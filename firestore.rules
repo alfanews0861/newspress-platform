@@ -1,0 +1,1314 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Core Security Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'alfanewsservice@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.platformRole in ['super_admin', 'platform_admin'])
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isTenantMember(tId) {
+      return isSignedIn() && (
+        isPlatformAdmin() ||
+        exists(/databases/$(database)/documents/tenantMembers/$(tId + '_' + request.auth.uid))
+      );
+    }
+
+    function isTenantEditor(tId) {
+      return isSignedIn() && (
+        isPlatformAdmin() ||
+        (exists(/databases/$(database)/documents/tenantMembers/$(tId + '_' + request.auth.uid)) &&
+         get(/databases/$(database)/documents/tenantMembers/$(tId + '_' + request.auth.uid)).data.organizationRole in ['owner', 'administrator', 'editor_in_chief', 'editor'])
+      );
+    }
+
+    function isTenantAdmin(tId) {
+      return isSignedIn() && (
+        isPlatformAdmin() ||
+        (exists(/databases/$(database)/documents/tenantMembers/$(tId + '_' + request.auth.uid)) &&
+         get(/databases/$(database)/documents/tenantMembers/$(tId + '_' + request.auth.uid)).data.organizationRole in ['owner', 'administrator', 'editor_in_chief'])
+      );
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isPlatformAdmin());
+      allow list: if isPlatformAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+        isValidId(userId) &&
+        request.resource.data.uid == userId &&
+        request.resource.data.email == request.auth.token.email &&
+        (request.resource.data.platformRole == 'none' || isPlatformAdmin());
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (request.auth.uid == userId &&
+         request.resource.data.uid == userId &&
+         request.resource.data.email == resource.data.email &&
+         request.resource.data.platformRole == resource.data.platformRole)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Persons Collection ---
+    match /persons/{personId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(personId) && (
+        isPlatformAdmin() ||
+        request.resource.data.email == request.auth.token.email
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        resource.data.email == request.auth.token.email
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Tenants Collection ---
+    match /tenants/{tenantId} {
+      allow get: if isSignedIn() && (isTenantMember(tenantId) || isPlatformAdmin());
+      allow list: if isSignedIn() && isPlatformAdmin();
+      allow create: if isSignedIn() && isValidId(tenantId);
+      allow update: if isTenantAdmin(tenantId);
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Tenant Members Collection ---
+    match /tenantMembers/{memberId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isTenantAdmin(resource.data.tenantId) ||
+        isPlatformAdmin()
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(memberId) && (
+        isTenantAdmin(request.resource.data.tenantId) ||
+        isPlatformAdmin()
+      );
+      allow update: if isSignedIn() && (
+        isTenantAdmin(resource.data.tenantId) ||
+        isPlatformAdmin()
+      );
+      allow delete: if isSignedIn() && (
+        isTenantAdmin(resource.data.tenantId) ||
+        isPlatformAdmin()
+      );
+    }
+
+    // --- Reporter Profiles Collection ---
+    match /reporterProfiles/{reporterId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(reporterId) && (
+        request.resource.data.userId == request.auth.uid ||
+        isPlatformAdmin()
+      );
+      // Reporters can update their bio/beats, but CANNOT self-alter factual reputation scores
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.verifiedOriginalReports == resource.data.verifiedOriginalReports &&
+         request.resource.data.firstRecordedSubmissions == resource.data.firstRecordedSubmissions &&
+         request.resource.data.confirmedDuplicates == resource.data.confirmedDuplicates &&
+         request.resource.data.marketplaceSales == resource.data.marketplaceSales &&
+         request.resource.data.marketplaceRevenue == resource.data.marketplaceRevenue)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- News Articles Collection ---
+    match /news/{newsId} {
+      allow get: if isSignedIn() && (
+        resource.data.isMarketplaceListed == true ||
+        resource.data.editorialStatus == 'published' ||
+        isTenantMember(resource.data.tenantId) ||
+        resource.data.authorId == request.auth.uid ||
+        isPlatformAdmin()
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId) ||
+        resource.data.isMarketplaceListed == true
+      );
+      allow create: if isSignedIn() && isValidId(newsId) && (
+        isTenantMember(request.resource.data.tenantId) &&
+        request.resource.data.authorId == request.auth.uid
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId) ||
+        (resource.data.authorId == request.auth.uid &&
+         resource.data.editorialStatus in ['draft', 'rejected'] &&
+         request.resource.data.editorialStatus in ['draft', 'submitted'] &&
+         request.resource.data.isMarketplaceListed == resource.data.isMarketplaceListed &&
+         request.resource.data.originalityStatus == resource.data.originalityStatus)
+      );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (isTenantAdmin(resource.data.tenantId) && resource.data.editorialStatus == 'draft')
+      );
+    }
+
+    // --- News Submissions Collection ---
+    match /newsSubmissions/{submissionId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId) ||
+        resource.data.reporterId == request.auth.uid
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId) ||
+        resource.data.reporterId == request.auth.uid
+      );
+      allow create: if isSignedIn() && isValidId(submissionId) &&
+        isTenantMember(request.resource.data.tenantId) &&
+        request.resource.data.reporterId == request.auth.uid;
+      // Submissions are strictly immutable receipts
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Reporter Evidence Collection ---
+    match /newsEvidence/{evidenceId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId) ||
+        resource.data.reporterId == request.auth.uid
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId) ||
+        resource.data.reporterId == request.auth.uid
+      );
+      allow create: if isSignedIn() && isValidId(evidenceId) &&
+        isTenantMember(request.resource.data.tenantId) &&
+        request.resource.data.reporterId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId) ||
+        (resource.data.reporterId == request.auth.uid &&
+         request.resource.data.isVerifiedByEditor == resource.data.isVerifiedByEditor)
+      );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (resource.data.reporterId == request.auth.uid && resource.data.isVerifiedByEditor != true)
+      );
+    }
+
+    // --- Event Groups & Breaking Locks Collection ---
+    match /newsEvents/{eventId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(eventId) && isTenantMember(request.resource.data.tenantId);
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Originality Assessments Collection ---
+    match /originalityAssessments/{assessmentId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(assessmentId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // ====================================================
+    // PHASE 3 — MARKETPLACE, LICENSING & REVENUE RULES
+    // ====================================================
+
+    // --- Marketplace Listings ---
+    match /marketplaceListings/{listingId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(listingId) && (
+        isPlatformAdmin() ||
+        (request.resource.data.reporterId == request.auth.uid && request.resource.data.price > 0)
+      );
+      // Price cannot be changed to <= 0 (NO FREE NEWS)
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (resource.data.reporterId == request.auth.uid &&
+         request.resource.data.reporterId == resource.data.reporterId &&
+         request.resource.data.newsId == resource.data.newsId &&
+         request.resource.data.price > 0)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Marketplace Purchases ---
+    match /marketplacePurchases/{purchaseId} {
+      allow get: if isSignedIn() && (
+        resource.data.buyerUserId == request.auth.uid ||
+        resource.data.reporterId == request.auth.uid ||
+        isTenantMember(resource.data.buyerTenantId) ||
+        isPlatformAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.buyerUserId == request.auth.uid ||
+        resource.data.reporterId == request.auth.uid ||
+        isTenantMember(resource.data.buyerTenantId) ||
+        isPlatformAdmin()
+      );
+      allow create: if isSignedIn() && isValidId(purchaseId) && (
+        isPlatformAdmin() ||
+        (request.resource.data.buyerUserId == request.auth.uid && request.resource.data.grossAmount > 0)
+      );
+      // Purchases are immutable historical records
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --- News Licenses ---
+    match /newsLicenses/{licenseId} {
+      allow get: if isSignedIn() && (
+        resource.data.buyerUserId == request.auth.uid ||
+        resource.data.sellerReporterId == request.auth.uid ||
+        isTenantMember(resource.data.buyerTenantId) ||
+        isPlatformAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.buyerUserId == request.auth.uid ||
+        resource.data.sellerReporterId == request.auth.uid ||
+        isTenantMember(resource.data.buyerTenantId) ||
+        isPlatformAdmin()
+      );
+      allow create: if isSignedIn() && isValidId(licenseId) && (
+        isPlatformAdmin() ||
+        request.resource.data.buyerUserId == request.auth.uid
+      );
+      // Buyer cannot alter license rights or terms after purchase
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Territorial Exclusive Locks ---
+    match /exclusiveLocks/{lockId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(lockId) && (
+        isPlatformAdmin() ||
+        request.resource.data.buyerTenantId != null
+      );
+      allow update: if isPlatformAdmin();
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Marketplace Subscription Plans ---
+    match /marketplaceSubscriptionPlans/{planId} {
+      allow get, list: if isSignedIn();
+      allow write: if isPlatformAdmin();
+    }
+
+    // --- Marketplace Entitlements ---
+    match /marketplaceEntitlements/{entitlementId} {
+      allow get, list: if isSignedIn() && (
+        isTenantMember(resource.data.buyerTenantId) ||
+        isPlatformAdmin()
+      );
+      // Granting and updating entitlements requires administrative/server authority
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Reporter Wallets ---
+    match /reporterWallets/{walletId} {
+      allow get: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.reporterId == request.auth.uid ||
+        isPlatformAdmin()
+      );
+      allow list: if isPlatformAdmin();
+      allow create: if isSignedIn() && isValidId(walletId) && (
+        request.resource.data.userId == request.auth.uid ||
+        isPlatformAdmin()
+      );
+      // Client cannot alter earnings, available balance, or fee amounts directly
+      allow update: if isPlatformAdmin();
+      allow delete: if false;
+    }
+
+    // --- Append-Only Financial Ledger ---
+    match /ledgerTransactions/{ledgerId} {
+      allow get, list: if isSignedIn() && (
+        resource.data.actorId == request.auth.uid ||
+        resource.data.beneficiaryId == request.auth.uid ||
+        isPlatformAdmin()
+      );
+      allow create: if isSignedIn() && isValidId(ledgerId) && (
+        isPlatformAdmin() ||
+        request.resource.data.actorId == request.auth.uid
+      );
+      // Ledger is strictly append-only: NO updates, NO deletes
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --- Payout Requests ---
+    match /payoutRequests/{payoutId} {
+      allow get, list: if isSignedIn() && (
+        resource.data.reporterId == request.auth.uid ||
+        isPlatformAdmin()
+      );
+      allow create: if isSignedIn() && isValidId(payoutId) &&
+        request.resource.data.reporterId == request.auth.uid &&
+        request.resource.data.requestedAmount > 0;
+      // Only platform admins can approve or reject payouts
+      allow update: if isPlatformAdmin();
+      allow delete: if false;
+    }
+
+    // --- Append-Only Immutable Audit Logs Collection ---
+    match /auditLogs/{auditId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(auditId) &&
+        request.resource.data.actorId == request.auth.uid;
+      // Audit events can NEVER be updated or deleted by normal clients
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ====================================================
+    // PHASE 4 — NEWSPAPER PAGE DESIGNER & LAYOUT ENGINE
+    // ====================================================
+
+    // --- Newspaper Brands ---
+    match /newspaperBrands/{brandId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(brandId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow update, delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // --- Newspaper Templates ---
+    match /newspaperTemplates/{templateId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      // Reporters CANNOT alter publisher templates
+      allow create: if isSignedIn() && isValidId(templateId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow update, delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // --- Newspaper Editions ---
+    match /newspaperEditions/{editionId} {
+      allow get: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(editionId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      // Editors can edit layouts; only Senior Editors (isTenantAdmin) can finalize
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (isTenantEditor(resource.data.tenantId) &&
+         request.resource.data.tenantId == resource.data.tenantId &&
+         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']) ||
+          request.resource.data.status in ['DRAFT', 'DESIGNING', 'REVIEW', 'planning', 'layout_in_progress'] ||
+          isTenantAdmin(resource.data.tenantId)))
+      );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // --- Newspaper Pages ---
+    match /newspaperPages/{pageId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(pageId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId)
+      );
+    }
+
+    // --- Article Placements ---
+    match /articlePlacements/{placementId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      // Editors can edit layouts, move stories, change design; reporters cannot
+      allow create, update: if isSignedIn() && isValidId(placementId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId)
+      );
+    }
+
+    // --- Edition Revisions ---
+    match /editionRevisions/{revisionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(revisionId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      // Historical revisions are strictly immutable
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Advertisement Placements ---
+    match /advertisementPlacements/{placementId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+    }
+
+    // --- Production Snapshots (Phase 5 - Strictly Immutable Frozen State) ---
+    match /productionSnapshots/{snapshotId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(snapshotId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      // Production snapshots are strictly immutable; once frozen cannot be edited
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Production Jobs (Phase 5 - Queue & RIP Pipeline) ---
+    match /productionJobs/{jobId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(jobId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Production Preflight Reports ---
+    match /productionPreflightReports/{reportId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(reportId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // --- Font Registry (Typography Licensing) ---
+    match /fontRegistry/{fontId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Print Image Derivatives ---
+    match /printImageDerivatives/{derivativeId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(derivativeId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // ====================================================
+    // PHASE 6 — AI EDITORIAL ENGINE & PUBLISHING PLANS
+    // ====================================================
+
+    // --- Editorial Content Versions ---
+    match /editorialContentVersions/{versionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(versionId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId) ||
+        (isTenantMember(request.resource.data.tenantId) && request.resource.data.sourceType == 'REPORTER_SUBMISSION')
+      );
+      // Versions are strictly immutable once created
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- AI Suggestions (Advisory suggestions pending editor review) ---
+    match /aiSuggestions/{suggestionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(suggestionId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- AI Usage Records (Usage tracking ledger) ---
+    match /aiUsageRecords/{usageId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(usageId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      // Usage records are append-only: no modification or deletion by client
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --- AI Prompt Templates ---
+    match /aiPromptTemplates/{promptId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- AI Plan Entitlements ---
+    match /aiPlanEntitlements/{entitlementId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(entitlementId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Fact Ledgers ---
+    match /factLedgers/{factLedgerId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(factLedgerId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Enhanced Image Derivatives ---
+    match /enhancedImageDerivatives/{derivativeId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(derivativeId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow update, delete: if isPlatformAdmin();
+    }
+    // ====================================================
+    // PHASE 7 — PUBLISHER SUBSCRIPTIONS, BILLING & USAGE
+    // ====================================================
+
+    // --- Plan Catalog & Plan Versions (Read by all, write by super admin) ---
+    match /plans/{planId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    match /planVersions/{versionId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Publisher Subscriptions ---
+    match /publisherSubscriptions/{subscriptionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(subscriptionId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Subscription Entitlement Snapshots ---
+    match /subscriptionEntitlements/{snapshotId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(snapshotId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Generalized Usage Records (Immutable usage logs) ---
+    match /usageRecords/{usageId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(usageId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      // Usage records are strictly append-only
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --- Publisher Invoices (Financial totals immutable by tenant) ---
+    match /invoices/{invoiceId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isPlatformAdmin();
+      allow delete: if false;
+    }
+
+    // --- Payment Transactions & Webhook Events ---
+    match /paymentTransactions/{transactionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    match /paymentWebhookEvents/{webhookEventId} {
+      allow get, list: if isPlatformAdmin();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Entitlement Grants (Promotional & Admin overrides) ---
+    match /entitlementGrants/{grantId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Billing Audit Logs ---
+    match /billingAuditLogs/{auditId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(auditId);
+      allow update, delete: if false;
+    }
+
+    // --- Tax Configurations ---
+    match /taxConfigurations/{taxConfigId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // ====================================================
+    // PHASE 8 — NEWSROOM OPERATIONS, STAFF & ASSIGNMENTS
+    // ====================================================
+
+    // --- Newsroom Members ---
+    match /newsroomMembers/{memberId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(memberId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow update, delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // --- Reporter Invitations ---
+    match /reporterInvitations/{invitationId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(invitationId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId) ||
+        (resource.data.status == 'PENDING' && request.resource.data.status in ['ACCEPTED', 'EXPIRED'])
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Reporter Verifications ---
+    match /reporterVerifications/{verificationId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(verificationId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Newsroom Desks ---
+    match /newsDesks/{deskId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isSignedIn() && isValidId(deskId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+    }
+
+    // --- News Beats ---
+    match /newsBeats/{beatId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isSignedIn() && isValidId(beatId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+    }
+
+    // --- Reporter Beat & District Assignments ---
+    match /reporterBeatAssignments/{assignmentId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isSignedIn() && isValidId(assignmentId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+    }
+
+    match /reporterDistrictAssignments/{assignmentId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update, delete: if isSignedIn() && isValidId(assignmentId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+    }
+
+    // --- News Assignments ---
+    match /newsAssignments/{assignmentId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(assignmentId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId) ||
+        (resource.data.assignedReporterId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedAt', 'startedAt', 'submittedAt', 'relatedNewsId']))
+      );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // --- Editorial Comments ---
+    match /editorialComments/{commentId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(commentId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantEditor(resource.data.tenantId) ||
+        resource.data.authorUserId == request.auth.uid
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Notification Events ---
+    match /notificationEvents/{eventId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(eventId) && (
+        isPlatformAdmin() ||
+        isTenantMember(request.resource.data.tenantId)
+      );
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']))
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 9: Newspaper Sections ---
+    match /newspaperSections/{sectionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(sectionId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin() || isTenantAdmin(resource.data.tenantId);
+    }
+
+    // --- Phase 9: Edition Content Reservations ---
+    match /editionContentReservations/{reservationId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(reservationId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin() || isTenantAdmin(resource.data.tenantId);
+    }
+
+    // --- Phase 9: Edition Advertisement Reservations ---
+    match /editionAdvertisementReservations/{reservationId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(reservationId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin() || isTenantAdmin(resource.data.tenantId);
+    }
+
+    // --- Phase 9: Edition Page Plans ---
+    match /editionPagePlans/{pagePlanId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(pagePlanId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 9: Edition Content Versions (Immutable) ---
+    match /editionContentVersions/{versionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(versionId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow update: if false; // Immutable historical versions
+      allow delete: if false; // Immutable historical versions
+    }
+
+    // --- Phase 10: Print Vendors ---
+    match /printVendors/{vendorId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(vendorId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin() || isTenantAdmin(resource.data.tenantId);
+    }
+
+    // --- Phase 10: Print Vendor Capabilities ---
+    match /printVendorCapabilities/{vendorId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(vendorId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin() || isTenantAdmin(resource.data.tenantId);
+    }
+
+    // --- Phase 10: Production Regions ---
+    match /productionRegions/{regionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(regionId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin() || isTenantAdmin(resource.data.tenantId);
+    }
+
+    // --- Phase 10: Print Production Artifacts (Cryptographic Sealed & Immutable) ---
+    match /printProductionArtifacts/{artifactId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(artifactId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId) ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      // Artifacts are strictly immutable once generated; corrections create new versions
+      allow update: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 10: Print Vendor Dispatches ---
+    match /printVendorDispatches/{dispatchId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(dispatchId) && (
+        isPlatformAdmin() ||
+        isTenantAdmin(request.resource.data.tenantId) ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 10: Vendor Proofs ---
+    match /vendorProofs/{proofId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(proofId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 10: Print Distributions & Delivery ---
+    match /printDistributions/{distributionId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create, update: if isSignedIn() && isValidId(distributionId) && (
+        isPlatformAdmin() ||
+        isTenantEditor(request.resource.data.tenantId) ||
+        isTenantAdmin(request.resource.data.tenantId)
+      );
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Revenue Events ---
+    match /revenueEvents/{eventId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Revenue Split Snapshots ---
+    match /revenueSplitSnapshots/{snapshotId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Financial Ledger ---
+    match /financialLedger/{ledgerId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Payout Profiles ---
+    match /payoutProfiles/{profileId} {
+      allow get: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isPlatformAdmin());
+      allow list: if isSignedIn();
+      allow create, update: if isSignedIn() && (request.resource.data.ownerId == request.auth.uid || isPlatformAdmin());
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Payout Requests ---
+    match /payoutRequests/{requestId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && (request.resource.data.requestedBy == request.auth.uid || request.resource.data.ownerId == request.auth.uid || isPlatformAdmin());
+      allow update: if isSignedIn();
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Payout Reservations ---
+    match /payoutReservations/{reservationId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 11: Financial Audit Events ---
+    match /financialAuditEvents/{auditId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false; // Immutable audit log
+    }
+
+    // --- Phase 14: Saved Analytics Reports ---
+    match /savedAnalyticsReports/{reportId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(request.resource.data.tenantId));
+      allow update: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+      allow delete: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+    }
+
+    // --- Phase 14: Analytics Report Snapshots ---
+    match /analyticsReportSnapshots/{snapshotId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if false; // Immutable snapshot
+    }
+
+    // --- Phase 14: Analytics Alerts ---
+    match /analyticsAlerts/{alertId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 14: Daily & Monthly Aggregations ---
+    match /analyticsDaily/{aggregationId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isPlatformAdmin();
+      allow delete: if isPlatformAdmin();
+    }
+
+    match /analyticsMonthly/{aggregationId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isPlatformAdmin();
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 15: API Applications & Integrations ---
+    match /apiApplications/{appId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+    }
+
+    // --- Phase 15: API Credentials & Verifiers ---
+    match /apiCredentials/{keyId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+    }
+
+    // --- Phase 15: API Usage & Metering Records ---
+    match /apiUsageRecords/{recordId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn();
+      allow update, delete: if false; // Immutable telemetry log
+    }
+
+    // --- Phase 15: API Idempotency Records ---
+    match /apiIdempotencyRecords/{recordId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 15: Webhook Endpoints ---
+    match /webhookEndpoints/{endpointId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(resource.data.tenantId));
+    }
+
+    // --- Phase 15: Webhook Events ---
+    match /webhookEvents/{eventId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn();
+      allow update, delete: if false; // Immutable event record
+    }
+
+    // --- Phase 15: Webhook Deliveries ---
+    match /webhookDeliveries/{deliveryId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create, update: if isSignedIn();
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 15: API Audit Events ---
+    match /apiAuditEvents/{eventId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn();
+      allow update, delete: if false; // Immutable audit log
+    }
+
+    // --- Phase 17: Platform Configuration Management ---
+    match /platformConfigs/{configId} {
+      allow get, list: if isSignedIn() && isPlatformAdmin();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 17: Publisher Onboarding & Tenant Lifecycle ---
+    match /publisherOnboardings/{tenantId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(tenantId));
+      allow create, update: if isSignedIn() && (isPlatformAdmin() || isTenantAdmin(tenantId));
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 17: Support & Customer Operations ---
+    match /supportCases/{caseId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantMember(request.resource.data.tenantId));
+      allow update: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 17: Legal & Policy Documents ---
+    match /policyDocuments/{docId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 17: Policy Acceptances ---
+    match /policyAcceptances/{acceptanceId} {
+      allow get, list: if isSignedIn() && (isPlatformAdmin() || isTenantMember(resource.data.tenantId));
+      allow create: if isSignedIn() && (isPlatformAdmin() || isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isPlatformAdmin();
+    }
+
+    // --- Phase 17: Launch Readiness Gates ---
+    match /launchReadinessChecks/{checkId} {
+      allow get, list: if isSignedIn() && isPlatformAdmin();
+      allow create, update, delete: if isPlatformAdmin();
+    }
+  }
+}
+

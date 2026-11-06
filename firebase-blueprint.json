@@ -1,0 +1,1506 @@
+{
+  "entities": {
+    "Tenant": {
+      "title": "Tenant",
+      "description": "Represents an independent news organization tenant in the platform.",
+      "type": "object",
+      "properties": {
+        "tenantId": { "type": "string", "description": "Unique identifier for the tenant organization" },
+        "organizationName": { "type": "string", "description": "Display name of the news organization" },
+        "legalName": { "type": "string", "description": "Registered legal entity name" },
+        "logoUrl": { "type": "string", "description": "URL to tenant logo asset" },
+        "contactEmail": { "type": "string", "description": "Primary editorial/administrative contact email" },
+        "contactPhone": { "type": "string", "description": "Primary office contact phone" },
+        "subscriptionPlan": { "type": "string", "enum": ["free_starter", "editorial_pro", "newsroom_enterprise"], "description": "Current subscription tier" },
+        "status": { "type": "string", "enum": ["active", "suspended", "provisioning", "archived"], "description": "Tenant operational status" },
+        "editionTimezone": { "type": "string", "description": "IANA timezone for edition deadlines" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of tenant creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last tenant update" }
+      },
+      "required": ["tenantId", "organizationName", "legalName", "subscriptionPlan", "status", "createdAt", "updatedAt"]
+    },
+    "Person": {
+      "title": "Person",
+      "description": "Represents a real-world human being, decoupled from auth accounts.",
+      "type": "object",
+      "properties": {
+        "personId": { "type": "string", "description": "Unique person identifier" },
+        "legalName": { "type": "string", "description": "Full legal name" },
+        "penName": { "type": "string", "description": "Byline / pen name used in print & digital" },
+        "email": { "type": "string", "description": "Personal or corporate contact email" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "bio": { "type": "string", "description": "Editorial biography / credentials" },
+        "primaryTenantId": { "type": "string", "description": "Default news organization tenant if applicable" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["personId", "legalName", "email", "createdAt", "updatedAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Represents a system login account linked to Firebase Auth UID.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "personId": { "type": "string", "description": "Foreign key reference to /persons/{personId}" },
+        "email": { "type": "string", "description": "Login email address" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "avatarUrl": { "type": "string", "description": "Avatar image URL" },
+        "platformRole": { "type": "string", "enum": ["none", "support_admin", "platform_admin", "super_admin"], "description": "System-wide platform role" },
+        "activeTenantId": { "type": "string", "description": "Currently active tenant workspace" },
+        "status": { "type": "string", "enum": ["active", "suspended", "invited"], "description": "Account status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["uid", "personId", "email", "platformRole", "status", "createdAt", "updatedAt"]
+    },
+    "TenantMember": {
+      "title": "TenantMember",
+      "description": "Defines a user's role and membership within a specific tenant organization.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "description": "Composite or unique member ID: {tenantId}_{uid}" },
+        "tenantId": { "type": "string", "description": "Foreign key reference to /tenants/{tenantId}" },
+        "userId": { "type": "string", "description": "Firebase Auth UID of the member" },
+        "personId": { "type": "string", "description": "Reference to /persons/{personId}" },
+        "organizationRole": { "type": "string", "enum": ["owner", "administrator", "editor_in_chief", "editor", "reporter_manager", "accountant", "member"], "description": "Tenant organizational role" },
+        "reporterRole": { "type": "string", "enum": ["none", "staff_reporter", "freelance_reporter"], "description": "Reporter affiliation role" },
+        "marketplaceRole": { "type": "string", "enum": ["none", "marketplace_buyer", "marketplace_seller", "marketplace_both"], "description": "Marketplace participation role" },
+        "status": { "type": "string", "enum": ["active", "suspended", "pending_invitation"], "description": "Membership status" },
+        "joinedAt": { "type": "string", "format": "date-time", "description": "Membership join timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["memberId", "tenantId", "userId", "organizationRole", "status", "joinedAt", "updatedAt"]
+    },
+    "ReporterProfile": {
+      "title": "ReporterProfile",
+      "description": "Represents an editorial or freelance reporter profile, credentialing, and factual originality metrics.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string", "description": "Unique reporter identifier" },
+        "personId": { "type": "string", "description": "Reference to /persons/{personId}" },
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "tenantId": { "type": "string", "description": "Affiliated tenant organization or 'freelance_open'" },
+        "reporterType": { "type": "string", "enum": ["staff_reporter", "freelance_reporter"], "description": "Affiliation category" },
+        "pressCardNumber": { "type": "string", "description": "Press credential identifier" },
+        "bio": { "type": "string", "description": "Public reporter bio" },
+        "verificationStatus": { "type": "string", "enum": ["unverified", "pending_review", "verified", "suspended"], "description": "Identity and originality verification status" },
+        "originalityScore": { "type": "number", "description": "Platform verified originality score index (0-100)" },
+        "originalFieldReports": { "type": "number", "description": "Count of filed original field dispatches" },
+        "verifiedOriginalReports": { "type": "number", "description": "Count of editor-verified original reports" },
+        "firstRecordedSubmissions": { "type": "number", "description": "Count of initial breaking reports" },
+        "independentReports": { "type": "number", "description": "Count of verified independent reports" },
+        "duplicateReports": { "type": "number", "description": "Count of flagged duplicate submissions" },
+        "confirmedDuplicates": { "type": "number", "description": "Count of confirmed duplicate/plagiarism actions" },
+        "disputedReports": { "type": "number", "description": "Count of disputed submissions" },
+        "corrections": { "type": "number", "description": "Count of post-publication corrections issued" },
+        "marketplaceSales": { "type": "number", "description": "Count of syndicated marketplace sales" },
+        "marketplaceRevenue": { "type": "number", "description": "Total royalties earned in INR" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Profile creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["reporterId", "personId", "userId", "tenantId", "reporterType", "verificationStatus", "createdAt", "updatedAt"]
+    },
+    "NewsArticle": {
+      "title": "NewsArticle",
+      "description": "Core news article domain model encompassing editorial workflow and syndication readiness.",
+      "type": "object",
+      "properties": {
+        "articleId": { "type": "string", "description": "Unique article identifier" },
+        "tenantId": { "type": "string", "description": "Authoring tenant organization ID" },
+        "headline": { "type": "string", "description": "Main story headline" },
+        "subheadline": { "type": "string", "description": "Deck or sub-headline" },
+        "leadParagraph": { "type": "string", "description": "Opening lead paragraph" },
+        "bodyContent": { "type": "string", "description": "Full editorial article body" },
+        "byline": { "type": "string", "description": "Reporter credit line" },
+        "authorId": { "type": "string", "description": "Reporter UID or personId" },
+        "category": { "type": "string", "description": "Editorial section / beat" },
+        "district": { "type": "string", "description": "Reporting district location" },
+        "state": { "type": "string", "description": "Reporting state location" },
+        "editorialStatus": { "type": "string", "enum": ["draft", "submitted", "originality_check", "editorial_review", "in_review", "fact_checking", "approved", "scheduled", "published", "rejected", "archived", "marketplace_listed"], "description": "Editorial lifecycle state" },
+        "originalityStatus": { "type": "string", "description": "Verified originality status" },
+        "wordCount": { "type": "number", "description": "Article word count" },
+        "isMarketplaceListed": { "type": "boolean", "description": "Whether story is listed on syndication wire" },
+        "isMarketplaceEligible": { "type": "boolean", "description": "Authoritative gate for marketplace listing" },
+        "publishedAt": { "type": "string", "format": "date-time", "description": "Publication timestamp" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Draft creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last modification timestamp" }
+      },
+      "required": ["articleId", "tenantId", "headline", "byline", "authorId", "editorialStatus", "isMarketplaceListed", "isMarketplaceEligible", "createdAt", "updatedAt"]
+    },
+    "MarketplaceListing": {
+      "title": "MarketplaceListing",
+      "description": "Represents an approved news article syndicated on the marketplace wire.",
+      "type": "object",
+      "properties": {
+        "listingId": { "type": "string", "description": "Unique marketplace listing identifier" },
+        "newsId": { "type": "string", "description": "Foreign key reference to /news/{newsId}" },
+        "reporterId": { "type": "string", "description": "Seller reporter ID" },
+        "reporterName": { "type": "string", "description": "Reporter display name" },
+        "reporterByline": { "type": "string", "description": "Reporter byline" },
+        "sourceTenantId": { "type": "string", "description": "Source tenant organization ID" },
+        "title": { "type": "string", "description": "Listing title" },
+        "shortDescription": { "type": "string", "description": "Public preview synopsis" },
+        "category": { "type": "string", "description": "News category beat" },
+        "district": { "type": "string", "description": "District geographic tag" },
+        "state": { "type": "string", "description": "State geographic tag" },
+        "publishedAt": { "type": "string", "format": "date-time", "description": "Published timestamp" },
+        "listingType": { "type": "string", "enum": ["STANDARD", "PREMIUM", "EXCLUSIVE", "FEATURE", "INVESTIGATION"], "description": "Listing pricing category" },
+        "pricingModel": { "type": "string", "enum": ["INDIVIDUAL_PURCHASE", "SUBSCRIPTION_ENTITLEMENT", "PREMIUM_PURCHASE", "EXCLUSIVE_PURCHASE"], "description": "Pricing model" },
+        "price": { "type": "number", "description": "Price in INR" },
+        "currency": { "type": "string", "description": "Currency code (INR)" },
+        "availability": { "type": "string", "enum": ["AVAILABLE", "LICENSED_EXCLUSIVE", "UNDER_OFFER", "WITHDRAWN", "ARCHIVED"], "description": "Market availability" },
+        "status": { "type": "string", "enum": ["ACTIVE", "DRAFT", "SUSPENDED", "ARCHIVED"], "description": "Operational status" },
+        "viewsCount": { "type": "number", "description": "Public view impressions" },
+        "purchasesCount": { "type": "number", "description": "Completed purchases count" },
+        "grossRevenue": { "type": "number", "description": "Gross sales generated" },
+        "netRevenue": { "type": "number", "description": "Net reporter royalties generated" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Listing creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["listingId", "newsId", "reporterId", "title", "shortDescription", "category", "listingType", "pricingModel", "price", "currency", "availability", "status", "createdAt", "updatedAt"]
+    },
+    "MarketplacePurchase": {
+      "title": "MarketplacePurchase",
+      "description": "Represents an authorized, completed news purchase transaction.",
+      "type": "object",
+      "properties": {
+        "purchaseId": { "type": "string", "description": "Unique purchase ID" },
+        "idempotencyKey": { "type": "string", "description": "Unique idempotency key preventing duplicate orders" },
+        "buyerTenantId": { "type": "string", "description": "Acquiring publisher tenant ID" },
+        "buyerUserId": { "type": "string", "description": "User UID who authorized purchase" },
+        "listingId": { "type": "string", "description": "Marketplace listing reference" },
+        "newsId": { "type": "string", "description": "Underlying news story ID" },
+        "reporterId": { "type": "string", "description": "Seller reporter ID" },
+        "sourceTenantId": { "type": "string", "description": "Source newsroom tenant ID" },
+        "licenseId": { "type": "string", "description": "Granted NewsLicense reference" },
+        "pricingModel": { "type": "string", "description": "Applied pricing model" },
+        "grossAmount": { "type": "number", "description": "Gross sale amount in INR" },
+        "platformFee": { "type": "number", "description": "Platform commission fee in INR" },
+        "reporterShare": { "type": "number", "description": "Reporter royalty share in INR" },
+        "sourceOrganizationShare": { "type": "number", "description": "Source newsroom share in INR" },
+        "currency": { "type": "string", "description": "Currency code" },
+        "status": { "type": "string", "enum": ["pending", "authorized", "completed", "cancelled", "refunded", "disputed"], "description": "Order status" },
+        "purchasedAt": { "type": "string", "format": "date-time", "description": "Purchase timestamp" },
+        "articleTitle": { "type": "string", "description": "Denormalized article title" }
+      },
+      "required": ["purchaseId", "idempotencyKey", "buyerTenantId", "buyerUserId", "listingId", "newsId", "reporterId", "licenseId", "grossAmount", "platformFee", "reporterShare", "status", "purchasedAt"]
+    },
+    "NewsLicense": {
+      "title": "NewsLicense",
+      "description": "Defines explicit legal syndication rights granted to a buyer organization.",
+      "type": "object",
+      "properties": {
+        "licenseId": { "type": "string", "description": "Unique license ID" },
+        "purchaseId": { "type": "string", "description": "Associated purchase reference" },
+        "listingId": { "type": "string", "description": "Listing reference" },
+        "newsId": { "type": "string", "description": "News article reference" },
+        "articleTitle": { "type": "string", "description": "Article headline" },
+        "buyerTenantId": { "type": "string", "description": "Licensed buyer tenant ID" },
+        "buyerUserId": { "type": "string", "description": "Purchaser UID" },
+        "sellerReporterId": { "type": "string", "description": "Author reporter ID" },
+        "type": { "type": "string", "enum": ["DIGITAL_ONLY", "PRINT_ONLY", "DIGITAL_AND_PRINT", "SINGLE_EDITION", "MULTI_EDITION", "REGIONAL", "NATIONAL", "EXCLUSIVE"], "description": "License category" },
+        "scope": { "type": "string", "description": "Usage scope" },
+        "territory": { "type": "string", "description": "Geographic territory bounds" },
+        "durationDays": { "type": "number", "description": "Validity period in days" },
+        "exclusivity": { "type": "boolean", "description": "Whether rights are exclusive" },
+        "resaleAllowed": { "type": "boolean", "description": "Whether redistribution is permitted" },
+        "derivativeEditingAllowed": { "type": "boolean", "description": "Whether editorial layout adaptation is permitted" },
+        "attributionRequired": { "type": "boolean", "description": "Whether byline credit is legally mandatory" },
+        "status": { "type": "string", "enum": ["ACTIVE", "EXPIRED", "REVOKED"], "description": "License operational status" },
+        "grantedAt": { "type": "string", "format": "date-time", "description": "License issuance timestamp" },
+        "expiresAt": { "type": "string", "format": "date-time", "description": "License expiration timestamp" }
+      },
+      "required": ["licenseId", "purchaseId", "listingId", "newsId", "buyerTenantId", "sellerReporterId", "type", "territory", "exclusivity", "resaleAllowed", "attributionRequired", "status", "grantedAt"]
+    },
+    "ExclusiveLock": {
+      "title": "ExclusiveLock",
+      "description": "Guarantees territorial exclusivity, preventing conflicting exclusive licenses for the same story.",
+      "type": "object",
+      "properties": {
+        "lockId": { "type": "string", "description": "Unique lock ID" },
+        "newsId": { "type": "string", "description": "News article ID" },
+        "listingId": { "type": "string", "description": "Listing reference" },
+        "buyerTenantId": { "type": "string", "description": "Holding buyer tenant ID" },
+        "territory": { "type": "string", "description": "Locked territory name" },
+        "scope": { "type": "string", "description": "Scope tag" },
+        "validFrom": { "type": "string", "format": "date-time", "description": "Lock start timestamp" },
+        "validUntil": { "type": "string", "format": "date-time", "description": "Lock expiration timestamp" },
+        "active": { "type": "boolean", "description": "Whether lock is currently enforced" },
+        "purchaseId": { "type": "string", "description": "Associated purchase ID" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Lock creation timestamp" }
+      },
+      "required": ["lockId", "newsId", "listingId", "buyerTenantId", "territory", "validFrom", "validUntil", "active", "purchaseId", "createdAt"]
+    },
+    "MarketplaceSubscriptionPlan": {
+      "title": "MarketplaceSubscriptionPlan",
+      "description": "Configurable monthly standard news packages for publishers.",
+      "type": "object",
+      "properties": {
+        "planId": { "type": "string", "description": "Unique plan ID" },
+        "name": { "type": "string", "description": "Plan display name" },
+        "monthlyPrice": { "type": "number", "description": "Monthly recurring rate in INR" },
+        "currency": { "type": "string", "description": "Currency code" },
+        "includedStandardNews": { "type": "number", "description": "Monthly story redemption quota" },
+        "premiumDiscountPercent": { "type": "number", "description": "Discount on premium purchases" },
+        "validityDays": { "type": "number", "description": "Billing cycle duration" },
+        "active": { "type": "boolean", "description": "Whether plan is active" }
+      },
+      "required": ["planId", "name", "monthlyPrice", "currency", "includedStandardNews", "validityDays", "active"]
+    },
+    "MarketplaceEntitlement": {
+      "title": "MarketplaceEntitlement",
+      "description": "Active subscription entitlement quota tracked per buyer tenant.",
+      "type": "object",
+      "properties": {
+        "entitlementId": { "type": "string", "description": "Unique entitlement ID" },
+        "subscriptionId": { "type": "string", "description": "Subscription order reference" },
+        "buyerTenantId": { "type": "string", "description": "Buyer tenant ID" },
+        "entitlementType": { "type": "string", "description": "Entitlement category" },
+        "totalUnits": { "type": "number", "description": "Total allocated standard units" },
+        "usedUnits": { "type": "number", "description": "Redeemed units count" },
+        "remainingUnits": { "type": "number", "description": "Remaining units available (cannot go below 0)" },
+        "startDate": { "type": "string", "format": "date-time", "description": "Activation timestamp" },
+        "endDate": { "type": "string", "format": "date-time", "description": "Expiration timestamp" },
+        "status": { "type": "string", "enum": ["active", "exhausted", "expired"], "description": "Entitlement status" }
+      },
+      "required": ["entitlementId", "subscriptionId", "buyerTenantId", "totalUnits", "usedUnits", "remainingUnits", "startDate", "endDate", "status"]
+    },
+    "ReporterWallet": {
+      "title": "ReporterWallet",
+      "description": "Reporter balance ledger with double-entry accounting records.",
+      "type": "object",
+      "properties": {
+        "walletId": { "type": "string", "description": "Unique wallet ID" },
+        "reporterId": { "type": "string", "description": "Reporter identifier" },
+        "userId": { "type": "string", "description": "User Auth UID" },
+        "grossSales": { "type": "number", "description": "Total gross sales in INR" },
+        "platformFees": { "type": "number", "description": "Total platform fees deducted" },
+        "netEarnings": { "type": "number", "description": "Total net royalties credited" },
+        "pendingEarnings": { "type": "number", "description": "Pending escrow balance" },
+        "availableBalance": { "type": "number", "description": "Withdrawable available balance in INR" },
+        "lifetimeEarnings": { "type": "number", "description": "Cumulative historical earnings" },
+        "salesCount": { "type": "number", "description": "Total count of story purchases" },
+        "currency": { "type": "string", "description": "Wallet currency (INR)" },
+        "payoutMethodStatus": { "type": "string", "enum": ["not_configured", "verified", "action_required"], "description": "Payout banking verification state" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last balance update timestamp" }
+      },
+      "required": ["walletId", "reporterId", "userId", "grossSales", "platformFees", "netEarnings", "pendingEarnings", "availableBalance", "lifetimeEarnings", "salesCount", "currency", "updatedAt"]
+    },
+    "LedgerTransaction": {
+      "title": "LedgerTransaction",
+      "description": "Immutable, append-only double-entry financial transaction record.",
+      "type": "object",
+      "properties": {
+        "ledgerId": { "type": "string", "description": "Unique ledger ID" },
+        "relatedPurchaseId": { "type": "string", "description": "Associated purchase ID" },
+        "relatedListingId": { "type": "string", "description": "Associated listing ID" },
+        "relatedNewsId": { "type": "string", "description": "Associated news ID" },
+        "actorId": { "type": "string", "description": "Initiating user UID or 'system'" },
+        "beneficiaryId": { "type": "string", "description": "Beneficiary ID (reporter, org, or platform)" },
+        "beneficiaryType": { "type": "string", "enum": ["reporter", "organization", "platform", "buyer"], "description": "Beneficiary category" },
+        "amount": { "type": "number", "description": "Transaction amount in INR or Units" },
+        "currency": { "type": "string", "description": "Currency code (INR, UNITS)" },
+        "direction": { "type": "string", "enum": ["credit", "debit"], "description": "Transaction direction" },
+        "transactionType": { "type": "string", "enum": ["SALE", "PLATFORM_FEE", "REPORTER_EARNING", "ORGANIZATION_EARNING", "SUBSCRIPTION_REDEMPTION", "REFUND", "ADJUSTMENT", "PAYOUT_PENDING", "PAYOUT_COMPLETED"], "description": "Transaction category" },
+        "status": { "type": "string", "enum": ["completed", "pending", "reversed"], "description": "Transaction status" },
+        "description": { "type": "string", "description": "Human-readable transaction description" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Append timestamp" }
+      },
+      "required": ["ledgerId", "actorId", "beneficiaryId", "beneficiaryType", "amount", "currency", "direction", "transactionType", "status", "createdAt"]
+    },
+    "PayoutRequest": {
+      "title": "PayoutRequest",
+      "description": "Reporter withdrawal request foundation awaiting administrative settlement review.",
+      "type": "object",
+      "properties": {
+        "payoutId": { "type": "string", "description": "Unique payout ID" },
+        "reporterId": { "type": "string", "description": "Reporter identifier" },
+        "reporterName": { "type": "string", "description": "Reporter display name" },
+        "requestedAmount": { "type": "number", "description": "Requested withdrawal amount in INR" },
+        "eligibleAmount": { "type": "number", "description": "Verified eligible balance" },
+        "currency": { "type": "string", "description": "Currency code (INR)" },
+        "status": { "type": "string", "enum": ["requested", "under_review", "approved", "rejected", "processing", "completed", "failed"], "description": "Payout lifecycle state" },
+        "requestedAt": { "type": "string", "format": "date-time", "description": "Request timestamp" },
+        "reviewedAt": { "type": "string", "format": "date-time", "description": "Review completion timestamp" },
+        "reviewedBy": { "type": "string", "description": "Administrator reviewer name" },
+        "rejectionReason": { "type": "string", "description": "Reason provided on rejection" },
+        "payoutMethod": { "type": "string", "description": "Selected payout banking channel" }
+      },
+      "required": ["payoutId", "reporterId", "requestedAmount", "eligibleAmount", "currency", "status", "requestedAt"]
+    },
+    "AuditEvent": {
+      "title": "AuditEvent",
+      "description": "Immutable, append-only security and editorial action audit record.",
+      "type": "object",
+      "properties": {
+        "auditId": { "type": "string", "description": "Unique audit record ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "actorId": { "type": "string", "description": "Actor Auth UID" },
+        "actorName": { "type": "string", "description": "Actor display name" },
+        "actorRole": { "type": "string", "description": "Role assumed during action" },
+        "action": { "type": "string", "description": "Audit action verb" },
+        "entityType": { "type": "string", "description": "Target entity model" },
+        "entityId": { "type": "string", "description": "Target document ID" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "ISO timestamp" }
+      },
+      "required": ["auditId", "tenantId", "actorId", "action", "entityType", "entityId", "timestamp"]
+    },
+    "NewspaperBrand": {
+      "title": "NewspaperBrand",
+      "description": "Represents a newspaper publication brand, masthead typography, and circulation imprint.",
+      "type": "object",
+      "properties": {
+        "brandId": { "type": "string", "description": "Unique brand identifier" },
+        "tenantId": { "type": "string", "description": "Tenant organization owner ID" },
+        "name": { "type": "string", "description": "Newspaper publication name" },
+        "code": { "type": "string", "description": "Brand edition prefix code" },
+        "tagline": { "type": "string", "description": "Publication motto or tagline" },
+        "language": { "type": "string", "enum": ["en", "te", "mixed"], "description": "Primary language" },
+        "defaultColumnCount": { "type": "number", "description": "Default column count" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["brandId", "tenantId", "name", "code", "language", "defaultColumnCount", "createdAt", "updatedAt"]
+    },
+    "NewspaperTemplate": {
+      "title": "NewspaperTemplate",
+      "description": "Reusable page specification, physical dimensions, baseline grid, and column geometries.",
+      "type": "object",
+      "properties": {
+        "templateId": { "type": "string", "description": "Unique template identifier" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "name": { "type": "string", "description": "Template display name" },
+        "description": { "type": "string", "description": "Template description" },
+        "pageSize": { "type": "string", "enum": ["A4", "Broadsheet", "Tabloid", "Custom"], "description": "Physical page size" },
+        "pageOrientation": { "type": "string", "enum": ["portrait", "landscape"], "description": "Page orientation" },
+        "columnCount": { "type": "number", "description": "Number of grid columns" },
+        "columnGutterMm": { "type": "number", "description": "Gutter width in millimeters" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["templateId", "tenantId", "name", "pageSize", "pageOrientation", "columnCount", "columnGutterMm", "createdAt", "updatedAt"]
+    },
+    "NewspaperEdition": {
+      "title": "NewspaperEdition",
+      "description": "Print publication issue containing pages, placed stories, and press specifications.",
+      "type": "object",
+      "properties": {
+        "editionId": { "type": "string", "description": "Unique edition identifier" },
+        "tenantId": { "type": "string", "description": "Publishing tenant organization ID" },
+        "brandId": { "type": "string", "description": "Associated brand identifier" },
+        "brandName": { "type": "string", "description": "Brand publication title" },
+        "editionCode": { "type": "string", "description": "Unique edition issue code" },
+        "publicationDate": { "type": "string", "description": "Edition publication date" },
+        "editionType": { "type": "string", "enum": ["morning", "evening", "sunday", "special"], "description": "Issue frequency/cycle" },
+        "status": { "type": "string", "description": "Edition production lifecycle state" },
+        "pageCount": { "type": "number", "description": "Total pages in issue" },
+        "placedArticlesCount": { "type": "number", "description": "Number of placed articles" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["editionId", "tenantId", "brandId", "brandName", "editionCode", "publicationDate", "status", "createdAt", "updatedAt"]
+    },
+    "NewspaperPage": {
+      "title": "NewspaperPage",
+      "description": "Individual printed page of an edition with snapped story blocks and diagnostics.",
+      "type": "object",
+      "properties": {
+        "pageId": { "type": "string", "description": "Unique page identifier" },
+        "editionId": { "type": "string", "description": "Parent edition ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "pageNumber": { "type": "number", "description": "Page sequence number" },
+        "templateId": { "type": "string", "description": "Applied template ID" },
+        "layoutVersion": { "type": "number", "description": "Layout iteration count" },
+        "occupiedArea": { "type": "number", "description": "Occupied area percentage" },
+        "status": { "type": "string", "description": "Page layout status" }
+      },
+      "required": ["pageId", "editionId", "tenantId", "pageNumber", "templateId", "layoutVersion", "occupiedArea", "status"]
+    },
+    "ArticlePlacement": {
+      "title": "ArticlePlacement",
+      "description": "Defines authoritative logical grid coordinates and design metrics for a story on a page.",
+      "type": "object",
+      "properties": {
+        "placementId": { "type": "string", "description": "Unique placement ID" },
+        "editionId": { "type": "string", "description": "Parent edition ID" },
+        "pageId": { "type": "string", "description": "Assigned page ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "newsId": { "type": "string", "description": "Source news article ID" },
+        "columnStart": { "type": "number", "description": "1-indexed starting column" },
+        "columnSpan": { "type": "number", "description": "Number of columns spanned" },
+        "rowStart": { "type": "number", "description": "Baseline grid row start" },
+        "rowSpan": { "type": "number", "description": "Baseline grid row span" },
+        "headlineSize": { "type": "number", "description": "Headline font size in points" },
+        "layoutRole": { "type": "string", "description": "Editorial layout role (LEAD, SECONDARY_LEAD, etc.)" },
+        "locked": { "type": "boolean", "description": "Whether block is locked from auto-layout rearrangement" },
+        "status": { "type": "string", "description": "Placement status" }
+      },
+      "required": ["placementId", "editionId", "pageId", "tenantId", "newsId", "columnStart", "columnSpan", "rowStart", "rowSpan", "layoutRole", "locked", "status"]
+    },
+    "EditionRevision": {
+      "title": "EditionRevision",
+      "description": "Immutable historical layout snapshot for an edition.",
+      "type": "object",
+      "properties": {
+        "revisionId": { "type": "string", "description": "Unique revision identifier" },
+        "editionId": { "type": "string", "description": "Parent edition ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "version": { "type": "number", "description": "Monotonically increasing version number" },
+        "createdBy": { "type": "string", "description": "User UID who generated revision" },
+        "changeSummary": { "type": "string", "description": "Description of layout changes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Snapshot creation timestamp" }
+      },
+      "required": ["revisionId", "editionId", "tenantId", "version", "createdBy", "changeSummary", "createdAt"]
+    },
+    "AdvertisementPlacement": {
+      "title": "AdvertisementPlacement",
+      "description": "Commercial advertisement placement zone acting as an immovable grid constraint.",
+      "type": "object",
+      "properties": {
+        "placementId": { "type": "string", "description": "Unique advertisement placement ID" },
+        "editionId": { "type": "string", "description": "Parent edition ID" },
+        "pageId": { "type": "string", "description": "Page ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "columnStart": { "type": "number", "description": "Starting column" },
+        "columnSpan": { "type": "number", "description": "Column span" },
+        "rowStart": { "type": "number", "description": "Row start" },
+        "rowSpan": { "type": "number", "description": "Row span" },
+        "sponsorLabel": { "type": "string", "description": "Sponsor or commercial client name" },
+        "isLocked": { "type": "boolean", "description": "Always locked as hard constraint" }
+      },
+      "required": ["placementId", "editionId", "pageId", "tenantId", "columnStart", "columnSpan", "rowStart", "rowSpan", "sponsorLabel", "isLocked"]
+    },
+    "ProductionSnapshot": {
+      "title": "ProductionSnapshot",
+      "description": "Immutable frozen production state of a finalized edition for RIP/PDF rendering.",
+      "type": "object",
+      "properties": {
+        "snapshotId": { "type": "string", "description": "Unique snapshot ID" },
+        "tenantId": { "type": "string", "description": "Tenant owner ID" },
+        "editionId": { "type": "string", "description": "Parent edition ID" },
+        "editionCode": { "type": "string", "description": "Edition code (e.g. MC-2026-10-04)" },
+        "brandId": { "type": "string", "description": "Brand ID" },
+        "brandName": { "type": "string", "description": "Brand title" },
+        "templateId": { "type": "string", "description": "Template ID" },
+        "revisionId": { "type": "string", "description": "Revision ID" },
+        "version": { "type": "number", "description": "Production version number" },
+        "publicationDate": { "type": "string", "description": "Target publication date" },
+        "publicationTimezone": { "type": "string", "description": "Brand timezone" },
+        "checksum": { "type": "string", "description": "Cryptographic SHA-256 hash of frozen content" },
+        "finalizedAt": { "type": "string", "format": "date-time", "description": "Timestamp finalized" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Snapshot creation timestamp" }
+      },
+      "required": ["snapshotId", "tenantId", "editionId", "brandId", "version", "checksum", "finalizedAt", "createdAt"]
+    },
+    "ProductionJob": {
+      "title": "ProductionJob",
+      "description": "Asynchronous print rendering and queue processing job.",
+      "type": "object",
+      "properties": {
+        "productionJobId": { "type": "string", "description": "Unique job identifier" },
+        "tenantId": { "type": "string", "description": "Tenant organization identifier" },
+        "editionId": { "type": "string", "description": "Target edition identifier" },
+        "snapshotId": { "type": "string", "description": "Target production snapshot identifier" },
+        "editionDate": { "type": "string", "description": "Edition date" },
+        "brandId": { "type": "string", "description": "Brand identifier" },
+        "priority": { "type": "number", "description": "Queue priority (1-10)" },
+        "queuePosition": { "type": "number", "description": "Current position in production queue" },
+        "status": { "type": "string", "enum": ["FINALIZED", "QUEUED", "CLAIMED", "PROCESSING", "RENDERING", "PREFLIGHT_CHECK", "READY", "FAILED", "RETRY_SCHEDULED", "CANCELLED", "SUPERSEDED"], "description": "Production job status" },
+        "stage": { "type": "string", "enum": ["QUEUED", "PREPARING", "RENDERING", "IMAGE_PROCESSING", "FONT_EMBEDDING", "PREFLIGHT", "PACKAGING", "READY"], "description": "Current rendering pipeline stage" },
+        "progressPercent": { "type": "number", "description": "Progress percentage derived from stage (0-100)" },
+        "attemptCount": { "type": "number", "description": "Number of processing attempts" },
+        "maxAttempts": { "type": "number", "description": "Max allowed retry attempts" },
+        "scheduledFor": { "type": "string", "format": "date-time", "description": "Scheduled production execution time" },
+        "workerId": { "type": "string", "description": "ID of worker currently claiming the job" },
+        "leaseExpiresAt": { "type": "string", "format": "date-time", "description": "Lease expiration timestamp" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Job creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["productionJobId", "tenantId", "editionId", "snapshotId", "status", "scheduledFor", "createdAt", "updatedAt"]
+    },
+    "ProductionPreflightReport": {
+      "title": "ProductionPreflightReport",
+      "description": "Pre-press quality control report evaluating geometry, typography, and image DPI.",
+      "type": "object",
+      "properties": {
+        "reportId": { "type": "string", "description": "Unique report ID" },
+        "productionJobId": { "type": "string", "description": "Associated production job ID" },
+        "snapshotId": { "type": "string", "description": "Target snapshot ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "result": { "type": "string", "enum": ["PASS", "PASS_WITH_WARNINGS", "FAIL"], "description": "Preflight verdict" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Report timestamp" }
+      },
+      "required": ["reportId", "productionJobId", "snapshotId", "tenantId", "result", "createdAt"]
+    },
+    "RegisteredFont": {
+      "title": "RegisteredFont",
+      "description": "Production font license and script compatibility record.",
+      "type": "object",
+      "properties": {
+        "fontId": { "type": "string", "description": "Font identifier" },
+        "fontFamily": { "type": "string", "description": "Font family name" },
+        "embeddingAllowed": { "type": "boolean", "description": "Whether font can be embedded into print PDF" },
+        "status": { "type": "string", "enum": ["active", "restricted", "deprecated"], "description": "Font status" }
+      },
+      "required": ["fontId", "fontFamily", "embeddingAllowed", "status"]
+    },
+    "PrintImageDerivative": {
+      "title": "PrintImageDerivative",
+      "description": "Non-destructive high-resolution image derivative for print press output.",
+      "type": "object",
+      "properties": {
+        "derivativeId": { "type": "string", "description": "Derivative ID" },
+        "sourceMediaId": { "type": "string", "description": "Source media reference" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "effectiveDPI": { "type": "number", "description": "Calculated print DPI" },
+        "colorProfile": { "type": "string", "enum": ["cmyk", "grayscale", "rgb"], "description": "Color profile" },
+        "processingStatus": { "type": "string", "enum": ["processed", "pending", "failed"], "description": "Processing status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["derivativeId", "sourceMediaId", "tenantId", "effectiveDPI", "colorProfile", "processingStatus", "createdAt"]
+    },
+    "EditorialContentVersion": {
+      "title": "EditorialContentVersion",
+      "description": "Versioned editorial snapshot preserving reporter submission and tracking AI vs human edits.",
+      "type": "object",
+      "properties": {
+        "versionId": { "type": "string", "description": "Unique version ID" },
+        "newsId": { "type": "string", "description": "Associated news article ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "versionNumber": { "type": "number", "description": "Sequential version number (v1 is immutable reporter submission)" },
+        "headline": { "type": "string", "description": "Version headline" },
+        "leadParagraph": { "type": "string", "description": "Lead paragraph" },
+        "bodyContent": { "type": "string", "description": "Body content" },
+        "sourceType": { "type": "string", "enum": ["REPORTER_SUBMISSION", "HUMAN_EDIT", "AI_SUGGESTION", "AI_ACCEPTED", "MARKETPLACE_SOURCE"], "description": "Content source classification" },
+        "createdBy": { "type": "string", "description": "Author UID" },
+        "changeSummary": { "type": "string", "description": "Summary of modifications" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["versionId", "newsId", "tenantId", "versionNumber", "headline", "leadParagraph", "bodyContent", "sourceType", "createdBy", "changeSummary", "createdAt"]
+    },
+    "AISuggestion": {
+      "title": "AISuggestion",
+      "description": "AI-generated editorial suggestion stored separately from authoritative source content.",
+      "type": "object",
+      "properties": {
+        "suggestionId": { "type": "string", "description": "Unique suggestion ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "sourceNewsId": { "type": "string", "description": "Target news article ID" },
+        "sourceVersion": { "type": "number", "description": "Target version number" },
+        "aiProvider": { "type": "string", "description": "AI provider name" },
+        "aiModel": { "type": "string", "description": "AI model name" },
+        "outputType": { "type": "string", "description": "AI output category" },
+        "factIntegrityStatus": { "type": "string", "enum": ["PASSED", "FLAGGED_FOR_EDITOR", "CRITICAL_DISCREPANCY"], "description": "Fact integrity check status" },
+        "editorStatus": { "type": "string", "enum": ["PENDING", "ACCEPTED", "REJECTED", "MODIFIED"], "description": "Human editor review state" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["suggestionId", "tenantId", "sourceNewsId", "sourceVersion", "aiProvider", "outputType", "factIntegrityStatus", "editorStatus", "createdAt"]
+    },
+    "AIUsageRecord": {
+      "title": "AIUsageRecord",
+      "description": "Audit and cost tracking record for an AI editorial operation.",
+      "type": "object",
+      "properties": {
+        "usageId": { "type": "string", "description": "Unique usage record ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "userId": { "type": "string", "description": "Requesting user UID" },
+        "operation": { "type": "string", "description": "Operation name" },
+        "modelTier": { "type": "string", "enum": ["NONE", "LIGHT", "ADVANCED"], "description": "Model tier invoked" },
+        "inputTokenEstimate": { "type": "number", "description": "Estimated input tokens" },
+        "outputTokenEstimate": { "type": "number", "description": "Estimated output tokens" },
+        "status": { "type": "string", "enum": ["QUEUED", "PROCESSING", "COMPLETED", "FAILED", "REJECTED", "BLOCKED_BY_PLAN"], "description": "Execution status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp" }
+      },
+      "required": ["usageId", "tenantId", "userId", "operation", "modelTier", "status", "createdAt"]
+    },
+    "AIPlanEntitlement": {
+      "title": "AIPlanEntitlement",
+      "description": "Publishing plan configuration and monthly AI operation limits.",
+      "type": "object",
+      "properties": {
+        "entitlementId": { "type": "string", "description": "Entitlement ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "planId": { "type": "string", "enum": ["BASIC", "STANDARD", "PREMIUM"], "description": "Publishing plan tier" },
+        "allowedModelTier": { "type": "string", "enum": ["NONE", "LIGHT", "ADVANCED"], "description": "Allowed model tier" },
+        "monthlyOperationsLimit": { "type": "number", "description": "Monthly operation quota" },
+        "currentMonthlyUsage": { "type": "number", "description": "Usage in current cycle" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["entitlementId", "tenantId", "planId", "allowedModelTier", "monthlyOperationsLimit", "currentMonthlyUsage", "createdAt"]
+    },
+    "FactLedger": {
+      "title": "FactLedger",
+      "description": "Immutable ledger of extracted factual entities from the authoritative source article.",
+      "type": "object",
+      "properties": {
+        "ledgerId": { "type": "string", "description": "Ledger ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "newsId": { "type": "string", "description": "News article ID" },
+        "versionId": { "type": "string", "description": "Associated version ID" },
+        "totalEntities": { "type": "number", "description": "Total entity count" },
+        "extractedAt": { "type": "string", "format": "date-time", "description": "Extraction timestamp" }
+      },
+      "required": ["ledgerId", "tenantId", "newsId", "versionId", "totalEntities", "extractedAt"]
+    },
+    "EnhancedImageDerivative": {
+      "title": "EnhancedImageDerivative",
+      "description": "Non-generative optical enhancement derivative linked to original photo.",
+      "type": "object",
+      "properties": {
+        "derivativeId": { "type": "string", "description": "Derivative ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "sourceMediaId": { "type": "string", "description": "Source image reference" },
+        "operation": { "type": "string", "description": "Applied enhancement operation" },
+        "safetyIntegrityVerified": { "type": "boolean", "description": "Integrity verification flag" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["derivativeId", "tenantId", "sourceMediaId", "operation", "safetyIntegrityVerified", "createdAt"]
+    },
+    "AIPromptTemplate": {
+      "title": "AIPromptTemplate",
+      "description": "Versioned system prompt template and schema definition for editorial AI tasks.",
+      "type": "object",
+      "properties": {
+        "promptId": { "type": "string", "description": "Prompt ID" },
+        "operation": { "type": "string", "description": "Target operation" },
+        "version": { "type": "string", "description": "SemVer prompt version" },
+        "active": { "type": "boolean", "description": "Active flag" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["promptId", "operation", "version", "active", "createdAt"]
+    },
+    "PlanRecord": {
+      "title": "PlanRecord",
+      "description": "Configurable publishing plan definition.",
+      "type": "object",
+      "properties": {
+        "planId": { "type": "string", "description": "Plan ID (BASIC, STANDARD, PREMIUM)" },
+        "version": { "type": "number", "description": "Plan configuration version" },
+        "name": { "type": "string", "description": "Plan display name" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE", "DEPRECATED", "DRAFT"], "description": "Plan status" },
+        "billingInterval": { "type": "string", "enum": ["MONTHLY", "ANNUAL"], "description": "Billing interval" },
+        "price": { "type": "number", "description": "Price per billing cycle" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["planId", "version", "name", "status", "billingInterval", "price", "createdAt"]
+    },
+    "PublisherSubscription": {
+      "title": "PublisherSubscription",
+      "description": "Publisher organization subscription lifecycle and payment state.",
+      "type": "object",
+      "properties": {
+        "subscriptionId": { "type": "string", "description": "Subscription ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "planId": { "type": "string", "description": "Subscribed plan ID" },
+        "planVersion": { "type": "number", "description": "Plan version snapshot" },
+        "status": { "type": "string", "enum": ["TRIALING", "ACTIVE", "PAST_DUE", "GRACE_PERIOD", "CANCELLED", "EXPIRED", "SUSPENDED"], "description": "Subscription status" },
+        "price": { "type": "number", "description": "Subscription price" },
+        "currentPeriodStart": { "type": "string", "format": "date-time", "description": "Period start" },
+        "currentPeriodEnd": { "type": "string", "format": "date-time", "description": "Period end" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["subscriptionId", "tenantId", "planId", "planVersion", "status", "price", "currentPeriodStart", "currentPeriodEnd", "createdAt"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Tax-compliant invoice generated for publisher subscription billing.",
+      "type": "object",
+      "properties": {
+        "invoiceId": { "type": "string", "description": "Invoice ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "subscriptionId": { "type": "string", "description": "Subscription ID" },
+        "invoiceNumber": { "type": "string", "description": "Invoice number" },
+        "subtotal": { "type": "number", "description": "Subtotal" },
+        "tax": { "type": "number", "description": "Tax total" },
+        "total": { "type": "number", "description": "Invoice total" },
+        "status": { "type": "string", "enum": ["DRAFT", "OPEN", "PAID", "FAILED", "VOID", "REFUNDED"], "description": "Invoice status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["invoiceId", "tenantId", "subscriptionId", "invoiceNumber", "subtotal", "tax", "total", "status", "createdAt"]
+    },
+    "UsageRecord": {
+      "title": "UsageRecord",
+      "description": "Immutable usage log record for tenant entitlement tracking.",
+      "type": "object",
+      "properties": {
+        "usageId": { "type": "string", "description": "Usage record ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "subscriptionId": { "type": "string", "description": "Subscription ID" },
+        "metric": { "type": "string", "description": "Usage metric verb" },
+        "quantity": { "type": "number", "description": "Quantity consumed" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Usage timestamp" }
+      },
+      "required": ["usageId", "tenantId", "subscriptionId", "metric", "quantity", "timestamp"]
+    },
+    "NewsroomMember": {
+      "title": "NewsroomMember",
+      "description": "Represents an active staff member, editor, or reporter in a newsroom organization.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "description": "Unique member ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "userId": { "type": "string", "description": "User UID" },
+        "personId": { "type": "string", "description": "Person ID" },
+        "role": { "type": "string", "description": "Newsroom operational role" },
+        "department": { "type": "string", "description": "Newsroom department" },
+        "designation": { "type": "string", "description": "Designation / Title" },
+        "status": { "type": "string", "enum": ["ACTIVE", "DEACTIVATED", "INVITED", "SUSPENDED"], "description": "Operational status" },
+        "joinedAt": { "type": "string", "format": "date-time", "description": "Join timestamp" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["memberId", "tenantId", "userId", "role", "designation", "status", "joinedAt", "createdAt", "updatedAt"]
+    },
+    "ReporterInvitation": {
+      "title": "ReporterInvitation",
+      "description": "Single-use hashed invitation token for staff and reporter onboarding.",
+      "type": "object",
+      "properties": {
+        "invitationId": { "type": "string", "description": "Unique invitation ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "email": { "type": "string", "description": "Invitee email address" },
+        "role": { "type": "string", "description": "Invited role" },
+        "employmentType": { "type": "string", "description": "Employment type" },
+        "invitedBy": { "type": "string", "description": "Inviting user ID" },
+        "status": { "type": "string", "enum": ["PENDING", "ACCEPTED", "EXPIRED", "REVOKED"], "description": "Invitation status" },
+        "tokenHash": { "type": "string", "description": "Cryptographically hashed single-use token" },
+        "expiresAt": { "type": "string", "format": "date-time", "description": "Expiration timestamp" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["invitationId", "tenantId", "email", "role", "employmentType", "invitedBy", "status", "tokenHash", "expiresAt", "createdAt"]
+    },
+    "ReporterVerification": {
+      "title": "ReporterVerification",
+      "description": "Journalist identity and press credential verification records.",
+      "type": "object",
+      "properties": {
+        "verificationId": { "type": "string", "description": "Unique verification ID" },
+        "reporterId": { "type": "string", "description": "Reporter ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "verificationType": { "type": "string", "description": "Verification category" },
+        "status": { "type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED", "EXPIRED"], "description": "Verification status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["verificationId", "reporterId", "tenantId", "verificationType", "status", "createdAt"]
+    },
+    "NewsroomDesk": {
+      "title": "NewsroomDesk",
+      "description": "Configurable newsroom desk section and assigned editors.",
+      "type": "object",
+      "properties": {
+        "deskId": { "type": "string", "description": "Unique desk ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "name": { "type": "string", "description": "Desk name" },
+        "description": { "type": "string", "description": "Desk description" },
+        "section": { "type": "string", "description": "Editorial section" },
+        "status": { "type": "string", "enum": ["ACTIVE", "INACTIVE"], "description": "Desk operational status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["deskId", "tenantId", "name", "section", "status", "createdAt", "updatedAt"]
+    },
+    "NewsBeat": {
+      "title": "NewsBeat",
+      "description": "Newsroom editorial beat and topical coverage area.",
+      "type": "object",
+      "properties": {
+        "beatId": { "type": "string", "description": "Unique beat ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "name": { "type": "string", "description": "Beat name" },
+        "description": { "type": "string", "description": "Beat description" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["beatId", "tenantId", "name", "description", "createdAt", "updatedAt"]
+    },
+    "ReporterBeatAssignment": {
+      "title": "ReporterBeatAssignment",
+      "description": "Mapping of reporter to assigned newsroom beat.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string", "description": "Unique assignment ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "reporterId": { "type": "string", "description": "Reporter ID" },
+        "beatId": { "type": "string", "description": "Beat ID" },
+        "assignedAt": { "type": "string", "format": "date-time", "description": "Assignment timestamp" }
+      },
+      "required": ["assignmentId", "tenantId", "reporterId", "beatId", "assignedAt"]
+    },
+    "ReporterDistrictAssignment": {
+      "title": "ReporterDistrictAssignment",
+      "description": "Mapping of reporter to geographic district.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string", "description": "Unique assignment ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "reporterId": { "type": "string", "description": "Reporter ID" },
+        "district": { "type": "string", "description": "District name" },
+        "state": { "type": "string", "description": "State name" },
+        "assignedAt": { "type": "string", "format": "date-time", "description": "Assignment timestamp" }
+      },
+      "required": ["assignmentId", "tenantId", "reporterId", "district", "assignedAt"]
+    },
+    "NewsAssignment": {
+      "title": "NewsAssignment",
+      "description": "Field reporting assignment brief with deadline tracking.",
+      "type": "object",
+      "properties": {
+        "assignmentId": { "type": "string", "description": "Unique assignment ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "deskId": { "type": "string", "description": "Desk ID" },
+        "assignedReporterId": { "type": "string", "description": "Assigned reporter ID" },
+        "assignedByUserId": { "type": "string", "description": "Assigning editor user ID" },
+        "title": { "type": "string", "description": "Assignment title" },
+        "brief": { "type": "string", "description": "Detailed brief" },
+        "priority": { "type": "string", "enum": ["URGENT", "HIGH", "NORMAL", "LOW"], "description": "Priority level" },
+        "beat": { "type": "string", "description": "Beat" },
+        "district": { "type": "string", "description": "District" },
+        "deadline": { "type": "string", "format": "date-time", "description": "Deadline timestamp" },
+        "status": { "type": "string", "enum": ["ASSIGNED", "ACCEPTED", "IN_PROGRESS", "SUBMITTED", "UNDER_REVIEW", "COMPLETED", "REJECTED", "CANCELLED", "OVERDUE"], "description": "Assignment status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["assignmentId", "tenantId", "deskId", "assignedReporterId", "assignedByUserId", "title", "brief", "priority", "deadline", "status", "createdAt"]
+    },
+    "EditorialComment": {
+      "title": "EditorialComment",
+      "description": "Editorial comments, fact check flags, and revision requests.",
+      "type": "object",
+      "properties": {
+        "commentId": { "type": "string", "description": "Unique comment ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "newsId": { "type": "string", "description": "Associated news ID" },
+        "authorUserId": { "type": "string", "description": "Comment author user ID" },
+        "targetReporterId": { "type": "string", "description": "Target reporter ID" },
+        "commentType": { "type": "string", "description": "Comment classification" },
+        "text": { "type": "string", "description": "Comment content" },
+        "status": { "type": "string", "enum": ["OPEN", "RESOLVED"], "description": "Comment status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["commentId", "tenantId", "newsId", "authorUserId", "targetReporterId", "commentType", "text", "status", "createdAt"]
+    },
+    "NotificationEvent": {
+      "title": "NotificationEvent",
+      "description": "Tenant and user-scoped notification event.",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string", "description": "Unique notification ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "userId": { "type": "string", "description": "Recipient user ID" },
+        "type": { "type": "string", "description": "Notification category" },
+        "title": { "type": "string", "description": "Title" },
+        "message": { "type": "string", "description": "Message body" },
+        "read": { "type": "boolean", "description": "Read status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp" }
+      },
+      "required": ["eventId", "tenantId", "userId", "type", "title", "message", "read", "createdAt"]
+    },
+    "PrintVendor": {
+      "title": "PrintVendor",
+      "description": "Commercial print vendor and rotary web offset press facility.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique vendor ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization ID" },
+        "name": { "type": "string", "description": "Vendor display name" },
+        "legalName": { "type": "string", "description": "Registered legal entity name" },
+        "contactName": { "type": "string", "description": "Primary press supervisor contact" },
+        "email": { "type": "string", "description": "Pressroom contact email" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "address": { "type": "string", "description": "Physical printing plant address" },
+        "dailyCapacity": { "type": "number", "description": "Maximum daily newspaper copy print capacity" },
+        "active": { "type": "boolean", "description": "Operational active status" },
+        "priority": { "type": "number", "description": "Preference routing priority" },
+        "vendorType": { "type": "string", "enum": ["INTERNAL_PRINT_UNIT", "EXTERNAL_PRINT_VENDOR", "CONTRACT_PRINT_VENDOR"], "description": "Vendor type" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "tenantId", "name", "legalName", "contactName", "email", "dailyCapacity", "active", "vendorType", "createdAt", "updatedAt"]
+    },
+    "PrintVendorCapability": {
+      "title": "PrintVendorCapability",
+      "description": "Technical press capabilities, paper formats, cutoffs, and emergency reprint support.",
+      "type": "object",
+      "properties": {
+        "vendorId": { "type": "string", "description": "Associated vendor ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "supportsColor": { "type": "boolean", "description": "Multi-color CMYK capability" },
+        "supportsMonochrome": { "type": "boolean", "description": "Monochrome black capability" },
+        "bleedRequirementsMm": { "type": "number", "description": "Press cylinder bleed allowance in mm" },
+        "maximumDailyCapacity": { "type": "number", "description": "Max rated daily copies" },
+        "productionCutoffTime": { "type": "string", "description": "Production plate cutoff time (HH:MM)" },
+        "dispatchCutoffTime": { "type": "string", "description": "Truck dispatch cutoff time (HH:MM)" },
+        "emergencyReprintSupport": { "type": "boolean", "description": "Supports urgent reprint reruns" }
+      },
+      "required": ["vendorId", "tenantId", "supportsColor", "supportsMonochrome", "maximumDailyCapacity", "productionCutoffTime", "dispatchCutoffTime", "emergencyReprintSupport"]
+    },
+    "ProductionRegion": {
+      "title": "ProductionRegion",
+      "description": "Regional newspaper distribution territory and delivery zone.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique region ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "name": { "type": "string", "description": "Region name" },
+        "code": { "type": "string", "description": "Unique uppercase region code" },
+        "timezone": { "type": "string", "description": "Local IANA timezone" },
+        "defaultVendorId": { "type": "string", "description": "Default assigned print vendor ID" },
+        "active": { "type": "boolean", "description": "Active region status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "tenantId", "name", "code", "timezone", "active", "createdAt", "updatedAt"]
+    },
+    "PrintProductionArtifact": {
+      "title": "PrintProductionArtifact",
+      "description": "Immutable production artifact sealed with cryptographic SHA-256 checksum.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique artifact ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "editionId": { "type": "string", "description": "Associated edition ID" },
+        "productionJobId": { "type": "string", "description": "Production job ID" },
+        "snapshotId": { "type": "string", "description": "Frozen snapshot ID" },
+        "version": { "type": "number", "description": "Edition production version" },
+        "artifactType": { "type": "string", "enum": ["PRINT_PDF", "DIGITAL_PDF", "PAGE_PDF", "THUMBNAIL", "PREFLIGHT_REPORT", "VENDOR_PROOF", "CORRECTED_PRINT_PDF"], "description": "Artifact type" },
+        "storagePath": { "type": "string", "description": "Tenant-scoped storage URI" },
+        "fileName": { "type": "string", "description": "File name" },
+        "fileSize": { "type": "number", "description": "File size in bytes" },
+        "checksum": { "type": "string", "description": "Cryptographic SHA-256 checksum" },
+        "pageCount": { "type": "number", "description": "Total pages" },
+        "colorMode": { "type": "string", "description": "Press color mode" },
+        "bleedStatus": { "type": "string", "description": "Bleed integrity" },
+        "fontEmbeddingStatus": { "type": "string", "description": "Font embedding verification" },
+        "dpiStatus": { "type": "string", "description": "Effective DPI resolution rating" },
+        "preflightStatus": { "type": "string", "enum": ["PASS", "WARNING", "BLOCKED"], "description": "Preflight gate verdict" },
+        "generatedAt": { "type": "string", "format": "date-time", "description": "Generation timestamp" },
+        "supersededAt": { "type": "string", "format": "date-time", "description": "Timestamp when superseded by correction" },
+        "immutable": { "type": "boolean", "description": "Immutable artifact lock" }
+      },
+      "required": ["id", "tenantId", "editionId", "productionJobId", "snapshotId", "version", "artifactType", "storagePath", "fileName", "fileSize", "checksum", "pageCount", "preflightStatus", "generatedAt", "immutable"]
+    },
+    "PrintVendorDispatch": {
+      "title": "PrintVendorDispatch",
+      "description": "Cryptographic dispatch record transmitting immutable artifact to print vendor.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique dispatch ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "editionId": { "type": "string", "description": "Edition ID" },
+        "productionJobId": { "type": "string", "description": "Production job ID" },
+        "vendorId": { "type": "string", "description": "Print vendor ID" },
+        "regionId": { "type": "string", "description": "Distribution region ID" },
+        "artifactId": { "type": "string", "description": "Dispatched artifact ID" },
+        "dispatchVersion": { "type": "number", "description": "Dispatched version number" },
+        "checksum": { "type": "string", "description": "Expected SHA-256 hash" },
+        "dispatchStatus": { "type": "string", "enum": ["PENDING", "DISPATCHING", "SENT", "ACKNOWLEDGED", "REJECTED", "FAILED", "CANCELLED", "COMPLETED"], "description": "Dispatch workflow status" },
+        "dispatchedAt": { "type": "string", "format": "date-time", "description": "Transmission timestamp" },
+        "acknowledgedAt": { "type": "string", "format": "date-time", "description": "Vendor acknowledgment timestamp" },
+        "vendorReferenceNumber": { "type": "string", "description": "Vendor confirmation reference" },
+        "acceptedChecksum": { "type": "string", "description": "Vendor verified cryptographic hash" },
+        "retryCount": { "type": "number", "description": "Bounded retry count" },
+        "idempotencyKey": { "type": "string", "description": "Deterministic idempotency key" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "tenantId", "editionId", "productionJobId", "vendorId", "regionId", "artifactId", "dispatchVersion", "checksum", "dispatchStatus", "retryCount", "idempotencyKey", "createdAt", "updatedAt"]
+    },
+    "VendorProof": {
+      "title": "VendorProof",
+      "description": "Pre-press vendor digital proof for editorial sign-off.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Proof ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "editionId": { "type": "string", "description": "Edition ID" },
+        "vendorDispatchId": { "type": "string", "description": "Dispatch reference ID" },
+        "artifactId": { "type": "string", "description": "Artifact ID" },
+        "storagePath": { "type": "string", "description": "Proof file storage path" },
+        "checksum": { "type": "string", "description": "Proof checksum" },
+        "submittedAt": { "type": "string", "format": "date-time", "description": "Vendor submission timestamp" },
+        "status": { "type": "string", "enum": ["PENDING", "RECEIVED", "UNDER_REVIEW", "APPROVED", "REJECTED"], "description": "Review status" },
+        "rejectionReason": { "type": "string", "description": "Reason if rejected" }
+      },
+      "required": ["id", "tenantId", "editionId", "vendorDispatchId", "artifactId", "storagePath", "checksum", "submittedAt", "status"]
+    },
+    "PrintDistribution": {
+      "title": "PrintDistribution",
+      "description": "Post-press distribution, delivery tracking, and regional circulation counts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique distribution ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "editionId": { "type": "string", "description": "Edition ID" },
+        "vendorDispatchId": { "type": "string", "description": "Vendor dispatch ID" },
+        "regionId": { "type": "string", "description": "Target region ID" },
+        "quantity": { "type": "number", "description": "Planned copy quantity" },
+        "wastageQuantity": { "type": "number", "description": "Damaged/waste copies" },
+        "reprintQuantity": { "type": "number", "description": "Emergency reprint copies" },
+        "carrier": { "type": "string", "description": "Logistics carrier" },
+        "trackingReference": { "type": "string", "description": "Carrier tracking reference" },
+        "deliveryStatus": { "type": "string", "enum": ["PLANNED", "DISPATCHED", "IN_TRANSIT", "DELIVERED", "PARTIALLY_DELIVERED", "FAILED"], "description": "Delivery status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "tenantId", "editionId", "regionId", "quantity", "deliveryStatus", "createdAt", "updatedAt"]
+    },
+    "SavedAnalyticsReport": {
+      "title": "SavedAnalyticsReport",
+      "description": "Custom configured MIS reports saved by authorized users for scheduled or ad-hoc execution.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique report ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "createdBy": { "type": "string", "description": "User ID of creator" },
+        "name": { "type": "string", "description": "Report display name" },
+        "description": { "type": "string", "description": "Detailed description of metrics and grouping" },
+        "grouping": { "type": "string", "enum": ["day", "week", "month", "quarter", "category", "district"], "description": "Aggregation dimension" },
+        "schedule": { "type": "string", "enum": ["none", "daily", "weekly", "monthly"], "description": "Automated schedule" },
+        "format": { "type": "string", "enum": ["CSV", "XLSX", "PDF_JSON"], "description": "Export format" },
+        "active": { "type": "boolean", "description": "Whether report schedule is active" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "tenantId", "createdBy", "name", "grouping", "schedule", "format", "active", "createdAt", "updatedAt"]
+    },
+    "AnalyticsReportSnapshot": {
+      "title": "AnalyticsReportSnapshot",
+      "description": "Immutable historical report snapshot sealed with cryptographic data hash.",
+      "type": "object",
+      "properties": {
+        "snapshotId": { "type": "string", "description": "Unique snapshot ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID" },
+        "reportDefinitionId": { "type": "string", "description": "Source report ID" },
+        "reportName": { "type": "string", "description": "Report name at time of freeze" },
+        "dataHash": { "type": "string", "description": "Cryptographic hash of frozen row payload" },
+        "generationTimestamp": { "type": "string", "format": "date-time", "description": "Snapshot creation timestamp" },
+        "createdBy": { "type": "string", "description": "User ID who ran or approved snapshot" }
+      },
+      "required": ["snapshotId", "tenantId", "reportDefinitionId", "reportName", "dataHash", "generationTimestamp", "createdBy"]
+    },
+    "AnalyticsAlert": {
+      "title": "AnalyticsAlert",
+      "description": "Deterministic operational anomaly alert triggered by threshold violation.",
+      "type": "object",
+      "properties": {
+        "alertId": { "type": "string", "description": "Unique alert ID" },
+        "tenantId": { "type": "string", "description": "Tenant ID if scoped" },
+        "metric": { "type": "string", "description": "Metric identifier" },
+        "severity": { "type": "string", "enum": ["CRITICAL", "WARNING", "INFO"], "description": "Alert severity" },
+        "threshold": { "type": "number", "description": "Trigger threshold" },
+        "currentValue": { "type": "number", "description": "Observed value" },
+        "previousValue": { "type": "number", "description": "Baseline value" },
+        "reason": { "type": "string", "description": "Causality explanation" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Trigger timestamp" },
+        "resolved": { "type": "boolean", "description": "Whether alert has been acknowledged and resolved" }
+      },
+      "required": ["alertId", "metric", "severity", "threshold", "currentValue", "reason", "timestamp", "resolved"]
+    },
+    "AnalyticsAggregation": {
+      "title": "AnalyticsAggregation",
+      "description": "Pre-computed idempotent daily or monthly aggregated operational metrics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite key: interval:tenant:dateKey" },
+        "tenantId": { "type": "string", "description": "Tenant ID if tenant scoped" },
+        "interval": { "type": "string", "enum": ["DAILY", "MONTHLY"], "description": "Aggregation interval" },
+        "dateKey": { "type": "string", "description": "Date or month key (YYYY-MM-DD or YYYY-MM)" },
+        "version": { "type": "number", "description": "Schema/run version" },
+        "aggregatedAt": { "type": "string", "format": "date-time", "description": "Aggregation execution timestamp" }
+      },
+    },
+    "ApiApplication": {
+      "title": "ApiApplication",
+      "description": "Tenant-scoped external API application registration and scopes.",
+      "type": "object",
+      "properties": {
+        "appId": { "type": "string", "description": "Unique application ID" },
+        "tenantId": { "type": "string", "description": "Tenant organization boundary" },
+        "name": { "type": "string", "description": "Display name of client application" },
+        "environment": { "type": "string", "enum": ["TEST", "LIVE"], "description": "Target environment" },
+        "status": { "type": "string", "enum": ["ACTIVE", "REVOKED", "EXPIRED", "SUSPENDED"], "description": "Application status" },
+        "allowedScopes": { "type": "array", "description": "List of granted API scopes" },
+        "rateLimitTier": { "type": "string", "enum": ["STARTER", "PRO", "ENTERPRISE"], "description": "Rate limit quota tier" }
+      },
+      "required": ["appId", "tenantId", "name", "environment", "status", "allowedScopes", "rateLimitTier"]
+    },
+    "ApiCredential": {
+      "title": "ApiCredential",
+      "description": "Machine-to-machine API key record with cryptographic hash verifier.",
+      "type": "object",
+      "properties": {
+        "keyId": { "type": "string", "description": "Unique key identifier" },
+        "appId": { "type": "string", "description": "Parent API application" },
+        "tenantId": { "type": "string", "description": "Tenant organization boundary" },
+        "keyPrefix": { "type": "string", "description": "Key prefix for lookup" },
+        "secretHash": { "type": "string", "description": "Cryptographic HMAC-SHA256 hash verifier" },
+        "status": { "type": "string", "enum": ["ACTIVE", "REVOKED", "EXPIRED"], "description": "Credential state" },
+        "scopes": { "type": "array", "description": "Granted scopes subset" }
+      },
+      "required": ["keyId", "appId", "tenantId", "keyPrefix", "secretHash", "status", "scopes"]
+    },
+    "WebhookEndpoint": {
+      "title": "WebhookEndpoint",
+      "description": "Tenant outbound webhook destination and event subscriptions.",
+      "type": "object",
+      "properties": {
+        "endpointId": { "type": "string", "description": "Unique endpoint identifier" },
+        "tenantId": { "type": "string", "description": "Tenant boundary" },
+        "url": { "type": "string", "format": "uri", "description": "HTTPS destination URL" },
+        "subscribedEvents": { "type": "array", "description": "Subscribed event topics" },
+        "status": { "type": "string", "enum": ["ACTIVE", "DISABLED", "SUSPENDED"], "description": "Endpoint state" }
+      },
+      "required": ["endpointId", "tenantId", "url", "subscribedEvents", "status"]
+    },
+    "WebhookDelivery": {
+      "title": "WebhookDelivery",
+      "description": "Outbound webhook dispatch attempt execution and lease state.",
+      "type": "object",
+      "properties": {
+        "deliveryId": { "type": "string", "description": "Unique delivery record ID" },
+        "eventId": { "type": "string", "description": "Reference to WebhookEvent" },
+        "endpointId": { "type": "string", "description": "Reference to WebhookEndpoint" },
+        "tenantId": { "type": "string", "description": "Tenant boundary" },
+        "eventType": { "type": "string", "description": "Webhook event type" },
+        "destinationUrl": { "type": "string", "format": "uri", "description": "Target destination" },
+        "attemptNumber": { "type": "number", "description": "Attempt counter" },
+        "status": { "type": "string", "enum": ["PENDING", "DELIVERING", "DELIVERED", "RETRY_SCHEDULED", "FAILED", "DEAD_LETTER"], "description": "Delivery state" }
+      },
+      "required": ["deliveryId", "eventId", "endpointId", "tenantId", "eventType", "destinationUrl", "attemptNumber", "status"]
+    }
+  },
+  "firestore": {
+    "/plans/{planId}": {
+      "schema": "PlanRecord",
+      "description": "Central publishing plan catalog definitions."
+    },
+    "/planVersions/{versionId}": {
+      "schema": "PlanRecord",
+      "description": "Historical plan version snapshots."
+    },
+    "/publisherSubscriptions/{subscriptionId}": {
+      "schema": "PublisherSubscription",
+      "description": "Tenant publisher subscription records."
+    },
+    "/subscriptionEntitlements/{snapshotId}": {
+      "schema": "PublisherSubscription",
+      "description": "Frozen subscription entitlement snapshots."
+    },
+    "/usageRecords/{usageId}": {
+      "schema": "UsageRecord",
+      "description": "Immutable usage records for billing and quota calculation."
+    },
+    "/invoices/{invoiceId}": {
+      "schema": "Invoice",
+      "description": "Publisher subscription invoices."
+    },
+    "/paymentTransactions/{transactionId}": {
+      "schema": "Invoice",
+      "description": "Payment authorization and capture transactions."
+    },
+    "/paymentWebhookEvents/{webhookEventId}": {
+      "schema": "Invoice",
+      "description": "Incoming provider payment webhook events."
+    },
+    "/entitlementGrants/{grantId}": {
+      "schema": "PublisherSubscription",
+      "description": "Promotional or administrative entitlement grants."
+    },
+    "/billingAuditLogs/{auditId}": {
+      "schema": "AuditEvent",
+      "description": "Immutable billing audit logs."
+    },
+    "/taxConfigurations/{taxConfigId}": {
+      "schema": "Invoice",
+      "description": "Tax rates and GST rules."
+    },
+    "/editorialContentVersions/{versionId}": {
+      "schema": "EditorialContentVersion",
+      "description": "Versioned editorial copies and audit-tracked changes."
+    },
+    "/aiSuggestions/{suggestionId}": {
+      "schema": "AISuggestion",
+      "description": "AI editorial suggestions pending human editor review."
+    },
+    "/aiUsageRecords/{usageId}": {
+      "schema": "AIUsageRecord",
+      "description": "AI usage and cost tracking records."
+    },
+    "/aiPromptTemplates/{promptId}": {
+      "schema": "AIPromptTemplate",
+      "description": "Version-controlled system prompts and output schemas."
+    },
+    "/aiPlanEntitlements/{entitlementId}": {
+      "schema": "AIPlanEntitlement",
+      "description": "Tenant publishing plan entitlements and monthly quota tracking."
+    },
+    "/factLedgers/{factLedgerId}": {
+      "schema": "FactLedger",
+      "description": "Factual entity extraction ledgers for integrity checking."
+    },
+    "/enhancedImageDerivatives/{derivativeId}": {
+      "schema": "EnhancedImageDerivative",
+      "description": "Non-generative optically enhanced photo derivatives."
+    },
+    "/productionSnapshots/{snapshotId}": {
+      "schema": "ProductionSnapshot",
+      "description": "Frozen immutable production snapshots for finalized newspaper editions."
+    },
+    "/productionJobs/{jobId}": {
+      "schema": "ProductionJob",
+      "description": "Asynchronous print rendering and night queue processing jobs."
+    },
+    "/productionPreflightReports/{reportId}": {
+      "schema": "ProductionPreflightReport",
+      "description": "Pre-press quality control reports evaluating typography, resolution, and bleeds."
+    },
+    "/fontRegistry/{fontId}": {
+      "schema": "RegisteredFont",
+      "description": "Production typography registry and font embedding rights."
+    },
+    "/printImageDerivatives/{derivativeId}": {
+      "schema": "PrintImageDerivative",
+      "description": "Non-destructive high-resolution derivatives for rotary press printing."
+    },
+    "/newspaperBrands/{brandId}": {
+      "schema": "NewspaperBrand",
+      "description": "Publication brand imprints and typography specifications."
+    },
+    "/newspaperTemplates/{templateId}": {
+      "schema": "NewspaperTemplate",
+      "description": "Reusable page layout templates and column grids."
+    },
+    "/newspaperEditions/{editionId}": {
+      "schema": "NewspaperEdition",
+      "description": "Daily and periodic newspaper editions and press specs."
+    },
+    "/newspaperPages/{pageId}": {
+      "schema": "NewspaperPage",
+      "description": "Printed edition pages containing story blocks and balance diagnostics."
+    },
+    "/articlePlacements/{placementId}": {
+      "schema": "ArticlePlacement",
+      "description": "Logical grid placements and typography fitting for articles on pages."
+    },
+    "/editionRevisions/{revisionId}": {
+      "schema": "EditionRevision",
+      "description": "Immutable versioned layout snapshots for audit and undo/redo."
+    },
+    "/advertisementPlacements/{placementId}": {
+      "schema": "AdvertisementPlacement",
+      "description": "Immovable commercial advertisement placement zones on pages."
+    },
+    "/tenants/{tenantId}": {
+      "schema": "Tenant",
+      "description": "Independent news organization tenant documents."
+    },
+    "/persons/{personId}": {
+      "schema": "Person",
+      "description": "Decoupled physical persons (reporters, editors, executives)."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Firebase authenticated login user accounts."
+    },
+    "/tenantMembers/{memberId}": {
+      "schema": "TenantMember",
+      "description": "Tenant membership association linking users to organizations and roles."
+    },
+    "/reporterProfiles/{reporterId}": {
+      "schema": "ReporterProfile",
+      "description": "Staff and freelance reporter editorial credentials and factual originality metrics."
+    },
+    "/news/{newsId}": {
+      "schema": "NewsArticle",
+      "description": "Tenant news stories, drafts, and published dispatches."
+    },
+    "/marketplaceListings/{listingId}": {
+      "schema": "MarketplaceListing",
+      "description": "Marketplace wire story listings available for licensing."
+    },
+    "/marketplacePurchases/{purchaseId}": {
+      "schema": "MarketplacePurchase",
+      "description": "Completed marketplace purchase orders and financial splits."
+    },
+    "/newsLicenses/{licenseId}": {
+      "schema": "NewsLicense",
+      "description": "Authoritative syndication license agreements granted to publishers."
+    },
+    "/exclusiveLocks/{lockId}": {
+      "schema": "ExclusiveLock",
+      "description": "Territorial exclusivity locks preventing duplicate exclusive rights."
+    },
+    "/marketplaceSubscriptionPlans/{planId}": {
+      "schema": "MarketplaceSubscriptionPlan",
+      "description": "Configurable monthly standard news subscription packs."
+    },
+    "/marketplaceEntitlements/{entitlementId}": {
+      "schema": "MarketplaceEntitlement",
+      "description": "Publisher subscription quotas and standard news redemption tracking."
+    },
+    "/reporterWallets/{walletId}": {
+      "schema": "ReporterWallet",
+      "description": "Reporter royalty balances, escrow, and lifetime earnings."
+    },
+    "/ledgerTransactions/{ledgerId}": {
+      "schema": "LedgerTransaction",
+      "description": "Append-only double-entry financial ledger records."
+    },
+    "/payoutRequests/{payoutId}": {
+      "schema": "PayoutRequest",
+      "description": "Reporter payout requests and administrative settlement status."
+    },
+    "/auditLogs/{auditId}": {
+      "schema": "AuditEvent",
+      "description": "Immutable append-only audit trail for all editorial, licensing, and financial actions."
+    },
+    "/newsroomMembers/{memberId}": {
+      "schema": "NewsroomMember",
+      "description": "Active staff members, editors, and reporters in newsroom organizations."
+    },
+    "/reporterInvitations/{invitationId}": {
+      "schema": "ReporterInvitation",
+      "description": "Hashed single-use invitations for onboarding staff and reporters."
+    },
+    "/reporterVerifications/{verificationId}": {
+      "schema": "ReporterVerification",
+      "description": "Identity and press credential verification records."
+    },
+    "/newsDesks/{deskId}": {
+      "schema": "NewsroomDesk",
+      "description": "Configurable newsroom desks and assigned desk editors."
+    },
+    "/newsBeats/{beatId}": {
+      "schema": "NewsBeat",
+      "description": "Newsroom beats and topical reporting categories."
+    },
+    "/reporterBeatAssignments/{assignmentId}": {
+      "schema": "ReporterBeatAssignment",
+      "description": "Assignments linking reporters to specific news beats."
+    },
+    "/reporterDistrictAssignments/{assignmentId}": {
+      "schema": "ReporterDistrictAssignment",
+      "description": "Assignments linking reporters to geographic districts."
+    },
+    "/newsAssignments/{assignmentId}": {
+      "schema": "NewsAssignment",
+      "description": "Field reporting assignments, briefs, and deadline tracking."
+    },
+    "/editorialComments/{commentId}": {
+      "schema": "EditorialComment",
+      "description": "Editorial comments, fact check flags, and revision requests."
+    },
+    "/notificationEvents/{eventId}": {
+      "schema": "NotificationEvent",
+      "description": "Tenant-scoped operational notification events."
+    },
+    "/newspaperSections/{sectionId}": {
+      "schema": "NewspaperSection",
+      "description": "Configurable newspaper sections and default page ranges."
+    },
+    "/editionContentReservations/{reservationId}": {
+      "schema": "EditionContentReservation",
+      "description": "Story content reservations for planned newspaper editions."
+    },
+    "/editionAdvertisementReservations/{reservationId}": {
+      "schema": "EditionAdvertisementReservation",
+      "description": "Commercial advertising slot reservations and commercial locks."
+    },
+    "/editionPagePlans/{pagePlanId}": {
+      "schema": "EditionPagePlan",
+      "description": "Newspaper page plans, section assignments, and content allocation targets."
+    },
+    "/editionContentVersions/{versionId}": {
+      "schema": "EditionContentVersion",
+      "description": "Immutable version snapshots of edition content and page allocations."
+    },
+    "/printVendors/{vendorId}": {
+      "schema": "PrintVendor",
+      "description": "Print vendors and rotary offset printing facilities."
+    },
+    "/printVendorCapabilities/{vendorId}": {
+      "schema": "PrintVendorCapability",
+      "description": "Print vendor technical capabilities and cutoff limits."
+    },
+    "/productionRegions/{regionId}": {
+      "schema": "ProductionRegion",
+      "description": "Regional newspaper distribution and delivery territories."
+    },
+    "/printProductionArtifacts/{artifactId}": {
+      "schema": "PrintProductionArtifact",
+      "description": "Immutable print and digital PDF artifacts sealed with SHA-256 hashes."
+    },
+    "/printVendorDispatches/{dispatchId}": {
+      "schema": "PrintVendorDispatch",
+      "description": "Dispatches of production artifacts to print vendors."
+    },
+    "/vendorProofs/{proofId}": {
+      "schema": "VendorProof",
+      "description": "Vendor pre-press proof review submissions."
+    },
+    "/printDistributions/{distributionId}": {
+      "schema": "PrintDistribution",
+      "description": "Regional print copy allocations, logistics carriers, and delivery tracking."
+    },
+    "/savedAnalyticsReports/{reportId}": {
+      "schema": "SavedAnalyticsReport",
+      "description": "Saved custom MIS reports and recurring execution schedules."
+    },
+    "/analyticsReportSnapshots/{snapshotId}": {
+      "schema": "AnalyticsReportSnapshot",
+      "description": "Immutable historical report snapshots with cryptographic checksums."
+    },
+    "/analyticsAlerts/{alertId}": {
+      "schema": "AnalyticsAlert",
+      "description": "Deterministic operational alerts and threshold violation flags."
+    },
+    "/analyticsDaily/{aggregationId}": {
+      "schema": "AnalyticsAggregation",
+      "description": "Idempotent daily operational metrics aggregations."
+    },
+    "/analyticsMonthly/{aggregationId}": {
+      "schema": "AnalyticsAggregation",
+      "description": "Idempotent monthly operational metrics aggregations."
+    },
+    "/apiApplications/{appId}": {
+      "schema": "ApiApplication",
+      "description": "Tenant-scoped external API application registration and scopes."
+    },
+    "/apiCredentials/{keyId}": {
+      "schema": "ApiCredential",
+      "description": "Machine-to-machine API key credentials and verifiers."
+    },
+    "/webhookEndpoints/{endpointId}": {
+      "schema": "WebhookEndpoint",
+      "description": "Outbound webhook endpoints and event subscriptions."
+    },
+    "/webhookDeliveries/{deliveryId}": {
+      "schema": "WebhookDelivery",
+      "description": "Outbound webhook delivery attempt records and response logs."
+    },
+    "/platformConfigs/{configId}": {
+      "schema": "PlatformConfig",
+      "description": "Versioned platform configuration settings."
+    },
+    "/publisherOnboardings/{tenantId}": {
+      "schema": "PublisherOnboardingRecord",
+      "description": "Publisher tenant onboarding lifecycle and verification records."
+    },
+    "/supportCases/{caseId}": {
+      "schema": "SupportCase",
+      "description": "Tenant support tickets and internal operations notes."
+    },
+    "/policyDocuments/{docId}": {
+      "schema": "PolicyDocumentVersion",
+      "description": "Legal and consent policy versions."
+    },
+    "/policyAcceptances/{acceptanceId}": {
+      "schema": "PolicyAcceptanceRecord",
+      "description": "Publisher and tenant policy acceptance logs."
+    },
+    "/launchReadinessChecks/{checkId}": {
+      "schema": "LaunchGateCheck",
+      "description": "Deterministic go-live readiness evaluation checks."
+    }
+  }
+}

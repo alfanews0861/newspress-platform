@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /newsroom/
+Allow: /newspaper/
+Allow: /marketplace/
+Allow: /production/
+Allow: /legal/
+
+Sitemap: https://alfa-news-service-test-project.web.app/sitemap.xml

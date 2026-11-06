@@ -1,0 +1,6 @@
+{
+  "name": "NewsPress Platform",
+  "description": "Multi-tenant SaaS newspaper production and news marketplace platform for independent news organizations, editorial desks, and reporters.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

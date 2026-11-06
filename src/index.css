@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-serif: "Google Sans", "Roboto", "Noto Sans", "Noto Sans Telugu", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Google Sans", "Roboto", "Noto Sans", "Noto Sans Telugu", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-canvas: var(--app-canvas);
+  --color-canvas-subtle: var(--app-canvas-subtle);
+  --color-surface: var(--app-surface);
+  --color-surface-elevated: var(--app-surface-elevated);
+  --color-border-subtle: var(--app-border-subtle);
+  --color-border-strong: var(--app-border-strong);
+  --color-text-subtle: var(--app-text-subtle);
+  --color-text-muted: var(--app-text-muted);
+  --color-text-secondary: var(--app-text-secondary);
+  --color-text-body: var(--app-text-body);
+  --color-text-heading-muted: var(--app-text-heading-muted);
+  --color-text-heading: var(--app-text-heading);
+
+  --color-primary: var(--app-primary);
+  --color-primary-dark: var(--app-primary-dark);
+  --color-primary-light: var(--app-primary-light);
+
+  --color-google-red: var(--app-google-red);
+  --color-google-green: var(--app-google-green);
+  --color-google-yellow: var(--app-google-yellow);
+}
+
+:root {
+  /* ==========================================================================
+     GOOGLE WORKSPACE & MATERIAL DESIGN 3 THEME (Default)
+     Crisp, high-contrast, pure black text on light Google surfaces
+     ========================================================================== */
+  --app-canvas: #f8fafd;           /* Google Cloud/Workspace soft clean backdrop */
+  --app-canvas-subtle: #f1f3f4;    /* Subtle background for footers / headers */
+  --app-surface: #ffffff;          /* Pure white card and panel surfaces */
+  --app-surface-elevated: #f1f3f4; /* Google light grey for hover & secondary pills */
+  --app-border-subtle: #bdc1c6;    /* Distinct visible border */
+  --app-border-strong: #70757a;    /* Focused border */
+  --app-text-subtle: #000000;      /* Pure black high-contrast text */
+  --app-text-muted: #000000;       /* Pure black high-contrast text */
+  --app-text-secondary: #000000;   /* Pure black high-contrast text */
+  --app-text-body: #000000;        /* Pure black high-contrast text */
+  --app-text-heading-muted: #000000;/* Pure black high-contrast text */
+  --app-text-heading: #000000;     /* Pure black high-contrast text */
+
+  /* Google Brand Colors */
+  --app-primary: #1a73e8;          /* Official Google Blue */
+  --app-primary-dark: #1557b0;     /* Google Blue Hover */
+  --app-primary-light: #e8f0fe;    /* Google Blue Pill/Surface */
+
+  --app-google-red: #d93025;
+  --app-google-green: #1e8e3e;
+  --app-google-yellow: #f9ab00;
+  
+  --scrollbar-track: #f1f3f4;
+  --scrollbar-thumb: #9aa0a6;
+  --scrollbar-thumb-hover: #5f6368;
+}
+
+[data-theme="dark"] {
+  /* ==========================================================================
+     GOOGLE DARK THEME
+     ========================================================================== */
+  --app-canvas: #202124;
+  --app-canvas-subtle: #292a2d;
+  --app-surface: #292a2d;
+  --app-surface-elevated: #35363a;
+  --app-border-subtle: #3c4043;
+  --app-border-strong: #5f6368;
+  --app-text-subtle: #80868b;
+  --app-text-muted: #9aa0a6;
+  --app-text-secondary: #bdc1c6;
+  --app-text-body: #e8eaed;
+  --app-text-heading-muted: #f1f3f4;
+  --app-text-heading: #ffffff;
+
+  --app-primary: #8ab4f8;
+  --app-primary-dark: #aecbfa;
+  --app-primary-light: #174ea6;
+
+  --scrollbar-track: #202124;
+  --scrollbar-thumb: #3c4043;
+  --scrollbar-thumb-hover: #5f6368;
+}
+
+@layer base {
+  html, body {
+    background-color: var(--color-canvas);
+    color: var(--color-text-heading);
+    font-family: var(--font-sans);
+    min-height: 100%;
+    letter-spacing: -0.01em;
+  }
+
+  /* Google-style subtle scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+}
+
+/* ==========================================================================
+   LIGHT MODE: HIGH-CONTRAST PURE BLACK TEXT & PURE OPAQUE SURFACES
+   Ensures all grey/washed-out text on light backgrounds is crisp pure black (#000000)
+   ========================================================================== */
+html:not([data-theme="dark"]),
+html[data-theme="light"],
+:root:not([data-theme="dark"]) {
+  /* Force light mode text classes to pure black */
+  .text-slate-400,
+  .text-slate-500,
+  .text-slate-600,
+  .text-slate-700,
+  .text-slate-800,
+  .text-slate-900,
+  .text-gray-400,
+  .text-gray-500,
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800,
+  .text-gray-900,
+  .text-zinc-400,
+  .text-zinc-500,
+  .text-zinc-600,
+  .text-zinc-700,
+  .text-zinc-800,
+  .text-zinc-900,
+  .text-\[\#5f6368\],
+  .text-\[\#80868b\],
+  .text-\[\#3c4043\],
+  .text-\[\#202124\] {
+    color: #000000 !important;
+  }
+
+  /* Subtitles, labels, descriptions, and breadcrumbs in light mode */
+  label {
+    color: #000000 !important;
+    font-weight: 600;
+  }
+
+  p {
+    color: #000000;
+  }
+
+  /* Form inputs in light mode: pure white solid background and crisp black text */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #bdc1c6 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #4b5563 !important;
+    opacity: 1 !important;
+  }
+
+  /* Tables in light mode */
+  th {
+    color: #000000 !important;
+    font-weight: 700 !important;
+  }
+
+  td {
+    color: #000000 !important;
+  }
+
+  /* Solid opaque backgrounds for modals, dialogs, dropdowns, and cards */
+  .modal-dialog,
+  [role="dialog"] {
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  /* Telugu Script Typography Integrity (Preserve conjunct glyphs & vattulu) */
+  :lang(te),
+  [data-lang="te"],
+  .font-telugu {
+    letter-spacing: normal !important;
+    word-spacing: normal !important;
+    text-transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   PRINT-READY NEWSPAPER STYLES (@media print)
+   ========================================================================== */
+@media print {
+  @page {
+    size: 350mm 540mm;
+    margin: 0;
+  }
+
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  /* Hide screen-only interactive UI controls */
+  .no-print,
+  nav,
+  aside,
+  header,
+  .newsroom-sidebar,
+  .page-designer-topbar,
+  .page-designer-inspector,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Dedicated Print Container for continuous pages */
+  .print-newspaper-export-container {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    z-index: 999999 !important;
+  }
+
+  .print-page-outer-sheet {
+    page-break-after: always !important;
+    break-after: page !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+}
