@@ -25,6 +25,7 @@ import {
   PanelLeftOpen,
   X,
   Search,
+  Sliders,
 } from 'lucide-react';
 import { NAVIGATION_SECTIONS, NavigationItem } from '../config/navigation';
 import { usePermission } from '../hooks/usePermission';
@@ -35,6 +36,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   editorial_queue: <CheckCircle2 className="w-4 h-4" />,
   editions: <BookOpen className="w-4 h-4" />,
   page_designer: <Palette className="w-4 h-4" />,
+  paper_settings: <Sliders className="w-4 h-4" />,
   downloads: <FileDown className="w-4 h-4" />,
   marketplace_home: <ShoppingBag className="w-4 h-4" />,
   reporters: <Users className="w-4 h-4" />,

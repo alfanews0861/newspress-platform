@@ -107,6 +107,26 @@ export interface AdvertisementZone {
   sponsor?: string;
 }
 
+export interface StatutoryImprintDetails {
+  rniNumber?: string;              // RNI / PRB Registration No. (ఆర్.ఎన్.ఐ రిజిస్ట్రేషన్ సంఖ్య)
+  titleCode?: string;              // Title Code (టైటిల్ కోడ్)
+  editorName: string;              // Editor Name (పి.ఆర్.బి చట్టం ప్రకారం వార్తల ఎంపికకు బాధ్యులు)
+  publisherName: string;           // Printed & Published By (ప్రచురణకర్త / ముద్రణకర్త)
+  ownerName: string;               // Owned by (యాజమాన్యం)
+  printingPressName: string;       // Press Name (ముద్రణాలయం పేరు)
+  printingPressAddress: string;    // Printing Press Address (ముద్రణాలయం చిరునామా)
+  publishedAtAddress: string;      // Published From Address (ప్రచురణ స్థలం కార్యాలయ చిరునామా)
+  placeOfPublication: string;      // City / District (ఉదా: హైదరాబాద్, విజయవాడ)
+  contactPhone?: string;           // Phone
+  contactEmail?: string;           // Email
+  legalJurisdiction?: string;      // Disputes subject to jurisdiction of ... Courts
+  declarationText?: string;        // Full combined imprint statement
+}
+
+export type PublicationFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'evening';
+export type PaperSizeFormat = 'broadsheet' | 'tabloid' | 'berliner' | 'a3' | 'a4';
+export type LogoPlacement = 'left' | 'center' | 'right' | 'full';
+
 export interface NewspaperBrand {
   brandId: string;
   tenantId: string;
@@ -114,19 +134,36 @@ export interface NewspaperBrand {
   code: string; // e.g. "MC", "EN"
   tagline?: string;
   logoUrl?: string;
+  frequency?: PublicationFrequency;
+  volumeNumber?: number | string;
+  issueNumber?: number | string;
+  autoIncrementIssue?: boolean;
+  paperSize?: PaperSizeFormat;
+  pageCount?: number;
+  price?: string | number;
+  editionsList?: string[];
+  imprint?: StatutoryImprintDetails;
   masthead: {
     title: string;
     subtitle?: string;
     fontFamily: string;
     fontSizePt: number;
-    style: 'classic_blackletter' | 'modern_serif' | 'clean_bold' | 'bilingual_banner';
+    style: 'classic_blackletter' | 'modern_serif' | 'clean_bold' | 'bilingual_banner' | 'royal_traditional' | 'contemporary_clean';
     showDate: boolean;
     showEditionNumber: boolean;
     showPrice: boolean;
     priceText?: string;
     borderColor?: string;
+    showLogo?: boolean;
+    showTitleText?: boolean; // When false, custom designed logo is the sole primary title artwork
+    logoUrl?: string;
+    logoPlacement?: LogoPlacement; // 'left' | 'center' | 'right' | 'full'
+    logoHeightPx?: number;
+    bannerImageUrl?: string;
+    templatePreset?: string;
+    templateLayout?: 'broadsheet_classic' | 'vernacular_ribbon' | 'modern_tabloid' | 'royal_herald' | 'commercial_banner' | string;
   };
-  language: 'en' | 'te' | 'mixed';
+  language: 'en' | 'te' | 'mixed' | 'hi' | 'ur' | 'ta' | 'kn' | string;
   defaultFonts: {
     headlineFont: string;
     bodyFont: string;

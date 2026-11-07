@@ -63,7 +63,7 @@ export class WebhookDispatcherService {
         'edition.status_changed',
         'production.artifact_ready',
       ],
-      signingSecret: 'whsec_99a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4',
+      signingSecret: 'whsec_mock_seed_signing_key_001',
       status: 'ACTIVE',
       failureCount: 0,
       createdAt: '2026-10-01T00:00:00Z',

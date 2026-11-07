@@ -17,6 +17,29 @@ export const TELUGU_NEWSPAPER_BRAND: NewspaperBrand = {
   "code": "AP",
   "tagline": "తెలుగు ప్రజల విశ్వసనీయ వార్తా దినపత్రిక",
   "logoUrl": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=120&auto=format&fit=crop&q=80",
+  "frequency": "daily",
+  "volumeNumber": 42,
+  "issueNumber": 288,
+  "autoIncrementIssue": true,
+  "paperSize": "broadsheet",
+  "pageCount": 8,
+  "price": "₹6.00",
+  "editionsList": ["హైదరాబాద్ (Hyderabad Main)", "విజయవాడ (Vijayawada)", "విశాఖపట్నం (Visakhapatnam)", "తిరుపతి (Tirupati)", "వరంగల్ (Warangal)"],
+  "imprint": {
+    "rniNumber": "RNI No. TELTEL/2014/56891",
+    "titleCode": "TELNEW00341",
+    "editorName": "కె. వెంకటేశ్వరరావు (K. Venkateswara Rao)",
+    "publisherName": "న్యూస్‌ప్రెస్ పబ్లికేషన్స్ ప్రైవేట్ లిమిటెడ్ తరపున పి. రమణమూర్తి",
+    "ownerName": "ఆంధ్ర ప్రభ మీడియా ఎంటర్‌ప్రైజెస్ లిమిటెడ్",
+    "printingPressName": "శ్రీ సత్యసాయి రోటరీ ఆఫ్సెట్ ప్రింటర్స్",
+    "printingPressAddress": "ప్లాట్ నం. 44, ఐ.డి.ఎ. మల్లాపూర్, నాచారం రోడ్, హైదరాబాద్ - 500076, తెలంగాణ",
+    "publishedAtAddress": "కార్యాలయం: దోర్ నం. 8-2-293/82/A, జూబ్లీహిల్స్ చెక్‌పోస్ట్ ఎదురుగా, హైదరాబాద్ - 500033",
+    "placeOfPublication": "హైదరాబాద్ (Hyderabad)",
+    "contactPhone": "+91 040-23456789",
+    "contactEmail": "editor@andhraprabhapress.com",
+    "legalJurisdiction": "హైదరాబాద్ న్యాయపరిధికి లోబడి ఉంటుంది (Disputes subject to Hyderabad Jurisdiction)",
+    "declarationText": "ప్రచురణకర్త మరియు ముద్రణకర్త: పి. రమణమూర్తి చే ఆంధ్ర ప్రభ మీడియా ఎంటర్‌ప్రైజెస్ లిమిటెడ్ తరపున ప్రచురించబడింది. ముద్రణాలయం: శ్రీ సత్యసాయి రోటరీ ఆఫ్సెట్ ప్రింటర్స్, ప్లాట్ నం. 44, ఐ.డి.ఎ. మల్లాపూర్, హైదరాబాద్ - 500076. ప్రచురణ కార్యాలయం: జూబ్లీహిల్స్, హైదరాబాద్ - 500033. సంపాదకుడు: కె. వెంకటేశ్వరరావు* (*పి.ఆర్.బి. చట్టం ప్రకారం వార్తల ఎంపికకు బాధ్యులు)."
+  },
   "masthead": {
     "title": "ఆంధ్ర ప్రభ",
     "subtitle": "దినపత్రిక • సమగ్ర జాతీయ, రాష్ట్ర, జిల్లా వార్తా స్రవంతి",
@@ -27,7 +50,12 @@ export const TELUGU_NEWSPAPER_BRAND: NewspaperBrand = {
     "showEditionNumber": true,
     "showPrice": true,
     "priceText": "₹6.00",
-    "borderColor": "#b91c1c"
+    "borderColor": "#b91c1c",
+    "templateLayout": "vernacular_ribbon",
+    "templatePreset": "template-andhra-prabha",
+    "logoPlacement": "center",
+    "showLogo": true,
+    "showTitleText": false
   },
   "language": "te",
   "defaultFonts": {

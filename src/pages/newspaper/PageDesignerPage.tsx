@@ -73,6 +73,8 @@ import {
   TELUGU_NEWSPAPER_EDITION,
   TELUGU_PREPLANNED_PAGES
 } from '../../services/mockDataService';
+import { brandManagementService } from '../../services/brandManagementService';
+import { NewspaperMastheadRenderer } from '../../components/newspaper/NewspaperMastheadRenderer';
 import { GridCalculationService } from '../../services/gridCalculationService';
 import { PagePlanningEngine } from '../../services/pagePlanningEngine';
 import { PageBalanceService } from '../../services/pageBalanceService';
@@ -86,9 +88,24 @@ export const PageDesignerPage: React.FC = () => {
   const { can } = usePermission();
 
   // Active Edition, Brand & Template State
-  const [selectedBrand, setSelectedBrand] = useState<NewspaperBrand>(TELUGU_NEWSPAPER_BRAND || MOCK_BRANDS[0]);
+  const [brandsList, setBrandsList] = useState<NewspaperBrand[]>(() => brandManagementService.getBrands());
+  const [selectedBrand, setSelectedBrand] = useState<NewspaperBrand>(() => {
+    const active = brandManagementService.getActiveBrand();
+    return active || TELUGU_NEWSPAPER_BRAND || MOCK_BRANDS[0];
+  });
   const [selectedTemplate, setSelectedTemplate] = useState<NewspaperTemplate>(MOCK_TEMPLATES[0]);
   const [edition, setEdition] = useState<NewspaperEdition>(TELUGU_NEWSPAPER_EDITION || MOCK_CURRENT_EDITION);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      const refreshed = brandManagementService.getBrands();
+      setBrandsList(refreshed);
+      const active = brandManagementService.getActiveBrand();
+      if (active) setSelectedBrand(active);
+    };
+    window.addEventListener('newspress:brands-updated', handleUpdate);
+    return () => window.removeEventListener('newspress:brands-updated', handleUpdate);
+  }, []);
 
   // Multi-page layout state
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
@@ -667,67 +684,18 @@ export const PageDesignerPage: React.FC = () => {
         {/* 1. PRINT MASTHEAD (Page 1 Only) */}
         {pageToRender.pageNumber === 1 && (
           <div
-            className="absolute border-b-2 border-[#991b1b] bg-white z-5 overflow-hidden flex flex-col justify-between"
+            className="absolute z-5 overflow-hidden"
             style={{
               top: `${grid.margins.top}px`,
               left: `${grid.margins.left}px`,
               width: `${grid.contentWidth}px`,
-              height: `${Math.max(116, Math.ceil((selectedTemplate.headerHeightMm * 2 || 68) / grid.baselineGrid) * grid.baselineGrid - 2)}px`,
             }}
           >
-            {/* Top Bar */}
-            <div className="text-[10px] font-sans border-b border-red-200 py-0.5 flex justify-between px-2 text-slate-700 bg-red-50/40">
-              <span className="font-semibold">{isTelugu ? 'సంపుటి: 88 • సంచిక: 48,910' : 'VOL. CXXXII NO. 47,822'}</span>
-              <span className="font-bold text-red-900">{selectedBrand.tagline || 'తెలుగు ప్రజల విశ్వసనీయ వార్తా దినపత్రిక'}</span>
-              <span className="font-bold text-slate-900">{selectedBrand.masthead.priceText || (isTelugu ? '₹6.00' : '₹5.00')}</span>
-            </div>
-
-            {/* Middle Bar: Ears + Main Title */}
-            <div className="flex items-center justify-between px-2 py-0.5 flex-1">
-              {/* Left Ear */}
-              <div className="w-[125px] text-[8.5px] leading-tight border-r border-red-200 pr-2 text-slate-700 font-sans">
-                <div className="font-bold text-red-800 border-b border-red-100 pb-0.5 mb-0.5">తిరుమల సమాచారం</div>
-                <div>సర్వదర్శనం: 12 గంటలు</div>
-                <div className="font-medium text-amber-800 mt-0.5">బంగారం (10గ్రా): ₹78,850 ▲</div>
-              </div>
-
-              {/* Center Masthead */}
-              <div className="text-center flex-1 px-2">
-                <h1
-                  style={{
-                    fontFamily: isTelugu ? "'Ramabhadra', 'Noto Serif Telugu', serif" : selectedBrand.masthead.fontFamily || 'Cinzel, serif',
-                    letterSpacing: 'normal',
-                    color: selectedBrand.colors.secondary || '#991b1b',
-                  }}
-                  className="text-[48px] font-black leading-none tracking-normal py-0 my-0 select-none drop-shadow-2xs"
-                >
-                  {selectedBrand.masthead.title}
-                </h1>
-                <div
-                  style={{
-                    fontFamily: isTelugu ? "'Suranna', 'Noto Serif Telugu', serif" : 'Newsreader, serif',
-                    letterSpacing: 'normal',
-                  }}
-                  className="text-[11px] font-bold text-slate-800 mt-1"
-                >
-                  {selectedBrand.masthead.subtitle}
-                </div>
-              </div>
-
-              {/* Right Ear */}
-              <div className="w-[125px] text-[8.5px] leading-tight border-l border-red-200 pl-2 text-slate-700 font-sans text-right">
-                <div className="font-bold text-blue-800 border-b border-red-100 pb-0.5 mb-0.5">వాతావరణం</div>
-                <div>విశాఖ: 31°C / విజయవాడ: 33°C</div>
-                <div className="font-medium text-blue-900 mt-0.5">హైదరాబాద్: 30°C చలిగాలులు</div>
-              </div>
-            </div>
-
-            {/* Bottom Date Rule */}
-            <div className="text-[9.5px] font-sans border-t-2 border-red-800 pt-0.5 flex justify-between px-2 text-slate-800 bg-red-50/20">
-              <span className="font-semibold">{edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}</span>
-              <span className="font-bold text-red-950">ఉదయపు ప్రధాన సంచిక • MORNING EDITION</span>
-              <span className="font-semibold">{isTelugu ? 'హైదరాబాద్ • అమరావతి' : 'METRO'}</span>
-            </div>
+            <NewspaperMastheadRenderer
+              brand={selectedBrand}
+              publicationDate={edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}
+              editionName={isTelugu ? (selectedBrand.editionsList?.[0] || 'హైదరాబాద్ ప్రధాన సంచిక') : 'MAIN METRO EDITION'}
+            />
           </div>
         )}
 
@@ -1055,9 +1023,9 @@ export const PageDesignerPage: React.FC = () => {
             <select
               value={selectedBrand.brandId}
               onChange={(e) => {
-                const nextBrand = MOCK_BRANDS.find((b) => b.brandId === e.target.value) || MOCK_BRANDS[0];
+                const nextBrand = brandsList.find((b) => b.brandId === e.target.value) || brandsList[0];
                 setSelectedBrand(nextBrand);
-                if (nextBrand.brandId === TELUGU_NEWSPAPER_BRAND.brandId) {
+                if (nextBrand.language === 'te' || nextBrand.brandId === TELUGU_NEWSPAPER_BRAND.brandId) {
                   setEdition(TELUGU_NEWSPAPER_EDITION);
                   setPages(TELUGU_PREPLANNED_PAGES);
                   setCurrentPageIndex(0);
@@ -1075,7 +1043,7 @@ export const PageDesignerPage: React.FC = () => {
               }}
               className="font-sans font-bold text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
             >
-              {MOCK_BRANDS.map((b) => (
+              {brandsList.map((b) => (
                 <option key={b.brandId} value={b.brandId}>
                   {b.name}
                 </option>
@@ -1100,7 +1068,7 @@ export const PageDesignerPage: React.FC = () => {
               onClick={() => setCurrentPageIndex((prev) => Math.max(0, prev - 1))}
               disabled={currentPageIndex === 0}
               className="p-1 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 rounded cursor-pointer transition-colors"
-              title="మునుపటి పేజీ"
+              title="Previous Page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -1111,7 +1079,7 @@ export const PageDesignerPage: React.FC = () => {
               onClick={() => setCurrentPageIndex((prev) => Math.min(pages.length - 1, prev + 1))}
               disabled={currentPageIndex === pages.length - 1}
               className="p-1 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 rounded cursor-pointer transition-colors"
-              title="తరువాతి పేజీ"
+              title="Next Page"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -1147,7 +1115,7 @@ export const PageDesignerPage: React.FC = () => {
             title="Download Standard A4 PDF (Universal Size)"
           >
             <Download className="w-4 h-4" />
-            <span>PDF డౌన్‌లోడ్ (A4)</span>
+            <span>Download PDF (A4)</span>
           </button>
           <button
             onClick={() => handlePrintPdf('broadsheet')}
@@ -1155,7 +1123,7 @@ export const PageDesignerPage: React.FC = () => {
             title="Download Broadsheet Press PDF (350x540mm)"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>బ్రాడ్‌షీట్ (Press)</span>
+            <span>Broadsheet (Press PDF)</span>
           </button>
         </div>
       </div>

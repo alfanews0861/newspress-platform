@@ -57,6 +57,12 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         requiredPermission: 'editions.edit',
       },
       {
+        id: 'paper_settings',
+        label: 'Paper Settings',
+        href: '/newspaper/brands',
+        requiredPermission: 'edition.view',
+      },
+      {
         id: 'downloads',
         label: 'Print-Ready Downloads',
         href: '/production/downloads',
