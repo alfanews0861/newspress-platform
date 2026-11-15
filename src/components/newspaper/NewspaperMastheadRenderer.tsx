@@ -130,32 +130,43 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
             </div>
           </div>
 
-          {/* CENTER: Iconic Andhra Prabha Calligraphic Logo & Motto */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-1 overflow-hidden relative">
-            <div className="text-[10px] font-serif italic text-slate-700 font-bold mb-0.5">
-              Estd. 1938
+          {/* CENTER: Iconic Andhra Prabha Calligraphic Logo & Motto (Matches AP.jpg / AP2.jpg) */}
+          <div className="flex-1 flex flex-col items-center justify-between text-center px-2 py-0.5 overflow-hidden relative">
+            <div className="w-full flex items-center justify-end pr-8">
+              <span className="text-[11px] font-serif italic text-[#0369a1] font-bold leading-none">
+                Estd. 1938
+              </span>
             </div>
 
-            {showLogo && (
+            {showLogo && logoUrl && !logoUrl.includes('images.unsplash.com') ? (
               <img
                 src={logoUrl}
                 alt="Andhra Prabha Masthead"
-                style={{ maxHeight: '72px' }}
+                style={{ maxHeight: '78px' }}
                 className="object-contain max-w-[98%] drop-shadow-xs"
               />
-            )}
-
-            {showTitleText && (
-              <div className="flex flex-col items-center">
-                <h1 className="text-4xl font-black text-[#0284c7] tracking-normal font-telugu leading-none drop-shadow-xs">
-                  {masthead.title || 'ఆంధ్ర ప్రభ'}
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full -my-1">
+                <h1
+                  className="font-black tracking-normal font-telugu leading-none select-none"
+                  style={{
+                    fontFamily: "'Ramabhadra', 'Suranna', 'Noto Serif Telugu', serif",
+                    fontSize: '74px',
+                    color: '#0284c7',
+                    textShadow: '2px 2px 0px #ffffff, -1px -1px 0px #ffffff, 0px 3px 6px rgba(3, 105, 161, 0.35)',
+                    letterSpacing: '0.02em',
+                    lineHeight: '0.95',
+                  }}
+                >
+                  {masthead.title || 'ఆంధ్రప్రభ'}
                 </h1>
-                <div className="flex items-center justify-between w-full max-w-[320px] text-[11px] font-bold mt-1 text-[#0369a1] px-2">
-                  <span className="font-serif">Andhraprabha</span>
-                  <span className="italic">Journalism first!</span>
-                </div>
               </div>
             )}
+
+            <div className="flex items-center justify-between w-full max-w-[460px] text-[12px] font-bold text-[#0284c7] px-4 leading-none">
+              <span className="font-serif tracking-wide">Andhraprabha</span>
+              <span className="font-serif italic">Journalism first!</span>
+            </div>
           </div>
 
           {/* RIGHT EAR BOX: Manepally Jewellers Gold & Silver Rates Commercial Ear */}

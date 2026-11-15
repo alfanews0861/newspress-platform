@@ -922,8 +922,6 @@ export const PageDesignerPage: React.FC = () => {
             ? "'Mallanna', 'Noto Sans Telugu', 'Noto Serif Telugu', sans-serif"
             : "'Newsreader', 'Georgia', serif";
 
-          const imgHeight = block.imageHeight || (isLead ? 145 : 110);
-
           // Dedicated Pocket Cartoon Renderer (Matches Telugu Broadsheet bottom-left cartoon like Andhra Prabha "షో..!" or Velugu "తిన్నర్")
           if (isCartoon) {
             return (
@@ -935,7 +933,7 @@ export const PageDesignerPage: React.FC = () => {
                   handleSelectBlock(block.placementId);
                 }}
                 data-lang="te"
-                className={`absolute flex flex-col transition-all overflow-hidden border-2 border-slate-800 bg-[#fefce8]/60 p-2 select-none ${
+                className={`absolute flex flex-col transition-all overflow-hidden border-2 border-slate-800 bg-[#fefce8]/80 p-2 select-none ${
                   isInteractive ? 'cursor-pointer group' : ''
                 } ${isSelected ? 'ring-2 ring-blue-600 shadow-md z-10' : ''} font-telugu`}
                 style={{
@@ -947,22 +945,22 @@ export const PageDesignerPage: React.FC = () => {
                 }}
               >
                 {/* Cartoon Title Header */}
-                <div className="flex items-center justify-between border-b-2 border-slate-900 pb-1 mb-1">
+                <div className="flex items-center justify-between border-b-2 border-slate-900 pb-1 mb-1 shrink-0">
                   <div className="flex items-center gap-1.5">
                     <span className="bg-red-800 text-white font-black text-xs px-2 py-0.5 rounded-none shadow-2xs font-telugu">
                       {block.cartoon?.title || 'షో..!'}
                     </span>
-                    <span className="text-[7.5px] font-bold text-slate-700">
+                    <span className="text-[8px] font-bold text-slate-800">
                       {block.cartoon?.subtitle || 'ఆంధ్ర ప్రభ వ్యంగ్య చిత్రం'}
                     </span>
                   </div>
-                  <span className="text-[7px] font-bold bg-slate-900 text-amber-300 px-1.5 py-0.2 rounded-xs">
+                  <span className="text-[7.5px] font-bold bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded-xs">
                     {block.cartoon?.cartoonist || 'శేఖర్..!'}
                   </span>
                 </div>
 
-                {/* Cartoon Drawing Frame */}
-                <div className="flex-1 w-full bg-white border border-slate-300 p-1 flex flex-col justify-between overflow-hidden relative rounded-xs">
+                {/* Cartoon Drawing Frame - Fills 100% of available height */}
+                <div className="flex-1 w-full bg-white border border-slate-300 p-1.5 flex flex-col justify-between overflow-hidden relative rounded-xs">
                   {block.imageUrl ? (
                     <img
                       src={block.imageUrl}
@@ -970,29 +968,37 @@ export const PageDesignerPage: React.FC = () => {
                       className="w-full flex-1 object-contain"
                     />
                   ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center p-2 text-center bg-amber-50/20">
-                      <svg viewBox="0 0 120 60" className="w-24 h-12 opacity-80 my-0.5">
-                        <circle cx="36" cy="24" r="12" fill="#fed7aa" stroke="#0f172a" strokeWidth="1.5" />
-                        <circle cx="32" cy="22" r="1.5" fill="#0f172a" />
-                        <circle cx="40" cy="22" r="1.5" fill="#0f172a" />
-                        <path d="M34,30 Q36,33 40,30" stroke="#b91c1c" strokeWidth="1.5" fill="none" />
-                        <rect x="26" y="36" width="20" height="20" fill="#cbd5e1" stroke="#0f172a" strokeWidth="1.5" />
-                        
-                        <circle cx="84" cy="24" r="12" fill="#fed7aa" stroke="#0f172a" strokeWidth="1.5" />
-                        <circle cx="80" cy="22" r="1.5" fill="#0f172a" />
-                        <circle cx="88" cy="22" r="1.5" fill="#0f172a" />
-                        <path d="M82,29 Q84,26 86,29" stroke="#0f172a" strokeWidth="1.5" fill="none" />
-                        <rect x="74" y="36" width="20" height="20" fill="#fecaca" stroke="#0f172a" strokeWidth="1.5" />
+                    <div className="flex-1 flex flex-col items-center justify-between p-1 text-center bg-amber-50/30 w-full h-full">
+                      <svg viewBox="0 0 220 95" className="w-full flex-1 max-h-[125px]" preserveAspectRatio="xMidYMid meet">
+                        <rect x="4" y="4" width="212" height="87" rx="4" fill="#fffbeb" stroke="#cbd5e1" strokeWidth="1" />
+                        <line x1="4" y1="76" x2="216" y2="76" stroke="#94a3b8" strokeWidth="1.5" />
+                        {/* Left Politician */}
+                        <circle cx="62" cy="34" r="15" fill="#fed7aa" stroke="#0f172a" strokeWidth="1.8" />
+                        <circle cx="57" cy="31" r="2" fill="#0f172a" />
+                        <circle cx="67" cy="31" r="2" fill="#0f172a" />
+                        <path d="M56,41 Q62,46 68,41" stroke="#b91c1c" strokeWidth="1.8" fill="none" />
+                        <rect x="46" y="49" width="32" height="27" rx="3" fill="#e2e8f0" stroke="#0f172a" strokeWidth="1.8" />
+                        <line x1="78" y1="56" x2="98" y2="48" stroke="#0f172a" strokeWidth="2" />
+                        {/* Center Podium / Files */}
+                        <rect x="98" y="44" width="24" height="32" fill="#fde68a" stroke="#0f172a" strokeWidth="1.5" />
+                        <text x="110" y="62" fontSize="7" fontWeight="bold" textAnchor="middle" fill="#991b1b">2047</text>
+                        {/* Right Citizen / Leader */}
+                        <circle cx="158" cy="34" r="15" fill="#fed7aa" stroke="#0f172a" strokeWidth="1.8" />
+                        <circle cx="153" cy="31" r="2" fill="#0f172a" />
+                        <circle cx="163" cy="31" r="2" fill="#0f172a" />
+                        <path d="M153,42 Q158,38 163,42" stroke="#0f172a" strokeWidth="1.8" fill="none" />
+                        <rect x="142" y="49" width="32" height="27" rx="3" fill="#fecaca" stroke="#0f172a" strokeWidth="1.8" />
                       </svg>
-                      <div className="bg-slate-900 text-white text-[8px] p-1.5 rounded font-telugu shadow-xs leading-tight mt-1">
+                      <div className="w-full bg-slate-900 text-white text-[8.5px] px-2 py-1 rounded font-telugu shadow-xs leading-snug shrink-0">
                         💬 "{block.cartoon?.dialogue || 'అక్కడెలాగో నెగ్గాం.. మరి ఇక్కడ 2047 నాటికి ఎలా గట్టెక్కేది..?!!'}"
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="text-[7px] text-slate-600 text-right font-medium italic mt-0.5">
-                  - కార్టూన్ వ్యంగ్యాస్త్రం
+                <div className="text-[7px] text-slate-700 flex items-center justify-between font-semibold mt-0.5 shrink-0">
+                  <span>సమకాలీన రాజకీయ వ్యంగ్యాస్త్రం</span>
+                  <span className="italic">- శేఖర్ కార్టూన్</span>
                 </div>
               </div>
             );
@@ -1021,7 +1027,7 @@ export const PageDesignerPage: React.FC = () => {
                 border: isAnchor ? '1.5px solid #d97706' : undefined,
                 borderRight: isAnchor ? undefined : (block.x + block.width < grid.pageWidth - grid.margins.right - 2 ? '1px solid #cbd5e1' : undefined),
                 borderBottom: isAnchor ? undefined : (block.y + block.height < grid.pageHeight - grid.margins.bottom - 10 ? '1px solid #94a3b8' : undefined),
-                padding: isAnchor ? '8px 10px' : '6px 8px',
+                padding: isAnchor ? '7px 9px' : '5px 7px',
                 boxSizing: 'border-box',
               }}
             >
@@ -1032,130 +1038,201 @@ export const PageDesignerPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Kicker Badge - Strictly for Special Stories or Investigative Reports (Never on ordinary news) */}
+              {/* Top Kicker Banner Bar - Authentic Telugu Broadsheet Reverse-Video Bar for Lead / Special / Punchline Kickers */}
               {(() => {
-                const isSpecialOrInvestigative = Boolean(
-                  (block as any).isSpecialStory ||
-                  (block as any).isInvestigative ||
-                  block.styleVariant === 'photo_feature' ||
-                  /ప్రత్యేకం|ఇన్వెస్టిగేటివ్|పరిశోధనాత్మక|Special|Investigative/i.test(block.kicker || '') ||
-                  /ప్రత్యేకం|ఇన్వెస్టిగేటివ్|పరిశోధనాత్మక|Special|Investigative/i.test(block.category || '')
+                const isGenericBeatKicker = /^(రాష్ట్రీయం|జాతీయం|అంతర్జాతీయం|క్రీడలు|బిజినెస్|వాణిజ్యం|సినిమా|క్రైమ్|ఎడిటోరియల్|ఆరోగ్యం|టెక్నాలజీ|వ్యవసాయం|state|national|international|sports|business)$/i.test(
+                  (block.kicker || '').trim()
+                );
+                const shouldShowKickerBar = Boolean(
+                  block.kicker &&
+                  (isLead ||
+                    !isGenericBeatKicker ||
+                    (block as any).isSpecialStory ||
+                    (block as any).isInvestigative ||
+                    block.styleVariant === 'photo_feature')
                 );
 
-                if (!isSpecialOrInvestigative || !block.kicker) return null;
+                if (!shouldShowKickerBar) return null;
 
                 return (
-                  <div className="flex justify-center w-full mb-1">
-                    <span
-                      className="inline-flex items-center text-[8.5px] font-bold rounded-xs px-2 py-0.5 text-white shadow-2xs tracking-wide"
-                      style={{
-                        backgroundColor: block.accentColor || '#991b1b',
-                        fontFamily: headlineFontFamily,
-                        letterSpacing: 'normal',
-                      }}
-                    >
-                      ★ {block.kicker} ★
-                    </span>
+                  <div
+                    className="w-full mb-1 px-2 py-0.5 text-white font-bold text-center shrink-0 flex items-center justify-center shadow-2xs"
+                    style={{
+                      backgroundColor: isLead ? '#dc2626' : (block.accentColor || '#0284c7'),
+                      fontFamily: headlineFontFamily,
+                      fontSize: isLead ? '13.5px' : '10.5px',
+                      lineHeight: '1.22',
+                      letterSpacing: 'normal',
+                    }}
+                  >
+                    <span>{block.kicker}</span>
                   </div>
                 );
               })()}
 
-              {/* Cutout Portrait Inset (politician or official headshot cutout as seen in Andhra Prabha) */}
-              {block.cutoutImage && (
-                <div className="float-right ml-2 mb-1 p-1 bg-white border border-slate-300 rounded shadow-2xs text-center shrink-0 w-16">
-                  <img
-                    src={block.cutoutImage.url}
-                    alt={block.cutoutImage.name || 'Portrait'}
-                    className="w-14 h-14 object-contain object-top rounded-full mx-auto border border-slate-400 bg-white"
-                  />
-                  {block.cutoutImage.name && (
-                    <div className="text-[7px] font-bold text-slate-900 mt-0.5 leading-none truncate font-telugu">
-                      {block.cutoutImage.name}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Infographic Stat Callout Card (Big numbers e.g. "24 మంది మృతి", "303 ప్రాజెక్టులు") */}
-              {block.statCallout && (
-                <div className="float-right ml-2 mb-1 p-1.5 rounded border-2 border-sky-600 bg-sky-50 text-center shrink-0 min-w-[70px] shadow-2xs">
-                  <div className="text-xl font-black text-sky-950 leading-none font-telugu">
-                    {block.statCallout.number}
-                  </div>
-                  <div className="text-[8px] font-bold text-sky-900 leading-tight mt-0.5 font-telugu">
-                    {block.statCallout.label}
-                  </div>
-                  {block.statCallout.unit && (
-                    <div className="text-[6.5px] text-slate-600 font-semibold font-telugu">
-                      {block.statCallout.unit}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Dynamic Headline & Layout Sizing - Center Aligned Headings, Flexible Photo Columns, Uncropped Natural Photos */}
+              {/* Dynamic Headline, Priority Photo Sizing (1 to 3.5 Cols) & Authentic Telugu Multi-Column Newspaper Layout */}
               {(() => {
+                const effectiveColumnCount = Math.max(1, block.columnSpan || 1);
+
                 const effectiveHeadlineSize = block.headlineSize || (
-                  isLead ? 44 :
-                  block.columnSpan >= 5 ? 34 :
-                  block.columnSpan >= 4 ? 28 :
-                  block.columnSpan === 3 ? 24 :
-                  block.columnSpan === 2 ? (block.height >= 400 ? 27 : 21) :
-                  (block.height >= 300 ? 20 : 18)
+                  isLead ? 38 :
+                  effectiveColumnCount >= 5 ? 32 :
+                  effectiveColumnCount === 4 ? 28 :
+                  effectiveColumnCount === 3 ? 24 :
+                  effectiveColumnCount === 2 ? (block.height >= 380 ? 25 : 20.5) :
+                  (block.height >= 300 ? 19.5 : 17.5)
                 );
 
-                // Should bullets show? Only for lead, anchor or special stories
-                const shouldShowBullets = hasBullets && (isLead || isAnchor || (block as any).showBullets || (block as any).isSpecialStory || block.styleVariant === 'anchor_box');
+                // Show bullet points when present on lead, anchor, 2+ col featured stories, or explicit showBullets
+                const shouldShowBullets = hasBullets && (
+                  isLead ||
+                  isAnchor ||
+                  (block as any).showBullets ||
+                  (block as any).isSpecialStory ||
+                  effectiveColumnCount >= 2 ||
+                  block.styleVariant === 'anchor_box'
+                );
 
-                // Inline jump markers
+                // Authentic Telugu Inline Bold Dateline (e.g. "హైదరాబాద్, ఆంధ్రప్రభ బ్యూరో: ") at the start of body text
+                const formattedDateline = (() => {
+                  const firstText = (block.leadParagraph || block.bodyContent || '').trim();
+                  // If the paragraph already starts with an explicit dateline before a colon in the first 38 chars, don't duplicate
+                  if (/^[^:]{3,38}:/.test(firstText)) return null;
+                  const rawByline = (block.byline || (isBlockTelugu ? 'హైదరాబాద్, ఆంధ్రప్రభ బ్యూరో' : 'Staff Reporter')).trim();
+                  return (
+                    <span className="font-bold text-slate-950 mr-1 inline">
+                      {rawByline.endsWith(':') ? rawByline : `${rawByline}:`}{' '}
+                    </span>
+                  );
+                })();
+
+                // Inline jump markers + Authentic Black Square Page Number Badge (matching AP.jpg / Velugu.jpg)
                 const inlineContinuedFrom = block.continuedFromPage ? (
-                  <span className="text-red-700 font-bold mr-1 inline font-telugu text-[10px] select-none">
+                  <span className="text-red-700 font-bold mr-1 inline font-telugu text-[9.5px] select-none">
                     【{block.continuedFromPage}వ పేజీ తరువాయి】{' '}
                   </span>
                 ) : null;
 
                 const inlineContinuedOn = block.continuedOnPage ? (
-                  <span className="font-bold text-red-700 whitespace-nowrap ml-1 font-telugu text-[9.5px] inline select-none">
-                    (మిగతా {block.continuedOnPage}వ పేజీలో...) ➔
+                  <span className="font-bold text-red-700 whitespace-nowrap ml-1 font-telugu text-[9px] inline-flex items-center gap-1 select-none">
+                    <span>➔ {block.continuedOnPage}వ పేజీలో...</span>
+                    <span className="inline-flex items-center justify-center bg-slate-900 text-white text-[8px] font-extrabold px-1 py-0.2 leading-none">
+                      {block.continuedOnPage}
+                    </span>
                   </span>
                 ) : null;
 
-                // Flexible Photo Column configuration:
-                // Photo can span 1, 1.5, 2, 2.5, or 3 columns without rigid constraints
-                const photoColSpan = (block as any).photoColumnSpan || (
-                  block.columnSpan >= 5 ? 2.5 :
-                  block.columnSpan === 4 ? 2 :
-                  block.columnSpan === 3 ? (block.imagePlacement === 'left' || block.imagePlacement === 'right' ? 1.5 : 2) :
-                  block.columnSpan === 2 ? 1 : 1
-                );
-                const photoWidthPercent = Math.min(85, Math.max(35, Math.round((photoColSpan / block.columnSpan) * 100)));
+                const pinnedContinuedOnBadge = block.continuedOnPage ? (
+                  <div
+                    className="absolute bottom-0 right-0 bg-gradient-to-l from-white via-white/95 to-transparent pl-5 pr-0.5 py-0.2 font-bold text-red-700 text-[9px] font-telugu select-none pointer-events-none flex items-center gap-1"
+                    style={{ lineHeight: '1.25' }}
+                  >
+                    <span>➔ {block.continuedOnPage}వ పేజీలో...</span>
+                    <span className="inline-flex items-center justify-center bg-slate-900 text-white text-[8px] font-extrabold px-1 py-0.5 leading-none">
+                      {block.continuedOnPage}
+                    </span>
+                  </div>
+                ) : null;
 
-                return (
+                // Inline floated Cutout Portrait & AP.jpg-style Solid Slate-Blue Stat Callout Box (e.g. "24 మంది మృతి")
+                const inlineCalloutElements = (
                   <>
-                    {/* 1. Main Headline - Center Aligned with Two-Tone Punchline */}
+                    {block.cutoutImage && (
+                      <div
+                        className="float-right ml-2 mb-1 p-0.5 bg-white border border-slate-300 shadow-2xs text-center shrink-0 w-14"
+                        style={{ breakInside: 'avoid' }}
+                      >
+                        <img
+                          src={block.cutoutImage.url}
+                          alt={block.cutoutImage.name || 'Portrait'}
+                          className="w-12 h-auto max-h-14 object-contain mx-auto bg-white block"
+                        />
+                        {block.cutoutImage.name && (
+                          <div className="text-[6.5px] font-bold text-slate-900 mt-0.5 leading-none font-telugu">
+                            {block.cutoutImage.name}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {block.statCallout && (
+                      <div
+                        className="float-right ml-2 mb-1 px-2 py-1 bg-[#475569] text-white flex items-center gap-1.5 shrink-0 shadow-2xs"
+                        style={{ breakInside: 'avoid' }}
+                      >
+                        <div className="text-xl font-black text-white leading-none font-sans tracking-tight">
+                          {block.statCallout.number}
+                        </div>
+                        <div className="flex flex-col text-left">
+                          <div className="text-[8px] font-bold text-white leading-tight font-telugu">
+                            {block.statCallout.label}
+                          </div>
+                          {block.statCallout.unit && (
+                            <div className="text-[6.5px] text-slate-200 font-semibold font-telugu leading-none mt-0.5">
+                              {block.statCallout.unit}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+
+                // Helper to frame Unsplash images at the exact target aspect ratio using face/entropy detection so faces/heads are never cropped off
+                const getOptimizedPhotoUrl = (rawUrl: string | undefined, widthPx: number, heightPx: number): string => {
+                  if (!rawUrl) return '';
+                  if (rawUrl.includes('images.unsplash.com')) {
+                    const baseUrl = rawUrl.split('?')[0];
+                    const w = Math.max(320, Math.round(widthPx * 2));
+                    const h = Math.max(200, Math.round(heightPx * 2));
+                    return `${baseUrl}?w=${w}&h=${h}&auto=format&fit=crop&crop=faces,entropy&q=85`;
+                  }
+                  return rawUrl;
+                };
+
+                // Render Headline Helper (Supports Two-Tone Red/Black & Solid Purple/Red Reverse-Video Highlight Box like "రాం..రాం!" in AP.jpg)
+                const renderHeadlineElement = (customSizePx?: number, alignLeft?: boolean) => {
+                  const sizePx = customSizePx || effectiveHeadlineSize;
+                  const useReverseVideoHighlight = Boolean(
+                    block.headlineHighlight &&
+                    !isLead &&
+                    effectiveColumnCount >= 2 &&
+                    block.headlineHighlight.length <= 14
+                  );
+
+                  return (
                     <h2
-                      className={`mb-1 font-bold shrink-0 text-center mx-auto ${
-                        isLead ? 'border-b-2 border-red-600 pb-1 font-extrabold' : ''
-                      }`}
+                      className={`mb-0.5 font-extrabold shrink-0 w-full ${alignLeft ? 'text-left' : 'text-center mx-auto'}`}
                       style={{
                         fontFamily: headlineFontFamily,
-                        fontSize: `${effectiveHeadlineSize}px`,
-                        color: block.headlineColor || (isLead ? '#991b1b' : isAnchor ? '#78350f' : '#0f172a'),
-                        lineHeight: isBlockTelugu ? (effectiveHeadlineSize > 26 ? '1.18' : '1.24') : '1.18',
+                        fontSize: `${sizePx}px`,
+                        color: block.headlineColor || (isLead ? '#0f172a' : isAnchor ? '#78350f' : '#0f172a'),
+                        lineHeight: isBlockTelugu ? (sizePx >= 28 ? '1.14' : '1.2') : '1.15',
                         letterSpacing: 'normal',
-                        textAlign: 'center',
+                        textAlign: alignLeft ? 'left' : 'center',
                       }}
                     >
                       {block.headlineHighlight && block.articleTitle?.includes(block.headlineHighlight) ? (
                         <>
                           <span>{block.articleTitle.split(block.headlineHighlight)[0]}</span>
-                          <span className="text-red-700 font-black">{block.headlineHighlight}</span>
+                          {useReverseVideoHighlight ? (
+                            <span
+                              className="inline-block text-white font-black px-2 py-0.2 mx-0.5 align-middle"
+                              style={{
+                                backgroundColor: block.accentColor || '#7e22ce',
+                                lineHeight: '1.15',
+                              }}
+                            >
+                              {block.headlineHighlight}
+                            </span>
+                          ) : (
+                            <span className="text-red-700 font-black">{block.headlineHighlight}</span>
+                          )}
                           <span>{block.articleTitle.split(block.headlineHighlight)[1]}</span>
                         </>
                       ) : block.articleTitle?.includes(':') ? (
                         <>
                           <span className="text-slate-950">{block.articleTitle.split(':')[0]}: </span>
-                          <span className={isLead ? 'text-red-700 font-black' : 'text-sky-800 font-black'}>
+                          <span className="text-red-700 font-black">
                             {block.articleTitle.split(':')[1]}
                           </span>
                         </>
@@ -1163,102 +1240,357 @@ export const PageDesignerPage: React.FC = () => {
                         block.articleTitle
                       )}
                     </h2>
+                  );
+                };
 
-                    {/* 2. Subheadline - Distinct Font, Contrasting Size & Medium Weight, Center Aligned */}
-                    {block.subheadline && (
-                      <p
-                        className="text-slate-700 dark:text-slate-600 font-medium mb-1.5 text-center shrink-0 px-2 mx-auto"
+                // Render Subheadline Helper (Matches AP.jpg Solid Reverse-Video Colored Subhead Pill Bar or Bold Red Deck)
+                const renderSubheadlineElement = (forceSolidPill?: boolean) => {
+                  if (!block.subheadline) return null;
+                  const useSolidPill =
+                    forceSolidPill ||
+                    isLead ||
+                    (block.styleVariant as string) === 'boxed_highlight' ||
+                    (effectiveColumnCount >= 2 && (block.priority?.editorialPriority ?? 0) >= 8);
+
+                  if (useSolidPill) {
+                    const pillBg = isLead
+                      ? '#881337'
+                      : effectiveColumnCount === 2
+                      ? '#0284c7'
+                      : (block.accentColor || '#dc2626');
+                    return (
+                      <div
+                        className="w-full mb-1 px-2 py-0.5 text-white font-bold text-center shrink-0"
                         style={{
+                          backgroundColor: pillBg,
                           fontFamily: subheadFontFamily,
-                          fontSize: isBlockTelugu ? '11px' : '10px',
-                          lineHeight: isBlockTelugu ? '1.35' : '1.25',
-                          letterSpacing: 'normal',
-                          textAlign: 'center',
+                          fontSize: isBlockTelugu ? (isLead ? '11px' : '10px') : '9.5px',
+                          lineHeight: '1.24',
                         }}
                       >
                         {block.subheadline}
-                      </p>
-                    )}
-
-                    {/* 3. Byline & Beat */}
-                    <div
-                      className="text-[8px] text-red-900 mb-1 italic flex items-center justify-between border-b border-slate-100 pb-0.5 shrink-0 font-normal"
-                      style={{ fontFamily: bodyFontFamily }}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span>✍️</span>
-                        <span>{isBlockTelugu ? (block.byline || 'ఆంధ్ర ప్రభ బ్యూరో') : `By ${block.byline || 'Staff Reporter'}`}</span>
                       </div>
-                      {block.category && (
-                        <span className="text-[6.5px] uppercase tracking-wider text-slate-500 bg-slate-100 px-1 py-0.2 rounded-xs font-normal">
-                          {block.category}
-                        </span>
-                      )}
+                    );
+                  }
+
+                  return (
+                    <p
+                      className="font-bold mb-1 text-center shrink-0 px-0.5 mx-auto w-full"
+                      style={{
+                        fontFamily: subheadFontFamily,
+                        fontSize: isBlockTelugu ? '10.5px' : '10px',
+                        color: '#b91c1c',
+                        lineHeight: isBlockTelugu ? '1.26' : '1.2',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {block.subheadline}
+                    </p>
+                  );
+                };
+
+                // Render Authentic Telugu Bullet Deck (Bold • lines matching AP.jpg / Velugu.jpg)
+                const renderBulletDeck = () => {
+                  if (!shouldShowBullets || !block.bulletPoints?.length) return null;
+                  return (
+                    <div
+                      className="mb-1 py-0.5 text-slate-950 shrink-0"
+                      style={{
+                        fontFamily: bodyFontFamily,
+                        fontSize: isBlockTelugu ? (isLead ? '10.5px' : '9.5px') : '9px',
+                        lineHeight: '1.32',
+                        breakInside: 'avoid',
+                      }}
+                    >
+                      <ul className="space-y-0.5">
+                        {block.bulletPoints.map((bp, i) => (
+                          <li key={i} className="flex items-start font-bold text-slate-900">
+                            <span className="text-red-700 mr-1 text-[10px] leading-none select-none font-black">•</span>
+                            <span>{bp}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
+                  );
+                };
 
-                    {/* 4. CONTENT & PHOTO FLOW - Natural Uncropped Photos, Zero Cropping, Seamless Text Wrapping */}
-                    {hasImage && block.imagePlacement !== 'top' && block.imagePlacement !== 'middle' ? (
-                      /* A. UNIFIED NATURAL FLOAT TEXT WRAP (Zero White Space Beside Photo, Continuous Story Flow Across Full Height) */
+                // Estimate header height & available body height
+                const estHeadlineLines = (block.articleTitle?.length || 0) > (effectiveColumnCount * 11) ? 2 : 1;
+                const estHeaderH = Math.round(effectiveHeadlineSize * 1.2 * estHeadlineLines) + (block.subheadline ? 20 : 0) + 6;
+                const availContentH = Math.max(95, block.height - estHeaderH - 10);
+
+                // Priority-driven Photo Column Span (Supports 1, 1.5, 2, 2.5, 3, 3.5 columns based on news & photo priority)
+                const rawPhotoCols = (block as any).photoColumnSpan;
+                const isExplicitPhotoOverride = Boolean(block.editorOverride?.isOverridden && typeof rawPhotoCols === 'number');
+
+                const effectivePhotoColSpan = (() => {
+                  if (isExplicitPhotoOverride && typeof rawPhotoCols === 'number') {
+                    return Math.max(1, Math.min(effectiveColumnCount - 0.5, rawPhotoCols));
+                  }
+                  if (effectiveColumnCount >= 5) {
+                    if (block.placementId.includes('polavaram')) return 3.5; // Major aerial project visual: 3.5 cols
+                    if (isLead || (block.priority?.editorialPriority ?? 0) >= 10) return 3; // Front-page Lead: 3 cols
+                    return 2.5;
+                  }
+                  if (effectiveColumnCount === 4) {
+                    if (
+                      block.placementId.includes('storm') ||
+                      block.height >= 480 ||
+                      block.showBullets
+                    ) {
+                      return 2.5; // High-impact disaster / infrastructure visual: 2.5 cols
+                    }
+                    return 2; // Standard 4-col feature: 2 cols
+                  }
+                  if (effectiveColumnCount === 3) {
+                    if (block.height >= 400) {
+                      return (block.priority?.editorialPriority ?? 0) >= 9 ? 2 : 1.5;
+                    }
+                    if (block.placementId.includes('assam') || block.placementId.includes('taiwan')) {
+                      return 1.5;
+                    }
+                    return 1.4;
+                  }
+                  if (effectiveColumnCount === 2) {
+                    // In AP.jpg, 2-column stories with photos span the full 2 columns at top when height >= 245px
+                    return block.height >= 245 ? 2 : 1;
+                  }
+                  return 1;
+                })();
+
+                // Determine whether a 2-column story should use the AP.jpg Full-2-Column Top Photo archetype
+                const isTwoColTopPhotoArchetype =
+                  hasImage &&
+                  effectiveColumnCount === 2 &&
+                  effectivePhotoColSpan >= 2 &&
+                  (block.imagePlacement as string) !== 'middle';
+
+                // Determine whether a 5-column Lead story should use the AP.jpg Lead Story archetype (Photo top-left, Headline+Pill+Bullets below photo on left, 2-col text on right)
+                const isAndhraPrabhaLeadArchetype =
+                  hasImage &&
+                  isLead &&
+                  effectiveColumnCount >= 5 &&
+                  block.imagePlacement !== 'top' &&
+                  (block.imagePlacement as string) !== 'middle';
+
+                // Determine photo width % and column counts for Under-Photo and Beside-Photo zones
+                const photoZoneWidthPercent = Math.min(
+                  68,
+                  Math.max(36, Math.round((effectivePhotoColSpan / effectiveColumnCount) * 100))
+                );
+                const photoZoneWidthPx = Math.round(((block.width - 14) * photoZoneWidthPercent) / 100);
+
+                // Tall stories (height >= 300) have content/columns BOTH underneath the photo and beside the photo
+                const hasUnderPhotoText = block.height >= 300 && availContentH >= 180;
+
+                const photoImgH = block.imageHeight || (
+                  isAndhraPrabhaLeadArchetype
+                    ? Math.min(195, Math.max(145, Math.round((block.height - 34) * 0.52)))
+                    : hasUnderPhotoText
+                    ? (block.height >= 480
+                        ? Math.min(225, Math.round(availContentH * 0.54))
+                        : block.height >= 400
+                        ? Math.min(205, Math.round(availContentH * 0.56))
+                        : Math.min(148, Math.round(availContentH * 0.55)))
+                    : Math.max(98, availContentH - (block.imageCaption ? 18 : 4))
+                );
+
+                // Multi-column counts for Under-Photo Zone and Beside-Photo Zone
+                const underPhotoCols = Math.max(1, Math.min(3, Math.round(effectivePhotoColSpan)));
+                const remainingColSpan = Math.max(1, effectiveColumnCount - effectivePhotoColSpan);
+                const sideCols = Math.max(1, Math.round(remainingColSpan));
+
+                // Calculate character offset where Beside-Photo Zone continues after Under-Photo Zone
+                const underPhotoAvailH = Math.max(55, availContentH - photoImgH - 20);
+                const estUnderPhotoChars = hasUnderPhotoText && !isAndhraPrabhaLeadArchetype
+                  ? Math.max(
+                      110,
+                      Math.round(((underPhotoAvailH * underPhotoCols - (shouldShowBullets ? 65 : 0)) / 14.5) * 21)
+                    )
+                  : 0;
+
+                const fullBodyText = block.bodyContent || '';
+                const sideZoneStartText = (() => {
+                  if (!hasUnderPhotoText || isAndhraPrabhaLeadArchetype) return fullBodyText;
+                  const leadLen = (block.leadParagraph || '').length;
+                  const rawCut = Math.max(40, Math.min(fullBodyText.length - 120, estUnderPhotoChars - leadLen));
+                  const spaceIdx = fullBodyText.indexOf(' ', rawCut);
+                  const cutIdx = spaceIdx !== -1 && spaceIdx < rawCut + 40 ? spaceIdx + 1 : rawCut;
+                  return `${fullBodyText.slice(cutIdx)} ${fullBodyText}`;
+                })();
+
+                // Top-placed photo dimensions (used for 2-column stories like AP.jpg "హైదరాబాద్ కొత్త సీపీగా మహేష్ భగవత్" & "నా ఫోన్ ట్యాప్ చేస్తున్నారు")
+                const topPhotoWidthPx = Math.max(140, block.width - 14);
+                const topPhotoImgH = block.imageHeight || (
+                  block.height >= 400 ? 158 : block.height >= 310 ? 128 : block.height >= 255 ? 112 : 95
+                );
+
+                // ARCHETYPE 1: AP.jpg 5-Column Main Lead Story (Kicker at top; Left 3-3.5 cols = Photo + Giant Headline + Solid Subhead Pill + Bullet Deck; Right 2 cols = Full-Height 2-Column Body Text)
+                if (isAndhraPrabhaLeadArchetype) {
+                  return (
+                    <div
+                      className="text-slate-950 font-normal flex-1 min-h-0 overflow-hidden flex flex-row gap-2.5 text-justify relative"
+                      style={{
+                        fontFamily: bodyFontFamily,
+                        fontSize: isBlockTelugu ? `${block.bodyFontSize || 10.5}px` : '9.5px',
+                        lineHeight: isBlockTelugu ? '1.44' : '1.35',
+                        textAlign: 'justify',
+                        textJustify: 'inter-word',
+                      }}
+                    >
+                      {/* LEFT 3–3.5 COLUMN ZONE: Photo on top + Giant Lead Headline + Solid Subhead Bar + Bullet Deck */}
                       <div
-                        className="text-slate-950 font-normal mt-0.5 flex-1 overflow-hidden flex flex-col justify-between text-justify"
-                        style={{
-                          fontFamily: bodyFontFamily,
-                          fontSize: isBlockTelugu ? `${block.bodyFontSize || (isLead ? 10.5 : 10)}px` : '9.5px',
-                          lineHeight: isBlockTelugu ? (isLead ? '1.5' : '1.45') : '1.35',
-                          textAlign: 'justify',
-                          textJustify: 'inter-word',
-                        }}
+                        className="h-full flex flex-col shrink-0 overflow-hidden border-r border-[#cbd5e1] pr-2.5"
+                        style={{ width: `${photoZoneWidthPercent}%` }}
                       >
-                        <div className="overflow-hidden flex-1">
-                          {/* Floated Photo - Zero Cropping, Natural Aspect Ratio, True Float Wrap */}
-                          <div
-                            className={`${
-                              block.imagePlacement === 'right' ? 'float-right ml-2.5 mb-1.5' : 'float-left mr-2.5 mb-1.5'
-                            } shrink-0`}
-                            style={{
-                              width: `${photoWidthPercent}%`,
-                              maxWidth: '100%',
+                        <div className="w-full bg-slate-50 border border-slate-200/80 overflow-hidden flex flex-col shrink-0 mb-1">
+                          <img
+                            src={getOptimizedPhotoUrl(block.imageUrl, photoZoneWidthPx, photoImgH)}
+                            alt={block.articleTitle}
+                            loading="eager"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
                             }}
-                          >
-                            <img
-                              src={block.imageUrl}
-                              alt={block.articleTitle}
-                              loading="eager"
-                              onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
-                              }}
-                              className="w-full h-auto object-contain block mx-auto"
-                            />
-                            {block.imageCaption && (
-                              <div
-                                className="text-[7.5px] text-slate-700 pt-0.5 leading-tight font-normal text-left"
-                                style={{ fontFamily: bodyFontFamily }}
-                              >
-                                📷 {block.imageCaption}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Bullet Highlights directly in the flow beside the photo */}
-                          {shouldShowBullets && (
+                            style={{ height: `${photoImgH}px`, width: '100%' }}
+                            className="w-full object-cover object-top block mx-auto"
+                          />
+                          {block.imageCaption && (
                             <div
-                              className="mb-1.5 p-1 bg-red-50/90 border-l-2 border-red-700 text-[8.5px] text-slate-900 rounded-r overflow-hidden"
+                              className="text-[7.5px] text-slate-700 px-1 py-0.5 bg-slate-50 border-t border-slate-200/70 leading-tight font-normal text-left shrink-0"
                               style={{ fontFamily: bodyFontFamily }}
                             >
-                              <ul className="space-y-0.5">
-                                {block.bulletPoints?.map((bp, i) => (
-                                  <li key={i} className="flex items-start font-normal">
-                                    <span className="text-red-700 mr-1 text-[6.5px] leading-relaxed select-none">■</span>
-                                    <span>{bp}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                              {block.imageCaption}
                             </div>
                           )}
+                        </div>
 
+                        {/* Giant Lead Headline & Solid Subhead Pill directly below photo */}
+                        {renderHeadlineElement(effectiveHeadlineSize)}
+                        {renderSubheadlineElement(true)}
+                        {renderBulletDeck()}
+
+                        {/* Remaining vertical space under bullets filled with multi-column text if tall */}
+                        <div className="flex-1 min-h-0 relative overflow-hidden w-full">
+                          <div
+                            className="overflow-hidden w-full h-full"
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              columnCount: underPhotoCols,
+                              columnGap: underPhotoCols > 1 ? '10px' : 'normal',
+                              columnRule: underPhotoCols > 1 ? '1px solid #cbd5e1' : 'none',
+                              columnFill: 'auto',
+                              textAlign: 'justify',
+                              textJustify: 'inter-word',
+                            }}
+                          >
+                            {block.leadParagraph && (
+                              <span className="text-slate-950 mr-1 inline font-semibold">
+                                {block.leadParagraph}{' '}
+                              </span>
+                            )}
+                            <span>{fullBodyText}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* RIGHT 2-COLUMN ZONE: Full-height 2-column justified body text starting with inline bold dateline */}
+                      <div className="flex-1 min-w-0 h-full relative overflow-hidden">
+                        <div
+                          className="overflow-hidden w-full h-full"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            columnCount: sideCols,
+                            columnGap: sideCols > 1 ? '10px' : 'normal',
+                            columnRule: sideCols > 1 ? '1px solid #cbd5e1' : 'none',
+                            columnFill: 'auto',
+                            textAlign: 'justify',
+                            textJustify: 'inter-word',
+                          }}
+                        >
+                          {inlineCalloutElements}
                           {inlineContinuedFrom}
+                          {formattedDateline}
+                          {block.leadParagraph && (
+                            <span className="text-slate-950 mr-1 inline font-semibold">
+                              {block.leadParagraph}{' '}
+                            </span>
+                          )}
+                          <span>{fullBodyText}</span>
+                          {inlineContinuedOn}
+                        </div>
+                      </div>
+                      {pinnedContinuedOnBadge}
+                    </div>
+                  );
+                }
+
+                // ARCHETYPE 2: AP.jpg 2-Column Story with Full-2-Column Photo on Top + Headline + Subhead Bar + 2-Col Body Text Below
+                if (isTwoColTopPhotoArchetype) {
+                  return (
+                    <>
+                      {/* 2-Column Wide Uncropped Photo at Top of Block */}
+                      <div className="mb-1 w-full overflow-hidden shrink-0 flex flex-col border border-slate-200/80 bg-slate-50">
+                        <img
+                          src={getOptimizedPhotoUrl(block.imageUrl, topPhotoWidthPx, topPhotoImgH)}
+                          alt={block.articleTitle}
+                          loading="eager"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
+                          }}
+                          style={{
+                            height: `${topPhotoImgH}px`,
+                            width: '100%',
+                          }}
+                          className="w-full object-cover object-top block mx-auto"
+                        />
+                        {block.imageCaption && (
+                          <div
+                            className="text-[7.5px] text-slate-700 px-1 py-0.5 leading-tight font-normal text-left shrink-0 bg-slate-50 border-t border-slate-200/70"
+                            style={{ fontFamily: bodyFontFamily }}
+                          >
+                            {block.imageCaption}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Headline, Solid Subhead Bar & Bullet Deck below the 2-column photo */}
+                      {renderHeadlineElement()}
+                      {renderSubheadlineElement()}
+                      {renderBulletDeck()}
+
+                      {/* 2-Column Justified Body Text filling the bottom */}
+                      <div
+                        className="text-slate-950 font-normal mt-0.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between relative"
+                        style={{
+                          fontFamily: bodyFontFamily,
+                          fontSize: isBlockTelugu ? `${block.bodyFontSize || 10}px` : '9.5px',
+                          lineHeight: isBlockTelugu ? '1.42' : '1.35',
+                          letterSpacing: 'normal',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        <div
+                          className="overflow-hidden flex-1 min-h-0 relative w-full h-full"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            columnCount: 2,
+                            columnGap: '10px',
+                            columnRule: '1px solid #cbd5e1',
+                            columnFill: 'auto',
+                            textAlign: 'justify',
+                            textJustify: 'inter-word',
+                          }}
+                        >
+                          {inlineCalloutElements}
+                          {inlineContinuedFrom}
+                          {formattedDateline}
                           {block.leadParagraph && (
                             <span className="text-slate-950 mr-1 inline font-semibold">
                               {block.leadParagraph}{' '}
@@ -1267,30 +1599,51 @@ export const PageDesignerPage: React.FC = () => {
                           <span>{block.bodyContent}</span>
                           {inlineContinuedOn}
                         </div>
+                        {pinnedContinuedOnBadge}
                       </div>
-                    ) : hasImage && block.imagePlacement === 'middle' ? (
-                      /* B. MIDDLE PHOTO STORY (Opening paragraph above photo, photo in middle, remainder below) */
+                    </>
+                  );
+                }
+
+                // ARCHETYPE 3: Standard 1 to 5 Column Stories (Headline + Subhead at Top; Priority-Scaled 1.5 to 3.5 Col Photo + Multi-Column Text Below)
+                return (
+                  <>
+                    {/* 1. Main Headline */}
+                    {renderHeadlineElement()}
+
+                    {/* 2. Subheadline (Solid Colored Pill or Bold Red Deck) */}
+                    {renderSubheadlineElement()}
+
+                    {/* 3. CONTENT & PHOTO FLOW - Priority-Scaled Multi-Column Photos (1 to 3.5 Cols) & True Newspaper Columns */}
+                    {hasImage && block.imagePlacement !== 'top' && (block.imagePlacement as string) !== 'middle' && effectiveColumnCount >= 2 ? (
+                      /* A. PRIORITY MULTI-COLUMN SUB-GRID (Photo spans 1, 1.5, 2, 2.5, 3, or 3.5 cols; columns underneath & beside photo) */
                       <div
-                        className="text-slate-950 font-normal mt-0.5 flex-1 overflow-hidden flex flex-col justify-between text-justify"
+                        className={`text-slate-950 font-normal mt-0.5 flex-1 min-h-0 overflow-hidden flex ${
+                          block.imagePlacement === 'right' ? 'flex-row-reverse' : 'flex-row'
+                        } gap-2.5 text-justify relative`}
                         style={{
                           fontFamily: bodyFontFamily,
-                          fontSize: isBlockTelugu ? `${block.bodyFontSize || 10}px` : '9.5px',
-                          lineHeight: isBlockTelugu ? '1.5' : '1.35',
+                          fontSize: isBlockTelugu ? `${block.bodyFontSize || (isLead ? 10.5 : 10)}px` : '9.5px',
+                          lineHeight: isBlockTelugu ? (isLead ? '1.44' : '1.4') : '1.35',
                           textAlign: 'justify',
                           textJustify: 'inter-word',
                         }}
                       >
-                        <div className="overflow-hidden flex-1">
-                          {inlineContinuedFrom}
-                          {block.leadParagraph && (
-                            <p className="text-slate-950 font-semibold mb-1">
-                              {block.leadParagraph}
-                            </p>
-                          )}
-
-                          <div className="my-1.5 w-full flex flex-col">
+                        {/* PHOTO ZONE: Holds Priority-Sized Photo at top + Multi-Column Text underneath when tall */}
+                        <div
+                          className={`h-full flex flex-col shrink-0 overflow-hidden ${
+                            block.imagePlacement === 'right'
+                              ? 'border-l border-[#cbd5e1] pl-2.5'
+                              : 'border-r border-[#cbd5e1] pr-2.5'
+                          }`}
+                          style={{
+                            width: `${photoZoneWidthPercent}%`,
+                          }}
+                        >
+                          {/* Priority-Scaled Photo Frame */}
+                          <div className={`w-full bg-slate-50 border border-slate-200/80 overflow-hidden flex flex-col ${hasUnderPhotoText ? 'shrink-0 mb-1' : 'flex-1 min-h-0'}`}>
                             <img
-                              src={block.imageUrl}
+                              src={getOptimizedPhotoUrl(block.imageUrl, photoZoneWidthPx, photoImgH)}
                               alt={block.articleTitle}
                               loading="eager"
                               onError={(e) => {
@@ -1298,14 +1651,141 @@ export const PageDesignerPage: React.FC = () => {
                                 target.onerror = null;
                                 target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
                               }}
-                              className="w-full h-auto object-contain block mx-auto"
+                              style={{
+                                height: hasUnderPhotoText ? `${photoImgH}px` : undefined,
+                                width: '100%',
+                              }}
+                              className={`w-full ${hasUnderPhotoText ? '' : 'flex-1 min-h-0'} object-cover object-top block mx-auto`}
                             />
                             {block.imageCaption && (
                               <div
-                                className="text-[7.5px] text-slate-700 pt-0.5 leading-tight font-normal text-left"
+                                className="text-[7.5px] text-slate-700 px-1 py-0.5 bg-slate-50 border-t border-slate-200/70 leading-tight font-normal text-left shrink-0"
                                 style={{ fontFamily: bodyFontFamily }}
                               >
-                                📷 {block.imageCaption}
+                                {block.imageCaption}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* UNDER-PHOTO MULTI-COLUMN TEXT ZONE (For tall 3, 4, 5+ column stories) */}
+                          {hasUnderPhotoText && (
+                            <div className="flex-1 min-h-0 relative overflow-hidden w-full">
+                              <div
+                                className="overflow-hidden w-full h-full"
+                                style={{
+                                  position: 'absolute',
+                                  inset: 0,
+                                  columnCount: underPhotoCols,
+                                  columnGap: underPhotoCols > 1 ? '10px' : 'normal',
+                                  columnRule: underPhotoCols > 1 ? '1px solid #cbd5e1' : 'none',
+                                  columnFill: 'auto',
+                                  textAlign: 'justify',
+                                  textJustify: 'inter-word',
+                                }}
+                              >
+                                {renderBulletDeck()}
+                                {inlineContinuedFrom}
+                                {formattedDateline}
+                                {block.leadParagraph && (
+                                  <span className="text-slate-950 mr-1 inline font-semibold">
+                                    {block.leadParagraph}{' '}
+                                  </span>
+                                )}
+                                <span>{fullBodyText}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* BESIDE-PHOTO MULTI-COLUMN TEXT ZONE (Fills remaining columns from top to bottom) */}
+                        <div className="flex-1 min-w-0 h-full relative overflow-hidden">
+                          <div
+                            className="overflow-hidden w-full h-full"
+                            style={{
+                              position: 'absolute',
+                              inset: 0,
+                              columnCount: sideCols,
+                              columnGap: sideCols > 1 ? '10px' : 'normal',
+                              columnRule: sideCols > 1 ? '1px solid #cbd5e1' : 'none',
+                              columnFill: 'auto',
+                              textAlign: 'justify',
+                              textJustify: 'inter-word',
+                            }}
+                          >
+                            {inlineCalloutElements}
+                            {!hasUnderPhotoText && renderBulletDeck()}
+                            {!hasUnderPhotoText && inlineContinuedFrom}
+                            {!hasUnderPhotoText && formattedDateline}
+                            {!hasUnderPhotoText && block.leadParagraph && (
+                              <span className="text-slate-950 mr-1 inline font-semibold">
+                                {block.leadParagraph}{' '}
+                              </span>
+                            )}
+                            <span>{sideZoneStartText}</span>
+                            {inlineContinuedOn}
+                          </div>
+                        </div>
+                        {pinnedContinuedOnBadge}
+                      </div>
+                    ) : hasImage && (block.imagePlacement as string) === 'middle' ? (
+                      /* B. MIDDLE PHOTO STORY WITH MULTI-COLUMN FLOW */
+                      <div
+                        className="text-slate-950 font-normal mt-0.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between text-justify relative"
+                        style={{
+                          fontFamily: bodyFontFamily,
+                          fontSize: isBlockTelugu ? `${block.bodyFontSize || 10}px` : '9.5px',
+                          lineHeight: isBlockTelugu ? '1.44' : '1.35',
+                          textAlign: 'justify',
+                          textJustify: 'inter-word',
+                        }}
+                      >
+                        <div
+                          className="overflow-hidden flex-1 min-h-0 relative w-full h-full"
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            columnCount: effectiveColumnCount,
+                            columnGap: effectiveColumnCount > 1 ? '10px' : 'normal',
+                            columnRule: effectiveColumnCount > 1 ? '1px solid #cbd5e1' : 'none',
+                            columnFill: 'auto',
+                            textAlign: 'justify',
+                            textJustify: 'inter-word',
+                          }}
+                        >
+                          {inlineCalloutElements}
+                          {inlineContinuedFrom}
+                          {formattedDateline}
+                          {block.leadParagraph && (
+                            <p className="text-slate-950 font-semibold mb-1">
+                              {block.leadParagraph}
+                            </p>
+                          )}
+
+                          <div
+                            className="my-1 w-full flex flex-col border border-slate-200/80 bg-slate-50"
+                            style={{ breakInside: 'avoid' }}
+                          >
+                            <img
+                              src={getOptimizedPhotoUrl(block.imageUrl, photoZoneWidthPx, topPhotoImgH)}
+                              alt={block.articleTitle}
+                              loading="eager"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
+                              }}
+                              style={{
+                                height: `${topPhotoImgH}px`,
+                                width: '100%',
+                              }}
+                              className="w-full object-cover object-top block mx-auto"
+                            />
+                            {block.imageCaption && (
+                              <div
+                                className="text-[7.5px] text-slate-700 px-1 py-0.5 leading-tight font-normal text-left"
+                                style={{ fontFamily: bodyFontFamily }}
+                              >
+                                {block.imageCaption}
                               </div>
                             )}
                           </div>
@@ -1313,14 +1793,15 @@ export const PageDesignerPage: React.FC = () => {
                           <span>{block.bodyContent}</span>
                           {inlineContinuedOn}
                         </div>
+                        {pinnedContinuedOnBadge}
                       </div>
                     ) : (
-                      /* C. TOP IMAGE OR MULTI-COLUMN TEXT FLOW (Natural Uncropped Photo, Full Height Content Justification) */
+                      /* C. TOP PHOTO BANNER (SPANS FULL BLOCK WIDTH) OR TEXT-ONLY MULTI-COLUMN FLOW */
                       <>
                         {hasImage && (
-                          <div className="my-1 w-full overflow-hidden shrink-0 flex flex-col">
+                          <div className="my-0.5 w-full overflow-hidden shrink-0 flex flex-col border border-slate-200/80 bg-slate-50">
                             <img
-                              src={block.imageUrl}
+                              src={getOptimizedPhotoUrl(block.imageUrl, topPhotoWidthPx, topPhotoImgH)}
                               alt={block.articleTitle}
                               loading="eager"
                               onError={(e) => {
@@ -1328,62 +1809,50 @@ export const PageDesignerPage: React.FC = () => {
                                 target.onerror = null;
                                 target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
                               }}
-                              className="w-full h-auto object-contain block mx-auto"
+                              style={{
+                                height: `${topPhotoImgH}px`,
+                                width: '100%',
+                              }}
+                              className="w-full object-cover object-top block mx-auto"
                             />
                             {block.imageCaption && (
                               <div
-                                className="text-[7.5px] text-slate-700 pt-0.5 leading-tight font-normal shrink-0"
+                                className="text-[7.5px] text-slate-700 px-1 py-0.5 leading-tight font-normal text-left shrink-0"
                                 style={{ fontFamily: bodyFontFamily }}
                               >
-                                📷 {block.imageCaption}
+                                {block.imageCaption}
                               </div>
                             )}
                           </div>
                         )}
 
-                        {/* Multi-Column Body Flow with 1-Column Bullet Highlights */}
                         <div
-                          className="text-slate-950 font-normal mt-0.5 flex-1 overflow-hidden flex flex-col justify-between"
+                          className="text-slate-950 font-normal mt-0.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between relative"
                           style={{
                             fontFamily: bodyFontFamily,
                             fontSize: isBlockTelugu ? `${block.bodyFontSize || 10.5}px` : '10px',
-                            lineHeight: isBlockTelugu ? '1.5' : '1.35',
+                            lineHeight: isBlockTelugu ? '1.44' : '1.35',
                             letterSpacing: 'normal',
                             wordBreak: 'break-word',
                           }}
                         >
                           <div
-                            className="overflow-hidden flex-1"
+                            className="overflow-hidden flex-1 min-h-0 relative w-full h-full"
                             style={{
-                              columnCount: isWide ? (block.columnSpan >= 5 ? 3 : 2) : 1,
-                              columnGap: isWide ? '14px' : 'normal',
-                              columnRule: isWide ? '1px solid #cbd5e1' : 'none',
-                              columnFill: 'balance',
+                              position: 'absolute',
+                              inset: 0,
+                              columnCount: effectiveColumnCount,
+                              columnGap: effectiveColumnCount > 1 ? '10px' : 'normal',
+                              columnRule: effectiveColumnCount > 1 ? '1px solid #cbd5e1' : 'none',
+                              columnFill: 'auto',
                               textAlign: 'justify',
                               textJustify: 'inter-word',
                             }}
                           >
-                            {/* Single Column Bullets - Never stretches across multiple columns */}
-                            {shouldShowBullets && (
-                              <div
-                                className="mb-1.5 p-1 bg-red-50/70 border-l-2 border-red-700 text-[8.5px] text-slate-900 rounded-r max-w-[210px]"
-                                style={{
-                                  fontFamily: bodyFontFamily,
-                                  breakInside: 'avoid',
-                                }}
-                              >
-                                <ul className="space-y-0.5">
-                                  {block.bulletPoints?.map((bp, i) => (
-                                    <li key={i} className="flex items-start font-normal">
-                                      <span className="text-red-700 mr-1 text-[6.5px] leading-relaxed select-none">■</span>
-                                      <span>{bp}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-
+                            {inlineCalloutElements}
+                            {renderBulletDeck()}
                             {inlineContinuedFrom}
+                            {formattedDateline}
                             {block.leadParagraph && (
                               <span className="text-slate-950 mr-1 inline font-semibold">
                                 {block.leadParagraph}{' '}
@@ -1392,6 +1861,7 @@ export const PageDesignerPage: React.FC = () => {
                             <span>{block.bodyContent}</span>
                             {inlineContinuedOn}
                           </div>
+                          {pinnedContinuedOnBadge}
                         </div>
                       </>
                     )}
@@ -1420,7 +1890,7 @@ export const PageDesignerPage: React.FC = () => {
                 <img
                   src={ad.imageUrl}
                   alt={ad.sponsorLabel || 'Commercial Advertisement'}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-white"
                 />
                 <div className="absolute top-1 right-1 bg-black/70 text-white text-[8px] font-sans px-1.5 py-0.5 rounded uppercase tracking-wider backdrop-blur-xs">
                   ప్రకటన / Ad

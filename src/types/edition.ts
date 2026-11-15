@@ -200,11 +200,13 @@ export interface NewspaperBrand {
   headerFooterRules: {
     showHeader: boolean;
     showFooter: boolean;
-    headerRuleStyle: 'solid' | 'double' | 'thin' | 'none';
-    footerRuleStyle: 'solid' | 'double' | 'thin' | 'none';
-    pageNumberFormat: 'PAGE {n}' | '{n}' | 'PAGE {n} OF {total}' | 'SECTION A - {n}';
+    headerRuleStyle: 'solid' | 'double' | 'thin' | 'single' | 'none';
+    footerRuleStyle: 'solid' | 'double' | 'thin' | 'single' | 'none';
+    ruleColor?: string;
+    pageNumberFormat?: 'PAGE {n}' | '{n}' | 'PAGE {n} OF {total}' | 'SECTION A - {n}';
   };
-  sectionStyles: Record<string, SectionStyle>;
+  sectionStyles?: Record<string, SectionStyle>;
+  status?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -248,8 +250,9 @@ export interface NewspaperTemplate {
   isDefault?: boolean;
   previewThumbnailUrl?: string;
   // Backward compatibility fields
-  format?: 'broadsheet' | 'tabloid' | 'berliner';
-  columnsCount?: 4 | 5 | 6 | 8;
+  format?: 'broadsheet' | 'tabloid' | 'berliner' | 'a3' | 'a4';
+  columnsCount?: number;
+  scale?: number;
   gridGutterMm?: number;
   createdAt: string;
   updatedAt: string;
@@ -305,6 +308,10 @@ export interface ArticlePlacement {
   headlineSize: number; // Font size pt / px
   bodyFontSize: number;
   imagePlacement: 'top' | 'left' | 'right' | 'bottom' | 'hero' | 'none';
+  photoColumnSpan?: number;
+  showBullets?: boolean;
+  isSpecialStory?: boolean;
+  isInvestigative?: boolean;
   imageCrop?: ImageCropConfig;
   imageUrl?: string;
   imageCaption?: string;
@@ -354,7 +361,7 @@ export interface ArticlePlacement {
     columnSpan?: number;
     headlineSize?: number;
     bodyFontSize?: number;
-    imagePlacement?: 'top' | 'left' | 'right' | 'bottom' | 'hero' | 'none';
+    imagePlacement?: 'top' | 'left' | 'right' | 'bottom' | 'middle' | 'hero' | 'none';
     imageCrop?: ImageCropConfig;
     priority?: number;
     layoutRole?: StoryLayoutRole;
@@ -439,13 +446,13 @@ export interface NewspaperPage {
   tenantId: string;
   pageNumber: number;
   sectionName?: string;
-  templateId: string;
-  layoutVersion: number;
+  templateId?: string;
+  layoutVersion?: number;
   blocks: ArticlePlacement[];
   adPlacements?: AdvertisementPlacement[];
-  occupiedArea: number; // Percentage 0 - 100
-  diagnostics: PageDiagnostics;
-  status: 'draft' | 'auto_planned' | 'editor_modified' | 'approved' | 'locked';
+  occupiedArea?: number; // Percentage 0 - 100
+  diagnostics?: PageDiagnostics;
+  status: 'draft' | 'auto_planned' | 'editor_modified' | 'approved' | 'locked' | 'layout_complete';
 }
 
 export interface EditionRevision {
@@ -468,6 +475,7 @@ export interface NewspaperEdition {
   tenantId: string;
   brandId: string;
   brandName: string;
+  editionName?: string;
   templateId?: string;
   editionCode: string; // e.g. "NP-2026-10-04-MORNING"
   editionDate?: string; // e.g. "2026-10-04"
@@ -481,6 +489,9 @@ export interface NewspaperEdition {
   totalPages: number; // backward compatibility
   placedArticlesCount: number;
   pages?: NewspaperPage[];
+  pagesList?: string[];
+  editorialCutoff?: string;
+  metadata?: Record<string, any>;
   contentDeadline?: string; // ISO 8601
   printDeadline: string; // ISO 8601
   pressSpecs: {

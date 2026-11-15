@@ -4,7 +4,6 @@ const path = require('path');
 const sampleFile = path.resolve(__dirname, '../src/data/teluguEditionSample.ts');
 let content = fs.readFileSync(sampleFile, 'utf8');
 
-// Match the TELUGU_PREPLANNED_PAGES definition
 const match = content.match(/export const TELUGU_PREPLANNED_PAGES: NewspaperPage\[\] = (\[[\s\S]*?\]);/);
 if (!match) {
   console.error('Could not find TELUGU_PREPLANNED_PAGES in teluguEditionSample.ts');
@@ -13,7 +12,74 @@ if (!match) {
 
 const pages = JSON.parse(match[1]);
 
-// Rich contextual Telugu journalism content generators for each subject
+// Exact 8-column edge-to-edge boundaries (x = 38 to 1285, total contentWidth = 1247px, zero gaps)
+const COL_EDGES = [38, 194, 350, 506, 662, 818, 974, 1130, 1285];
+function getColBounds(colStart, colSpan) {
+  const left = COL_EDGES[colStart - 1];
+  const right = COL_EDGES[colStart - 1 + colSpan];
+  return { x: left, width: right - left };
+}
+
+// Rich contextual Telugu journalism paragraphs tailored to each beat/topic
+const specificExpansions = {
+  'pl-p1-lead': [
+    "రాష్ట్రంలో కాంగ్రెస్ ప్రభుత్వం అధికారంలోకి వచ్చినప్పటి నుంచి హైదరాబాద్ విశ్వనగర ఖ్యాతిని మరింత ఇనుమడింపజేసేలా అంతర్జాతీయ సదస్సులు, పెట్టుబడుల సమ్మేళనాలు నిర్వహిస్తుంటే కేంద్రంలోని పెద్దలకు కడుపుమంటగా ఉందని ముఖ్యమంత్రి రేవంత్ రెడ్డి ధ్వజమెత్తారు. ఫ్యూచర్ సిటీ నిర్మాణం, మూసీ పునరుజ్జీవనం, రీజినల్ రింగ్ రోడ్డు వంటి భారీ ప్రాజెక్టులకు అంతర్జాతీయ ఆర్థిక సంస్థల నుంచి నిధులు సమీకరిస్తుంటే రాజకీయ కక్షతో అడ్డుకుంటున్నారని ఆరోపించారు.",
+    "ప్రపంచవ్యాప్తంగా వందకు పైగా దేశాల నుంచి ప్రతినిధులు, ఆర్థికవేత్తలు, నోబెల్ గ్రహీతలు హాజరయ్యే 'భారత్ సమ్మిట్' ద్వారా తెలంగాణ ఆర్థిక ముఖచిత్రం మారబోతోందని సీఎం వివరించారు. ఐటీ, ఫార్మా, ఏరోస్పేస్, గ్రీన్ ఎనర్జీ రంగాల్లో రూ. లక్ష కోట్లకు పైగా పెట్టుబడులు ఆకర్షించేలా రూపొందించిన రోడ్‌మ్యాప్‌ను చూసి ప్రతిపక్షాలు ఓర్వలేకపోతున్నాయని విమర్శించారు. యువతకు లక్షలాది ఉద్యోగాలు కల్పించే ఈ మహత్తర యజ్ఞంలో ప్రజలంతా భాగస్వాములు కావాలని పిలుపునిచ్చారు.",
+    "రాజ్యాంగబద్ధమైన సమాఖ్య వ్యవస్థలో రాష్ట్రాల హక్కులను గౌరవించాల్సిన కేంద్ర ప్రభుత్వం, తెలంగాణ పట్ల సవతి తల్లి ప్రేమ కనబరుస్తోందని మంత్రులు సైతం తీవ్రస్థాయిలో మండిపడ్డారు. ఎన్ని అడ్డంకులు సృష్టించినా హైదరాబాద్ వేదికగా అంతర్జాతీయ సదస్సును చరిత్రలో నిలిచిపోయేలా నిర్వహించి తీరుతామని ప్రభుత్వం స్పష్టం చేసింది."
+  ],
+  'pl-p1-rail-revanth': [
+    "గత ప్రభుత్వ హయాంలో రాజకీయ ప్రత్యర్థులు, జర్నలిస్టులు, న్యాయమూర్తులు, చివరకు సొంత పార్టీ నేతల ఫోన్లను సైతం అక్రమంగా ట్యాప్ చేసి ప్రజాస్వామ్యాన్ని ఖూనీ చేశారని ముఖ్యమంత్రి రేవంత్ రెడ్డి ఆరోపించారు. తమ ప్రభుత్వంలో ఎలాంటి రహస్యాలు లేవని, పారదర్శక పాలనే తమ విధానమని పునరుద్ఘాటించారు.",
+    "ఫోన్ ట్యాపింగ్ కేసులో ఎంతటి పెద్దవారున్నా చట్టం ముందు తలవంచక తప్పదని, విదేశాల్లో తలదాచుకున్న నిందితులను రెడ్ కార్నర్ నోటీసుల ద్వారా భారత్‌కు రప్పించి కఠినంగా శిక్షిస్తామని సీఎం హెచ్చరించారు. బాధితులకు పూర్తి న్యాయం జరిగే వరకు దర్యాప్తు నిష్పక్షపాతంగా కొనసాగుతుందన్నారు."
+  ],
+  'pl-p1-rail-modi': [
+    "రాష్ట్ర పునర్విభజన చట్టంలో పేర్కొన్న పెండింగ్ హామీలు, వెనుకబడిన జిల్లాల అభివృద్ధి నిధులు, రీజినల్ రింగ్ రోడ్డు అనుమతులపై ప్రధాని నరేంద్ర మోదీకి ముఖ్యమంత్రి రేవంత్ రెడ్డి సమగ్ర వినతిపత్రం సమర్పించనున్నారు. హైదరాబాద్ మెట్రో రెండో దశ విస్తరణకు కేంద్ర క్యాబినెట్ ఆమోదం వెంటనే మంజూరు చేయాలని కోరనున్నారు.",
+    "అలాగే మూసీ నది ప్రక్షాళన, గోదావరి-మూసీ అనుసంధానం ప్రాజెక్టులకు జాతీయ హోదా కల్పించాలని, ఐఐఎం, ట్రైబల్ యూనివర్సిటీలకు అదనపు నిధులు కేటాయించాలని కేంద్ర మంత్రులతో జరిగే వరుస భేటీల్లో సీఎం ప్రత్యేకంగా చర్చించనున్నారు."
+  ],
+  'pl-p1-rahul-phone': [
+    "ఇన్‌స్టాగ్రామ్ వేదికగా నిర్వహించిన ప్రత్యేక 'ఆస్క్ మీ' లైవ్ సెషన్‌లో యువత, నెటిజన్లు అడిగిన పలు ప్రశ్నలకు రాహుల్ గాంధీ నిర్భయంగా సమాధానాలు ఇచ్చారు. తన ఐఫోన్‌కు ఆపిల్ సంస్థ నుంచి వచ్చిన అధికారిక త్రెట్ నోటిఫికేషన్లను చూపిస్తూ, ప్రభుత్వ ప్రాయోజిత హ్యాకర్లు ప్రతిపక్ష నేతల సమాచారాన్ని తస్కరించేందుకు యత్నిస్తున్నారని ఆరోపించారు.",
+    "దేశంలో రాజ్యాంగ సంస్థలను గుప్పిట్లో పెట్టుకుని ప్రజాస్వామ్య గొంతుకలను అణచివేయాలని చూస్తే సహించేది లేదని రాహుల్ స్పష్టం చేశారు. నిరుద్యోగం, ధరల పెరుగుదల, రైతాంగ సమస్యల నుంచి ప్రజల దృష్టిని మళ్లించేందుకే కేంద్రం ఇలాంటి కుట్రలకు పాల్పడుతోందని విమర్శించారు. రాబోయే రోజుల్లో ప్రజా సమస్యలపై దేశవ్యాప్త ఉద్యమాన్ని మరింత ఉధృతం చేస్తామని ప్రకటించారు."
+  ],
+  'pl-p1-police-commissioner': [
+    "బాధ్యతలు స్వీకరించిన అనంతరం కమిషనరేట్ ఉన్నతాధికారులతో నిర్వహించిన తొలి సమీక్షా సమావేశంలో సీపీ మహేష్ భగవత్ కీలక ఆదేశాలు జారీ చేశారు. బాధితులు పోలీస్ స్టేషన్‌కు వచ్చిన వెంటనే వారి ఫిర్యాదులపై తక్షణమే స్పందించి ఎఫ్ఐఆర్ నమోదు చేయాలని, నిర్లక్ష్యం వహించే సిబ్బందిపై శాఖాపరమైన చర్యలు తప్పవని హెచ్చరించారు.",
+    "నగరంలో ట్రాఫిక్ రద్దీ నియంత్రణకు ఏఐ ఆధారిత సిగ్నలింగ్ వ్యవస్థను బలోపేతం చేస్తామని, సీసీటీవీ కెమెరాల నెట్‌వర్క్‌ను ప్రతి కాలనీకి విస్తరించి 24 గంటల కమాండ్ కంట్రోల్ సెంటర్ నిఘా కొనసాగిస్తామని వివరించారు."
+  ],
+  'pl-p1-auto-workers': [
+    "మహాలక్ష్మి ఉచిత బస్సు ప్రయాణ పథకం వల్ల ఆటో కార్మికుల ఉపాధికి ఎలాంటి ఇబ్బంది కలగకుండా ప్రభుత్వం ప్రత్యేక ఆర్థిక చేయూతను అందిస్తోందని మంత్రి పొన్నం ప్రభాకర్ వివరించారు. ప్రతి ఆటో డ్రైవర్ కుటుంబానికి ఏడాదికి రూ. 12,000 ఆర్థిక సాయంతో పాటు రూ. 5 లక్షల జీవిత, ప్రమాద బీమా కవరేజీని అమలు చేస్తున్నామన్నారు.",
+    "ఎలక్ట్రిక్ ఆటోల కొనుగోలుకు ముందుకు వచ్చే డ్రైవర్లకు ప్రభుత్వమే ప్రత్యేక సబ్సిడీ, బ్యాంకు రుణ సదుపాయం కల్పిస్తుందని, నగరవ్యాప్తంగా నూతన ఆటో స్టాండ్లు, రెస్ట్ రూమ్‌లు నిర్మిస్తామని మంత్రి హామీ ఇచ్చారు."
+  ],
+  'pl-p1-assam-accident': [
+    "ప్రమాద ధాటికి బస్సు ముందు భాగం పూర్తిగా నుజ్జునుజ్జు కాగా, స్థానికులు మరియు జాతీయ విపత్తు స్పందన దళం (NDRF) సిబ్బంది గ్యాస్ కట్టర్ల సాయంతో శకలాలను తొలగించి బాధితులను బయటకు తీశారు. విహారయాత్రకు వెళ్తున్న ఇంజనీరింగ్ కళాశాల విద్యార్థులు ఈ దుర్ఘటనలో ప్రాణాలు కోల్పోవడంతో తల్లిదండ్రుల రోదనలు మిన్నంటాయి.",
+    "జాతీయ రహదారిపై పొగమంచు వేళల్లో వాహనాల వేగ నియంత్రణకు ప్రత్యేక గస్తీ ఏర్పాటు చేయాలని, ప్రమాద కారణాలపై ఉన్నతస్థాయి విచారణ జరిపి నివేదిక సమర్పించాలని అస్సాం ముఖ్యమంత్రి అధికారులను ఆదేశించారు."
+  ],
+  'pl-p1-taiwan-war': [
+    "తైవాన్ గగనతల రక్షణ మండలిలోకి చైనాకు చెందిన 70కి పైగా జె-20 స్టెల్త్ ఫైటర్ జెట్లు, బాంబర్లు దూసుకురావడంతో తైవాన్ సైన్యం హైఅలర్ట్ ప్రకటించింది. తీరప్రాంత రక్షణ క్షిపణి వ్యవస్థలను, పేట్రియాట్ యాంటీ-మిస్సైల్ బ్యాటరీలను తక్షణమే యాక్టివేట్ చేసి చైనా యుద్ధ నౌకల కదలికలను నిశితంగా గమనిస్తోంది.",
+    "మరోవైపు అమెరికా ఏడో నౌకాదళానికి చెందిన విమానవాహక యుద్ధ నౌకలు ఫిలిప్పీన్స్ సముద్రం మీదుగా తైవాన్ జలసంధి సమీపానికి చేరుకోవడంతో ఇండో-పసిఫిక్ రీజియన్‌లో యుద్ధ వాతావరణం వేడెక్కింది. దౌత్యపరమైన చర్చల ద్వారానే సమస్యను పరిష్కరించుకోవాలని ఐక్యరాజ్యసమితి పిలుపునిచ్చింది."
+  ],
+  'pl-p1-rajgopal': [
+    "మునుగోడు నియోజకవర్గ అభివృద్ధి కోసం తాను ప్రతిపాదించిన సాగునీటి కాలువలు, రోడ్లు, ఆసుపత్రుల ఫైళ్లు నెలల తరబడి సచివాలయంలో కదలడం లేదని కోమటిరెడ్డి రాజగోపాల్ రెడ్డి ఆవేదన వ్యక్తం చేశారు. ఎన్నికల సమయంలో ప్రజలకు ఇచ్చిన హామీలను నెరవేర్చలేని పదవులు తనకు అవసరం లేదని, ప్రజాక్షేత్రంలోనే తేల్చుకుంటానని స్పష్టం చేశారు.",
+    "ఆయన నివాసానికి చేరుకున్న వేలాది మంది కార్యకర్తలు, సర్పంచులు, ఎంపీటీసీలు రాజగోపాల్ రెడ్డికి సంపూర్ణ మద్దతు ప్రకటించారు. ప్రజల ఆకాంక్షలకు అనుగుణంగా రాబోయే రోజుల్లో సంచలన రాజకీయ నిర్ణయం ఉంటుందని ఆయన సంకేతాలు ఇచ్చారు."
+  ],
+  'pl-p1-governor-vc': [
+    "విశ్వవిద్యాలయాల్లో ఏళ్ల తరబడి ఖాళీగా ఉన్న అసిస్టెంట్, అసోసియేట్ ప్రొఫెసర్ పోస్టుల భర్తీకి వెంటనే రోస్టర్ వారీగా నోటిఫికేషన్లు సిద్ధం చేయాలని గవర్నర్ ఆదేశించారు. హాస్టళ్లలో విద్యార్థులకు నాణ్యమైన భోజనం, పరిశుభ్రమైన తాగునీరు, డిజిటల్ లైబ్రరీ వసతులు కల్పించడంలో అలసత్వం వహిస్తే కఠిన చర్యలు తీసుకుంటామన్నారు.",
+    "జాతీయ విద్యా విధానం (NEP) నిబంధనలకు అనుగుణంగా నూతన ఉపాధి ఆధారిత కోర్సులు, కృత్రిమ మేధ (AI), డేటా సైన్స్ విభాగాలను ప్రవేశపెట్టాలని, పరిశ్రమలతో అవగాహన ఒప్పందాలు కుదుర్చుకుని క్యాంపస్ ప్లేస్‌మెంట్లను పెంచాలని వీసీలకు దిశానిర్దేశం చేశారు."
+  ],
+  'pl-p1-revanth-weather': [
+    "రాష్ట్రంలో భూగర్భ జలాలు అడుగంటి సాగునీరు లేక ఎండుతున్న పంటలను కాపాడటంలో కాంగ్రెస్ ప్రభుత్వం ఘోరంగా విఫలమైందని మాజీ మంత్రులు, ప్రతిపక్ష నేతలు తీవ్రస్థాయిలో ధ్వజమెత్తారు. కాళేశ్వరం ప్రాజెక్టుపై రాజకీయ విమర్శలు మాని, రిజర్వాయర్ల నుంచి తక్షణమే కాలువలకు నీరు విడుదల చేసి రైతాంగాన్ని ఆదుకోవాలని డిమాండ్ చేశారు.",
+    "ధాన్యం కొనుగోలు కేంద్రాల్లో రైతులకు క్వింటాల్‌కు రూ. 500 బోనస్ వెంటనే చెల్లించాలని, ఎకరాకు రూ. 25,000 పంట నష్టపరిహారం అందించే వరకు రైతుల పక్షాన నిరసన దీక్షలు కొనసాగిస్తామని విపక్ష నేతలు స్పష్టం చేశారు."
+  ],
+  'pl-p1-amaravati-progress': [
+    "రాజధాని అమరావతి పరిధిలో ఐకానిక్ టవర్లు, హైకోర్టు ప్రధాన భవనం, అసెంబ్లీ సముదాయం, ఎమ్మెల్యేలు మరియు అఖిల భారత సర్వీసు అధికారుల నివాస సముదాయాల నిర్మాణాన్ని రెండేళ్ల కాలపరిమితిలో పూర్తి చేసేలా ఇంజనీరింగ్ అధికారులు కార్యాచరణ రూపొందించారు. గ్రీన్ అండ్ బ్లూ సిటీ కాన్సెప్ట్‌తో 30 శాతం పచ్చదనం, సౌర విద్యుత్ వినియోగం, ఎలక్ట్రిక్ వాహనాల కారిడార్లతో అమరావతిని ఆదర్శ నగరంగా తీర్చిదిద్దుతున్నారు."
+  ],
+  'pl-p1-storm-damage': [
+    "తుఫాను ప్రభావిత ప్రాంతాల్లో సహాయక చర్యలను పర్యవేక్షించేందుకు ప్రత్యేక ఐఏఎస్ అధికారులను జిల్లాల వారీగా నియమించారు. నీటమునిగిన పంట పొలాల నుంచి ముంపు నీటిని మళ్లించేందుకు డ్రైనేజీ కాలువలను యుద్ధప్రాతిపదికన శుభ్రం చేస్తున్నారు. దెబ్బతిన్న చేనేత, మత్స్యకార కుటుంబాలకు తక్షణ ఆర్థిక సాయం కింద కుటుంబానికి రూ. 5,000తో పాటు 25 కిలోల బియ్యం, నిత్యావసర సరుకుల కిట్లను పంపిణీ చేస్తున్నారు.",
+    "ప్రాథమిక ఆరోగ్య కేంద్రాల ద్వారా బ్లీచింగ్, క్లోరినేషన్ కార్యక్రమాలు చేపట్టి ప్రజలకు రక్షిత మంచినీరు అందిస్తున్నారు. పంట నష్టపోయిన రైతులకు రబీ సాగు కోసం 80 శాతం సబ్సిడీపై విత్తనాలు, ఎరువులు సరఫరా చేసేందుకు వ్యవసాయ శాఖ ఏర్పాట్లు పూర్తి చేసింది."
+  ],
+  'pl-p1-river-dispute': [
+    "రెండు తెలుగు రాష్ట్రాల మధ్య జల వివాదాలను సామరస్యపూర్వకంగా పరిష్కరించుకోవడం ద్వారానే సాగునీటి ప్రాజెక్టుల పూర్తి సామర్థ్యాన్ని వినియోగించుకోవచ్చని సాగునీటి రంగ నిపుణులు అభిప్రాయపడ్డారు. గోదావరిలో ఏటా సముద్రంలో కలుస్తున్న మూడు వేల టీఎంసీల వరద జలాలను కృష్ణా బేసిన్‌కు, దుర్భిక్ష ప్రాంతాలకు తరలించేలా ఉమ్మడి కార్యాచరణ చేపట్టాలని సూచించారు.",
+    "శ్రీశైలం, నాగార్జునసాగర్, పులిచింతల ప్రాజెక్టుల వద్ద ఆటోమేటిక్ టెలిమెట్రీ పరికరాల ద్వారా ప్రతి చుక్క నీటి లెక్కలను పారదర్శకంగా నమోదు చేస్తూ, రాయలసీమ, తెలంగాణ, డెల్టా రైతాంగానికి సకాలంలో సాగునీరు అందించేందుకు బోర్డు అధికారులు కట్టుదిట్టమైన చర్యలు తీసుకుంటున్నారు."
+  ]
+};
+
 const domainExpansions = {
   space: [
     "ఈ ప్రయోగంలో ఉపయోగించిన స్వదేశీ లిక్విడ్ ప్రొపల్షన్ ఇంజిన్లు నిర్దేశిత థ్రస్ట్‌ను ఉత్పత్తి చేస్తూ శాస్త్రవేత్తల ప్రణాళికను నూరు శాతం నిజం చేశాయి. కంట్రోల్ సెంటర్‌లోని టెలిమెట్రీ స్క్రీన్లపై ప్రతి సెకనుకు సంబంధించిన సమాచారాన్ని విశ్లేషించిన శాస్త్రవేత్తలు మిషన్ విజయంపై హర్షం వ్యక్తం చేశారు.",
@@ -21,9 +87,9 @@ const domainExpansions = {
     "ఈ విజయంతో అంతరిక్షంలో సొంత అంతరిక్ష కేంద్రాన్ని (భారతీయ అంతరిక్ష స్టేషన్) నిర్మించే దిశగా భారత్ మరో అడుగు ముందుకు వేసింది. రానున్న రోజుల్లో చంద్రయాన్-4, శుక్రయాన్ ప్రయోగాలకు సైతం ఈ క్రూ మాడ్యూల్ సాంకేతికత కీలక పునాదిగా ఉపయోగపడనుంది."
   ],
   defence: [
-    "సరిహద్దుల్లో ఏ క్షణమైనా ఎదురయ్యే సవాళ్లను తిప్పికొట్టేందుకు ఈ విమానాలలో అత్యాధునిక ఎలక్ట్రానిక్ కౌంటర్ మెజర్స్ (ECM) వ్యవస్థలను అమర్చారు. శత్రువుల రాడార్ల నిఘా నుంచి తప్పించుకునే స్టెల్త్ లక్షణాలు ఇందులో ఉండటం వల్ల వైమానిక పైలట్లకు తిరుగులేని ఆధిక్యత లభిస్తుంది.",
+    "సరిహద్దుల్లో ఏ క్షణమైనా ఎదురయ్యే సవాళ్లను తిప్పికొట్టేందుకు ఈ వ్యవస్థలలో అత్యాధునిక ఎలక్ట్రానిక్ కౌంటర్ మెజర్స్ (ECM) పరికరాలను అమర్చారు. శత్రువుల రాడార్ల నిఘా నుంచి తప్పించుకునే అత్యాధునిక సాంకేతికత ఇందులో ఉండటం వల్ల భద్రతా దళాలకు తిరుగులేని ఆధిక్యత లభిస్తుంది.",
     "స్వదేశీ రక్షణ పరిశ్రమలకు వేల కోట్ల ఆర్డర్లు లభించడం ద్వారా వేలాది మంది ఇంజనీర్లు, చిన్న తరహా ఎంఎస్ఎంఈ పరిశ్రమలకు భారీ ప్రోత్సాహం లభించింది. విదేశీ దిగుమతులపై ఆధారపడే రోజులు పోయి స్వదేశీ ఆయుధ సంపత్తే దేశానికి రక్షణ కవచంగా నిలుస్తోంది.",
-    "హిందుస్థాన్ ఏరోనాటిక్స్ లిమిటెడ్ (హెచ్‌ఏఎల్) ఇప్పటికే అత్యాధునిక రోబోటిక్ అసెంబ్లీ లైన్లను ఏర్పాటు చేసింది. తద్వారా నిర్ణీత గడువులోగా భారత వాయుసేనకు ఈ ఫైటర్ జెట్లను సరఫరా చేయనున్నట్లు ఉన్నతాధికారులు ధృవీకరించారు."
+    "నిర్ణీత గడువులోగా ఆధునిక భద్రతా పరికరాలను దళాలకు అందించేందుకు ప్రభుత్వ రంగ సంస్థలు మూడు షిఫ్టుల్లో ఉత్పత్తిని వేగవంతం చేశాయి. దేశ అంతర్గత, సరిహద్దు భద్రతలో రాజీపడే ప్రసక్తే లేదని ఉన్నతాధికారులు ధృవీకరించారు."
   ],
   governance: [
     "పారదర్శకమైన ప్రజా పాలనను అందించడమే ప్రభుత్వ ప్రధాన లక్ష్యమని ఉన్నతాధికారులు స్పష్టం చేశారు. ప్రతి పథకం లబ్ధిదారుల ఎంపికలో రాజకీయ జోక్యం లేకుండా నేరుగా ఆధార్ ఆధారిత బయోమెట్రిక్ వెరిఫికేషన్ ద్వారా అర్హులందరికీ న్యాయం చేస్తున్నారు.",
@@ -42,7 +108,10 @@ const domainExpansions = {
   ]
 };
 
-function getExpansion(category, title) {
+function getExpansion(placementId, category, title) {
+  if (specificExpansions[placementId]) {
+    return [...specificExpansions[placementId], ...domainExpansions.governance];
+  }
   const t = (category + ' ' + title).toLowerCase();
   if (t.includes('ఇస్రో') || t.includes('గగన్‌యాన్') || t.includes('స్పేస్') || t.includes('అంతరిక్ష') || t.includes('సైన్స్')) {
     return domainExpansions.space;
@@ -50,44 +119,125 @@ function getExpansion(category, title) {
   if (t.includes('రక్షణ') || t.includes('తేజస్') || t.includes('యుద్ధ') || t.includes('తీరప్రాంత') || t.includes('భద్రత') || t.includes('కోర్టు') || t.includes('న్యాయ')) {
     return domainExpansions.defence;
   }
-  if (t.includes('పారిశ్రామిక') || t.includes('పెట్టుబడుల') || t.includes('బడ్జెట్') || t.includes('మిర్చి') || t.includes('ఎగుమతి') || t.includes('బ్యాంక్') || t.includes('స్టీల్')) {
+  if (t.includes('పారిశ్రామిక') || t.includes('పెట్టుబడుల') || t.includes('బడ్జెట్') || t.includes('మిర్చి') || t.includes('ఎగుమతి') || t.includes('బ్యాంక్') || t.includes('స్టీల్') || t.includes('సెమీకండక్టర్') || t.includes('ఐటీ')) {
     return domainExpansions.economy;
   }
-  if (t.includes('రాజధాని') || t.includes('అమరావతి') || t.includes('రైతు') || t.includes('సంక్షేమం') || t.includes('పోలవరం') || t.includes('గ్యాస్') || t.includes('మెట్రో')) {
+  if (t.includes('రాజధాని') || t.includes('అమరావతి') || t.includes('రైతు') || t.includes('సంక్షేమం') || t.includes('పోలవరం') || t.includes('గ్యాస్') || t.includes('మెట్రో') || t.includes('సమ్మిట్')) {
     return domainExpansions.governance;
   }
   return domainExpansions.general;
 }
 
-pages.forEach((page, pIdx) => {
-  page.blocks.forEach((block) => {
-    const hasImage = !!block.imageUrl && block.imagePlacement !== 'none';
-    const isLead = block.layoutRole === 'LEAD';
-    const imgHeight = hasImage ? (block.imageHeight || (isLead ? 165 : 135)) : 0;
-    const headlineH = block.headlineSize || 20;
-    const bulletH = (block.bulletPoints && block.bulletPoints.length > 0) ? (block.bulletPoints.length * 18 + 15) : 0;
-    
-    // Available height for text in this block
-    const availableTextHeight = block.height - imgHeight - headlineH - bulletH - 55;
-    const colCount = block.columnSpan >= 5 ? 3 : block.columnSpan >= 3 ? 2 : 1;
-    const targetLines = Math.max(8, Math.floor(availableTextHeight / 16.5)) * colCount;
-    const wordsPerLine = block.columnSpan >= 5 ? 6 : 7;
-    const targetWords = Math.max(80, Math.round(targetLines * wordsPerLine * 0.85));
+// 1. Snap Page 1 blocks & ads to zero-gap grid boundaries (y = 154 to 1994, x = 38 to 1285)
+const p1 = pages[0];
+const p1RowMap = {
+  'pl-p1-rail-revanth': { y: 154, height: 228 },
+  'pl-p1-rail-modi': { y: 382, height: 228 },
+  'pl-p1-lead': { y: 154, height: 456 },
+  'pl-p1-rahul-phone': { y: 154, height: 456 },
+  'pl-p1-police-commissioner': { y: 610, height: 240 },
+  'pl-p1-auto-workers': { y: 850, height: 240 },
+  'pl-p1-assam-accident': { y: 610, height: 240 },
+  'pl-p1-taiwan-war': { y: 850, height: 240 },
+  'pl-p1-rajgopal': { y: 610, height: 480 },
+  'pl-p1-pocket-cartoon': { y: 1090, height: 250 },
+  'pl-p1-governor-vc': { y: 1090, height: 250 },
+  'pl-p1-revanth-weather': { y: 1090, height: 250 },
+  'pl-p1-amaravati-progress': { y: 1340, height: 310 },
+  'pl-p1-storm-damage': { y: 1650, height: 344 },
+  'pl-p1-river-dispute': { y: 1650, height: 344 },
+};
 
-    let currentWords = (block.bodyContent || '').split(/\s+/).length;
-    const expansionPool = getExpansion(block.category, block.articleTitle);
+p1.blocks.forEach((b) => {
+  const colB = getColBounds(b.columnStart, b.columnSpan);
+  b.x = colB.x;
+  b.width = colB.width;
+  if (p1RowMap[b.placementId]) {
+    b.y = p1RowMap[b.placementId].y;
+    b.height = p1RowMap[b.placementId].height;
+  }
+});
+(p1.adPlacements || []).forEach((ad) => {
+  const colB = getColBounds(ad.columnStart, ad.columnSpan);
+  ad.x = colB.x;
+  ad.width = colB.width;
+  if (ad.placementId === 'ad-p1-bottom-jewel') {
+    ad.y = 1340;
+    ad.height = 310;
+  }
+});
+
+// 2. Snap Pages 2, 3, 4 blocks & ads to zero-gap grid boundaries (y = 74 to 1994, x = 38 to 1285)
+for (let i = 1; i < pages.length; i++) {
+  const p = pages[i];
+  p.blocks.forEach((b) => {
+    const colB = getColBounds(b.columnStart, b.columnSpan);
+    b.x = colB.x;
+    b.width = colB.width;
+
+    // Snap vertical rows seamlessly (74 -> 522 -> 1080 -> 1572 -> 1994)
+    if (b.y <= 90) {
+      b.y = 74;
+      b.height = 448;
+    } else if (b.y >= 520 && b.y <= 540) {
+      b.y = 522;
+      b.height = b.height >= 500 ? 558 : 279;
+    } else if (b.y >= 795 && b.y <= 820) {
+      b.y = 801;
+      b.height = 279;
+    } else if (b.y >= 1075 && b.y <= 1100) {
+      b.y = 1080;
+      b.height = b.height >= 400 ? 492 : 246;
+    } else if (b.y >= 1315 && b.y <= 1340) {
+      b.y = 1326;
+      b.height = 246;
+    } else if (b.y >= 1570) {
+      b.y = 1572;
+      b.height = 422;
+    }
+
+    // Use left-floated photo on wide stories (>= 3 cols) on inner pages for natural broadsheet flow
+    if (b.imageUrl && b.imagePlacement === 'top' && b.columnSpan >= 3) {
+      b.imagePlacement = 'left';
+      b.photoColumnSpan = b.columnSpan >= 5 ? 2.2 : b.columnSpan === 4 ? 1.8 : 1.35;
+    }
+  });
+
+  (p.adPlacements || []).forEach((ad) => {
+    const colB = getColBounds(ad.columnStart, ad.columnSpan);
+    ad.x = colB.x;
+    ad.width = colB.width;
+    if (ad.y >= 1570) {
+      ad.y = 1572;
+      ad.height = 422;
+    }
+  });
+}
+
+// 3. Enrich every story block across all 4 pages so text fills 100% of block height with zero blank spaces
+pages.forEach((page) => {
+  page.blocks.forEach((block) => {
+    if (block.styleVariant === 'pocket_cartoon') return;
+
+    // Calculate generous target character count based on block area (width * height)
+    const area = block.width * block.height;
+    // Roughly 1 Telugu character per ~110 sq px of block area, with a 35% safety buffer so text never runs short
+    const minTargetChars = Math.max(
+      block.columnSpan === 1 ? 650 : 1150,
+      Math.round((area / 95) * 1.35)
+    );
+
+    const expansionPool = getExpansion(block.placementId, block.category || '', block.articleTitle || '');
     let expIdx = 0;
 
-    while (currentWords < targetWords && expIdx < 10) {
+    while ((block.bodyContent || '').length < minTargetChars && expIdx < 18) {
       const sentence = expansionPool[expIdx % expansionPool.length];
       block.bodyContent = (block.bodyContent ? block.bodyContent + ' ' : '') + sentence;
-      currentWords = block.bodyContent.split(/\s+/).length;
       expIdx++;
     }
   });
 });
 
-// Write updated content back
 const newPagesJson = JSON.stringify(pages, null, 2);
 const newCandidateStories = JSON.stringify(
   pages.flatMap(p => p.blocks.map(b => ({
@@ -105,9 +255,17 @@ const newCandidateStories = JSON.stringify(
   2
 );
 
-const replaced = content
-  .replace(/export const TELUGU_PREPLANNED_PAGES: NewspaperPage\[\] = \[[\s\S]*?\];/, 'export const TELUGU_PREPLANNED_PAGES: NewspaperPage[] = ' + newPagesJson + ';')
-  .replace(/export const TELUGU_EDITION_CANDIDATE_STORIES: any\[\] = \[[\s\S]*?\];/, 'export const TELUGU_EDITION_CANDIDATE_STORIES: any[] = ' + newCandidateStories + ';');
+let replaced = content.replace(
+  /export const TELUGU_PREPLANNED_PAGES: NewspaperPage\[\] = \[[\s\S]*?\];/,
+  'export const TELUGU_PREPLANNED_PAGES: NewspaperPage[] = ' + newPagesJson + ';'
+);
+
+if (/export const TELUGU_EDITION_CANDIDATE_STORIES: any\[\] = \[[\s\S]*?\];/.test(replaced)) {
+  replaced = replaced.replace(
+    /export const TELUGU_EDITION_CANDIDATE_STORIES: any\[\] = \[[\s\S]*?\];/,
+    'export const TELUGU_EDITION_CANDIDATE_STORIES: any[] = ' + newCandidateStories + ';'
+  );
+}
 
 fs.writeFileSync(sampleFile, replaced, 'utf8');
-console.log('Successfully enriched all article copy across all 4 pages to 100% density!');
+console.log('Successfully calibrated zero-gap grid coordinates and enriched all 4 pages to 100% text density!');
