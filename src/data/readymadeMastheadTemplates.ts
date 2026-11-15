@@ -72,20 +72,51 @@ const SVG_NATIONAL_CHRONICLE = `data:image/svg+xml;utf8,${encodeURIComponent(`
 </svg>
 `)}`;
 
-// 2. Bilingual Regional / Telugu Calligraphic Masthead Artwork (Crisp Vector SVG)
+// 2. Bilingual Regional / Telugu Calligraphic Masthead Artwork (Andhra Prabha Authentic Vector SVG)
 const SVG_ANDHRA_PRABHA_CALLIGRAPHIC = `data:image/svg+xml;utf8,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 110" width="760" height="110">
-  <!-- Calligraphic Stylized Regional Title -->
-  <g transform="translate(380, 56)">
-    <!-- Sunburst / Kalasha Motif behind emblem -->
-    <circle cx="0" cy="-30" r="14" fill="#991b1b" opacity="0.15" />
-    <path d="M-12,-30 C-6,-42 6,-42 12,-30 C6,-18 -6,-18 -12,-30 Z" fill="#991b1b" />
-    <circle cx="0" cy="-30" r="3" fill="#ffffff" />
-    <!-- Stylized Title Artwork -->
-    <text x="0" y="24" text-anchor="middle" font-family="'Ramabhadra', 'Noto Serif Telugu', serif" font-size="54" font-weight="900" fill="#991b1b" letter-spacing="2">ఆంధ్ర ప్రభ</text>
-    <!-- Subtitle script ribbon -->
-    <text x="0" y="44" text-anchor="middle" font-family="'Noto Serif Telugu', serif" font-size="11" font-weight="bold" fill="#475569" letter-spacing="1">దినపత్రిక • సమగ్ర జాతీయ, రాష్ట్ర, జిల్లా వార్తా స్రవంతి</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 115" width="760" height="115">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="1" dy="1.5" stdDeviation="0.8" flood-color="#0c4a6e" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  <!-- Estd 1938 -->
+  <text x="380" y="20" text-anchor="middle" font-family="'Times New Roman', serif" font-size="13" font-weight="bold" font-style="italic" fill="#0f172a" letter-spacing="1">Estd. 1938</text>
+  
+  <!-- Stylized Authentic Andhra Prabha Title Artwork in Classic Broadsheet Blue -->
+  <g transform="translate(380, 72)" filter="url(#shadow)">
+    <!-- Main Telugu Calligraphy Title with Classic Flourish -->
+    <text x="0" y="0" text-anchor="middle" font-family="'Suranna', 'Ramabhadra', 'Noto Serif Telugu', serif" font-size="64" font-weight="900" fill="#0284c7" stroke="#0369a1" stroke-width="1.5" letter-spacing="0">ఆంధ్ర ప్రభ</text>
+    <text x="0" y="0" text-anchor="middle" font-family="'Suranna', 'Ramabhadra', 'Noto Serif Telugu', serif" font-size="64" font-weight="900" fill="#0284c7" letter-spacing="0">ఆంధ్ర ప్రభ</text>
   </g>
+  
+  <!-- Subtitle Ribbon: Andhraprabha (left) • Journalism first! (right) -->
+  <g transform="translate(380, 102)">
+    <text x="-150" y="0" text-anchor="middle" font-family="'Times New Roman', 'Newsreader', serif" font-size="13" font-weight="bold" fill="#0284c7">Andhraprabha</text>
+    <circle cx="0" cy="-3" r="2" fill="#0284c7" />
+    <text x="150" y="0" text-anchor="middle" font-family="'Inter', sans-serif" font-size="12" font-style="italic" font-weight="bold" fill="#0369a1">Journalism first!</text>
+  </g>
+</svg>
+`)}`;
+
+// 2b. Prajasakti Broadsheet Header (Vijayawada Edition)
+const SVG_PRAJASAKTI_BROADSHEET = `data:image/svg+xml;utf8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 115" width="760" height="115">
+  <text x="380" y="20" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="bold" fill="#475569" letter-spacing="1">PRAJASAKTI Regd. No. 15795/68</text>
+  <text x="380" y="74" text-anchor="middle" font-family="'Ramabhadra', 'Noto Serif Telugu', serif" font-size="66" font-weight="900" fill="#0284c7" stroke="#0369a1" stroke-width="1">ప్రజాశక్తి</text>
+  <text x="380" y="100" text-anchor="middle" font-family="'Noto Serif Telugu', serif" font-size="13" font-weight="bold" fill="#dc2626">ప్రతి అక్షరం ప్రజల పక్షం</text>
+</svg>
+`)}`;
+
+// 2c. Velugu Metro Header (Hyderabad Edition)
+const SVG_VELUGU_METRO = `data:image/svg+xml;utf8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 115" width="760" height="115">
+  <rect x="0" y="0" width="760" height="115" fill="#4a154b" />
+  <text x="40" y="30" font-family="'Noto Serif Telugu', serif" font-size="14" font-weight="bold" fill="#ffffff">ప్రభాత</text>
+  <text x="380" y="78" text-anchor="middle" font-family="'Ramabhadra', 'Gidugu', sans-serif" font-size="70" font-weight="900" fill="#fde047">వెలుగు</text>
+  <text x="720" y="30" text-anchor="end" font-family="sans-serif" font-size="12" font-weight="bold" fill="#ffffff">14.11.2026</text>
+  <line x1="20" y1="92" x2="740" y2="92" stroke="#ffffff" stroke-opacity="0.3" stroke-width="1" />
+  <text x="380" y="106" text-anchor="middle" font-family="'Noto Serif Telugu', sans-serif" font-size="11" font-weight="bold" fill="#f3e8ff">శనివారం | హైదరాబాద్ • సంపుటి: 12 | సంచిక: 270 | ₹5</text>
 </svg>
 `)}`;
 
@@ -194,30 +225,30 @@ export const READYMADE_MASTHEAD_TEMPLATES: ReadymadeTemplate[] = [
   },
   {
     id: 'template-andhra-prabha',
-    name: 'Design 2: Vernacular Dual-Ear Ribbon (Indian Regional Standard)',
-    tagline: 'Solid crimson top motto ribbon, dual front-page sponsor ear ad slots, and circular edition stamp.',
-    desc: 'Modeled after high-circulation Indian regional dailies (Eenadu/Sakshi/Dainik Bhaskar). Features a solid crimson top motto ribbon, two boxed front-page sponsor ear ad slots, calligraphic logo with crimson circular edition seal, and triple red rules.',
+    name: 'Design 2: Andhra Prabha Authentic Broadsheet (Twin Ears & Manepally Bullion Ad)',
+    tagline: 'Authentic Andhra Prabha masthead with left publication ear box, central blue calligraphic title, and right bullion ear ad.',
+    desc: 'Modeled precisely after Andhra Prabha broadsheet front page. Left ear holds volume, issue, edition, golden-yellow date band, publication centers, and web URL; center has Estd. 1938 and blue calligraphy logo; right ear has authentic Manepally Jewellers Gold/Silver rates sponsor ad.',
     layoutStyle: 'vernacular_ribbon',
-    layoutName: 'Vernacular Ribbon & Front-Page Ear Ads Architecture',
-    layoutDescription: 'High-impact regional language layout featuring a solid crimson top motto bar, twin commercial ear ad slots (4x5 cm), circular edition badge, and triple rules.',
+    layoutName: 'Andhra Prabha Classic Broadsheet Masthead',
+    layoutDescription: 'Tri-partite vernacular broadsheet layout with publication center ear on left, iconic blue calligraphic title in center, and commercial bullion ear on right.',
     features: [
-      'Solid Crimson Header Ribbon with Motto & ePaper Web Link',
-      'Dual Boxed Front-Page Sponsor Ear Ads (4cm x 5cm slots)',
-      'Circular Stamped Regional Edition Badge (e.g. Hyderabad / విజయవాడ)',
-      'Triple Crimson Dateline Bar with RNI, Volume, & ABC stats',
+      'Left Box: సంపుటి 65, సంచిక 203, హైదరాబాద్ / విజయవాడ, పేజీలు 10, వెల ₹5.00',
+      'Amber Date Band: 14-11-2026 శనివారం & All-center publication list',
+      'Center: Estd. 1938 • ఆంధ్ర ప్రభ Blue Calligraphy • Journalism first!',
+      'Right Ear: Manepally Jewellers Gold & Silver Rates (24kt, 22kt, Silver)',
     ],
     logoPlacement: 'center',
     showTitleText: false,
     logoUrl: SVG_ANDHRA_PRABHA_CALLIGRAPHIC,
     logoHeightPx: 68,
-    borderColor: '#991b1b',
-    primaryColor: '#991b1b',
-    fontFamily: "'Ramabhadra', serif",
-    fontSizePt: 54,
-    subtitle: 'దినపత్రిక • సమగ్ర జాతీయ, రాష్ట్ర, జిల్లా వార్తా స్రవంతి',
-    defaultPrice: '₹6.00',
-    defaultVolume: 42,
-    defaultIssue: 288,
+    borderColor: '#0284c7',
+    primaryColor: '#0284c7',
+    fontFamily: "'Suranna', 'Ramabhadra', serif",
+    fontSizePt: 56,
+    subtitle: 'Andhraprabha • Journalism first!',
+    defaultPrice: '₹5.00',
+    defaultVolume: 65,
+    defaultIssue: 203,
   },
   {
     id: 'template-metro-express',

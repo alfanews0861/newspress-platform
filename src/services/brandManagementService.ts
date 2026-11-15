@@ -72,7 +72,9 @@ class BrandManagementService {
       const found = brands.find((b) => b.brandId === activeId);
       if (found) return found;
     }
-    return brands[0] || MOCK_BRANDS[0];
+    // Prioritize Andhra Prabha (Telugu Newspaper brand) as primary publication
+    const telugu = brands.find((b) => b.brandId === 'brand-andhra-prabha' || b.language === 'te');
+    return telugu || brands[0] || MOCK_BRANDS[0];
   }
 
   public setActiveBrandId(brandId: string) {
@@ -104,6 +106,26 @@ class BrandManagementService {
     const now = new Date().toISOString();
 
     const isTelugu = data.language === 'te' || data.name?.includes('తెలుగు') || false;
+    const freq = data.frequency || 'daily';
+
+    // RNI / Government of India Press standards: Auto-fill paperSize, cols and page count by frequency
+    let defaultPaperSize: 'broadsheet' | 'tabloid' | 'berliner' | 'a3' | 'a4' = 'broadsheet';
+    let defaultCols = 8;
+    let defaultPages = 8;
+
+    if (freq === 'weekly') {
+      defaultPaperSize = 'tabloid';
+      defaultCols = 5;
+      defaultPages = 12;
+    } else if (freq === 'biweekly') {
+      defaultPaperSize = 'tabloid';
+      defaultCols = 5;
+      defaultPages = 16;
+    } else if (freq === 'monthly') {
+      defaultPaperSize = 'a4';
+      defaultCols = 4;
+      defaultPages = 24;
+    }
 
     const newBrand: NewspaperBrand = {
       brandId,
@@ -112,12 +134,13 @@ class BrandManagementService {
       code: data.code || (isTelugu ? 'AP' : 'NC'),
       tagline: data.tagline || (isTelugu ? 'తెలుగు ప్రజల విశ్వసనీయ వార్తా దినపత్రిక' : 'The Independent Voice of Record & Integrity'),
       logoUrl: data.logoUrl || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=120&auto=format&fit=crop&q=80',
-      frequency: data.frequency || 'daily',
+      frequency: freq,
       volumeNumber: data.volumeNumber || 1,
       issueNumber: data.issueNumber || 1,
       autoIncrementIssue: data.autoIncrementIssue !== undefined ? data.autoIncrementIssue : true,
-      paperSize: data.paperSize || 'broadsheet',
-      pageCount: data.pageCount || 8,
+      paperSize: data.paperSize || defaultPaperSize,
+      defaultColumnCount: data.defaultColumnCount || defaultCols,
+      pageCount: data.pageCount || defaultPages,
       price: data.price || '₹5.00',
       editionsList: data.editionsList && data.editionsList.length > 0 
         ? data.editionsList 
@@ -174,7 +197,7 @@ class BrandManagementService {
         pageBackground: '#ffffff',
         accent: '#dc2626',
       },
-      defaultColumnCount: data.defaultColumnCount || 8,
+      defaultColumnCount: data.defaultColumnCount || defaultCols,
       defaultMargins: data.defaultMargins || {
         top: 20,
         bottom: 20,

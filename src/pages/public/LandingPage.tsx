@@ -140,158 +140,164 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-600 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-[#f8fafd] dark:bg-[#1f1f1f] text-[#202124] dark:text-[#f2f2f2] font-sans selection:bg-[#e8f0fe] selection:text-[#1a73e8] transition-colors duration-200">
       {/* =========================================================================
           UNIFIED PLATFORM HEADER (EXACT SAME 3-TIER HEADER ACROSS ALL PAGES)
           ========================================================================= */}
       <UnifiedPlatformHeader currentPath="/" onNavigate={navigateTo} />
 
       {/* =========================================================================
-          4. HERO SLIDER CAROUSEL (CRISP LIGHT/DARK CARD & REAL PHOTOGRAPHY)
+          4. GOOGLE WORKSPACE CLEAN HERO & 4-COLOR PRODUCT SUITE
           ========================================================================= */}
-      <section id="hero" className="relative overflow-hidden py-8 sm:py-14 bg-gradient-to-b from-slate-100/60 via-slate-50 to-white dark:from-[#090d16] dark:via-[#0f172a] dark:to-[#090d16]">
-        {/* Subtle background mesh glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-[120px] pointer-events-none" />
+      <section id="hero" className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 bg-[#f8fafd] dark:bg-[#1f1f1f]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-8">
+          {/* Google 4-Color Pill Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-[#28292a] text-[#3c4043] dark:text-[#e3e3e3] border border-[#dadce0] dark:border-[#444746] shadow-xs">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-[#1a73e8]" />
+              <span className="w-2 h-2 rounded-full bg-[#ea4335]" />
+              <span className="w-2 h-2 rounded-full bg-[#fbbc04]" />
+              <span className="w-2 h-2 rounded-full bg-[#34a853]" />
+            </span>
+            <span className="font-semibold text-[#1a73e8] dark:text-[#8ab4f8]">NewsPress Workspace</span>
+            <span className="text-[#dadce0] dark:text-[#5e5e5e]">|</span>
+            <span>{lang === 'hi' ? 'भारतीय समाचार पत्रों के लिए आधुनिक ऑपरेटिंग सिस्टम' : 'The Modern Operating System for Indian Dailies'}</span>
+          </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Main Slide Carousel Shell */}
-          <div className="relative rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl overflow-hidden min-h-[580px] flex flex-col justify-between">
-            {/* Slide Body */}
-            <div className="p-6 sm:p-10 lg:p-12 flex-1 flex flex-col justify-center">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-                {/* Left Side: Copy, Metrics & CTAs */}
-                <div className="lg:col-span-7 space-y-6">
-                  {/* Category Pill */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>{SLIDES[currentSlide].tag[lang]}</span>
-                  </div>
+          {/* Google-Style Headline & Subtitle */}
+          <div className="space-y-4 max-w-4xl mx-auto">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal text-[#202124] dark:text-[#f2f2f2] tracking-tight leading-[1.18]">
+              {lang === 'hi' ? (
+                <>
+                  आधुनिक समाचार पत्र प्रकाशन,{' '}
+                  <span className="text-[#1a73e8] font-medium">सरल और स्पष्ट।</span>
+                </>
+              ) : (
+                <>
+                  Modern newspaper publishing,{' '}
+                  <span className="text-[#1a73e8] font-medium">simplified.</span>
+                </>
+              )}
+            </h1>
+            <p className="text-base sm:text-xl text-[#5f6368] dark:text-[#c4c7c5] max-w-3xl mx-auto font-normal leading-relaxed">
+              {lang === 'hi'
+                ? 'गूगल-मानक स्पष्टता के साथ भारतीय समाचार पत्रों के लिए विशेष रूप से डिज़ाइन किया गया। स्मार्ट संपादकीय एआई, 8-कॉलम ब्रॉडशीट लेआउट और स्वचालित 10:00 PM नाइट प्रेस लॉक।'
+                : 'Designed with Google-standard clarity for India\'s independent newsrooms. Smart editorial AI, 8-column broadsheet layout, and automated midnight press locks.'}
+            </p>
+          </div>
 
-                  {/* Headline */}
-                  <div className="space-y-2">
-                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-                      {SLIDES[currentSlide].title[lang]}
-                    </h1>
-                    <p className="text-base sm:text-lg text-blue-600 dark:text-blue-400 font-bold">
-                      {SLIDES[currentSlide].subtitle[lang]}
-                    </p>
-                  </div>
+          {/* Action Buttons (Google Pill Design) */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => navigateTo('/dashboard')}
+              className="px-8 py-3.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-sm shadow-none hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <span>{lang === 'hi' ? 'न्यूज़रूम कंसोल खोलें' : 'Open Newsroom Console'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigateTo('/marketplace')}
+              className="px-8 py-3.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f1f3f4] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-sm transition-all cursor-pointer shadow-none"
+            >
+              <span>{lang === 'hi' ? 'लाइव वायर मार्केटप्लेस' : 'View Wire Marketplace'}</span>
+            </button>
+          </div>
 
-                  {/* Description */}
-                  <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed max-w-2xl font-normal">
-                    {SLIDES[currentSlide].description[lang]}
-                  </p>
-
-                  {/* Highlights Bullet List */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {SLIDES[currentSlide].bullets[lang].map((bullet, idx) => (
-                      <div key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <span>{bullet}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap items-center gap-4 pt-4">
-                    <button
-                      onClick={() => navigateTo('/dashboard')}
-                      className="px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md shadow-blue-500/25 hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>{SLIDES[currentSlide].ctaPrimary[lang]}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => navigateTo(SLIDES[currentSlide].ctaSecondaryLink)}
-                      className="px-5 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-sm transition-colors cursor-pointer shadow-xs"
-                    >
-                      {SLIDES[currentSlide].ctaSecondary[lang]}
-                    </button>
-                  </div>
+          {/* 4 Iconic Google-Style Product Cards (Material Design 3 Palette) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-8 text-left">
+            {/* 1. Google Blue Card: AI Editorial */}
+            <div
+              onClick={() => navigateTo('/newsroom/editorial-queue')}
+              className="p-6 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#1a73e8] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
                 </div>
-
-                {/* Right Side: High-Resolution Photo + Live Interactive Mockup Overlay */}
-                <div className="lg:col-span-5 relative">
-                  <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 shadow-xl relative group bg-slate-100 dark:bg-[#202124]">
-                    {/* Background Real Photography */}
-                    <img
-                      src={SLIDES[currentSlide].image}
-                      alt={SLIDES[currentSlide].title.en}
-                      className="w-full h-72 sm:h-84 object-cover brightness-[0.9] dark:brightness-[0.85] group-hover:scale-105 transition-transform duration-700"
-                    />
-
-                    {/* Gradient overlay for contrast */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-                    {/* Floating Overlay Card on top of photo */}
-                    <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-white/95 dark:bg-[#292a2d]/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shadow-xl space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold flex items-center gap-1.5 text-slate-900 dark:text-white">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                          <span>{SLIDES[currentSlide].badgeTitle[lang]}</span>
-                        </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          {SLIDES[currentSlide].badgeStatus}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2">
-                        {SLIDES[currentSlide].badgeDesc[lang]}
-                      </p>
-                      <div className="flex items-center justify-between pt-1 text-[10px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
-                        <span>{SLIDES[currentSlide].badgeMetric1}</span>
-                        <span className="text-blue-600 dark:text-blue-400 font-bold">{SLIDES[currentSlide].badgeMetric2}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#1a73e8] transition-colors">
+                  {lang === 'hi' ? 'एआई संपादकीय डेस्क' : 'AI Editorial Desk'}
+                </h3>
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
+                  {lang === 'hi'
+                    ? 'हर्फ़बज़ इंजन द्वारा शुद्ध भारतीय लिपि विन्यास और 85%+ मौलिकता सत्यापन।'
+                    : 'HarfBuzz Indic font shaping with zero broken conjuncts and real-time originality checks.'}
+                </p>
+              </div>
+              <div className="pt-4 mt-2 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center text-xs font-medium text-[#1a73e8] dark:text-[#8ab4f8]">
+                <span>{lang === 'hi' ? 'संपादकीय कतार' : 'Inspect Queue'}</span>
+                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
 
-            {/* Carousel Bottom Controls */}
-            <div className="border-t border-slate-200 dark:border-slate-800/90 bg-slate-50 dark:bg-[#202124]/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              {/* Slide Selector Chips */}
-              <div className="flex items-center gap-2 overflow-x-auto max-w-full">
-                {SLIDES.map((slide, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                      currentSlide === index
-                        ? 'bg-blue-600 text-white shadow-xs font-bold'
-                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-blue-400'
-                    }`}
-                  >
-                    0{index + 1}. {slide.shortTitle[lang]}
-                  </button>
-                ))}
-              </div>
-
-              {/* Prev / Next & Pause Controls */}
-              <div className="flex items-center gap-3 shrink-0">
-                <button
-                  onClick={() => setIsSliderAutoplay(!isSliderAutoplay)}
-                  className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 transition-colors cursor-pointer"
-                  title={isSliderAutoplay ? 'Pause Carousel' : 'Play Carousel'}
-                  aria-label="Toggle autoplay"
-                >
-                  {isSliderAutoplay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                </button>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length)}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:border-blue-400 transition-colors cursor-pointer"
-                    aria-label="Previous Slide"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentSlide((prev) => (prev + 1) % SLIDES.length)}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:border-blue-400 transition-colors cursor-pointer"
-                    aria-label="Next Slide"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+            {/* 2. Google Green Card: Press-Ready PDF */}
+            <div
+              onClick={() => navigateTo('/production/queue')}
+              className="p-6 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#1e8e3e] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-[#e6f4ea] dark:bg-[#0d2818] text-[#1e8e3e] dark:text-[#81c995] flex items-center justify-center">
+                  <Printer className="w-5 h-5" />
                 </div>
+                <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#1e8e3e] transition-colors">
+                  {lang === 'hi' ? '300+ DPI प्रेस प्लेट्स' : 'Press-Ready Vector PDF'}
+                </h3>
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
+                  {lang === 'hi'
+                    ? 'वेब-ऑफसेट रोटरी प्रेसों के लिए सीएमवाईకే प्रीफ्लाइट और रात 10:00 बजे नाइट लॉक।'
+                    : 'Automated CMYK color separation for offset presses with 99.98% midnight lock SLA.'}
+                </p>
+              </div>
+              <div className="pt-4 mt-2 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center text-xs font-medium text-[#1e8e3e] dark:text-[#81c995]">
+                <span>{lang === 'hi' ? 'प्रोडक्शन पाइपलाइन' : 'Production Pipeline'}</span>
+                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 3. Google Yellow Card: Wire Marketplace & UPI */}
+            <div
+              onClick={() => navigateTo('/marketplace')}
+              className="p-6 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#f9ab00] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-[#fef7e0] dark:bg-[#382c00] text-[#f9ab00] dark:text-[#fdd663] flex items-center justify-center">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#f9ab00] transition-colors">
+                  {lang === 'hi' ? 'संवाददाता मार्केटप्लेस' : 'Stringer Wire & UPI'}
+                </h3>
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
+                  {lang === 'hi'
+                    ? 'जिला व ग्रामीण पत्रकारों को यूपीआई द्वारा 60 सेकंड में तत्काल रॉयल्टी भुगतान।'
+                    : 'Instant UPI wire settlements to rural stringers with automated Form 16A TDS certificates.'}
+                </p>
+              </div>
+              <div className="pt-4 mt-2 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center text-xs font-medium text-[#f9ab00] dark:text-[#fdd663]">
+                <span>{lang === 'hi' ? 'मार्केटप्लेस ब्राउज करें' : 'Browse Marketplace'}</span>
+                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+
+            {/* 4. Google Red Card: YouTube Video Studio */}
+            <div
+              onClick={() => navigateTo('/newsroom/youtube-studio')}
+              className="p-6 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#d93025] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-full bg-[#fce8e6] dark:bg-[#3c1410] text-[#d93025] dark:text-[#f28b82] flex items-center justify-center">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#d93025] transition-colors">
+                  {lang === 'hi' ? 'यूट्यूब वीडियो स्टूडियो' : 'YouTube Video Studio'}
+                </h3>
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
+                  {lang === 'hi'
+                    ? 'अखबार की खबरों से 1-क्लिक में एआई वीडियो और डिजिटल ब्रॉडकास्ट तैयार करें।'
+                    : 'Turn newspaper articles into broadcast-ready video shorts with synthetic AI anchors.'}
+                </p>
+              </div>
+              <div className="pt-4 mt-2 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center text-xs font-medium text-[#d93025] dark:text-[#f28b82]">
+                <span>{lang === 'hi' ? 'स्टूडियो खोलें' : 'Launch Studio'}</span>
+                <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           </div>
@@ -299,55 +305,59 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       </section>
 
       {/* =========================================================================
-          5. LIVE METRICS & PRODUCTION NUMBERS BANNER
+          5. LIVE METRICS & PRODUCTION NUMBERS BANNER (GOOGLE 4-COLOR BRAND PALETTE)
           ========================================================================= */}
-      <section className="bg-white dark:bg-[#202124] border-y border-slate-200 dark:border-slate-800/80 py-10 relative overflow-hidden">
+      <section className="bg-white dark:bg-[#202124] border-y border-[#dadce0] dark:border-[#444746] py-10 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            {/* Google Blue Metric */}
             <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-black font-sans text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-blue-400 dark:to-cyan-400">
+              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#1a73e8] dark:text-[#8ab4f8]">
                 48+
               </div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
                 {lang === 'hi' ? 'भारतीय दैनिक समाचार पत्र' : 'Indian Publications Onboarded'}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
                 {lang === 'hi' ? 'दैनिक भास्कर, लोकमत, ईनाडु आदि' : 'National Dailies & Regional Presses'}
               </div>
             </div>
 
+            {/* Google Green Metric */}
             <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-black font-sans text-emerald-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-emerald-400 dark:to-teal-400">
+              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#1e8e3e] dark:text-[#81c995]">
                 1.24M+
               </div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
                 {lang === 'hi' ? 'दैनिक मुद्रण प्रसार (सर्कुलेशन)' : 'Daily Print Circulation Managed'}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
                 {lang === 'hi' ? 'जीरो प्लेट एरर के साथ मुद्रित' : 'Preflight-Checked Broadsheet Copies'}
               </div>
             </div>
 
+            {/* Google Yellow Metric */}
             <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-black font-sans text-blue-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-blue-400 dark:to-cyan-400">
+              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#f9ab00] dark:text-[#fdd663]">
                 99.98%
               </div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
                 {lang === 'hi' ? 'नाइट प्रेस लॉक विश्वसनीयता' : 'Midnight Press Lock SLA'}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
                 {lang === 'hi' ? '10:00 PM IST डेडलाइन गारंटी' : 'Guaranteed Offset Printing Windows'}
               </div>
             </div>
 
+            {/* Google Red Metric */}
             <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-black font-sans text-purple-600 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-purple-400 dark:to-pink-400">
+              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#d93025] dark:text-[#f28b82]">
                 ₹4.2 Cr+
               </div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
                 {lang === 'hi' ? 'संवाददाताओं को तुरंत रॉयल्टी' : 'Direct Reporter Royalties Paid'}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
                 {lang === 'hi' ? 'UPI व रेज़रपे एक्स के माध्यम से' : 'Via Instant UPI & Section 194J TDS'}
               </div>
             </div>
@@ -358,26 +368,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       {/* =========================================================================
           6. INDIAN EDITORS TESTIMONIALS (REAL PORTRAITS & VERIFIED REVIEWS)
           ========================================================================= */}
-      <section id="testimonials" className="py-16 sm:py-24 bg-slate-50 dark:bg-gradient-to-b dark:from-[#090d16] dark:via-[#0d1322] dark:to-[#090d16] border-b border-slate-200 dark:border-slate-800">
+      <section id="testimonials" className="py-16 sm:py-24 bg-[#f8fafd] dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#444746]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-medium bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
               <Award className="w-3.5 h-3.5" />
               <span>{lang === 'hi' ? 'संपादकीय विश्वास व समीक्षाएं' : 'Journalistic Trust & Editorial Endorsements'}</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
               {lang === 'hi'
                 ? 'भारत के प्रमुख समाचार पत्र संपादकों की समीक्षाएं'
                 : 'Trusted by India\'s Foremost Editors & Bureau Chiefs'}
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
               {lang === 'hi'
                 ? 'दैनिक भास्कर, द हिंदू, लोकमत, मलयला मनोरमा और प्रमुख समाचार सिंडिकेट्स के शीर्ष संपादकों के अनुभव।'
                 : 'Discover how editors across leading Indian publications streamline multi-edition night press locks, eliminate broken Indic ligatures, and source verified rural journalism.'}
             </p>
 
-            {/* Filter buttons */}
+            {/* Filter buttons (Google Pill Chips) */}
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
               {[
                 { id: 'all', label: lang === 'hi' ? 'सभी समीक्षाएं (All)' : 'All Reviews (6)' },
@@ -389,10 +399,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <button
                   key={btn.id}
                   onClick={() => setTestimonialFilter(btn.id as any)}
-                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                     testimonialFilter === btn.id
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:text-white'
+                      ? 'bg-[#1a73e8] text-white shadow-xs'
+                      : 'bg-white dark:bg-[#28292a] text-[#3c4043] dark:text-[#c4c7c5] border border-[#dadce0] dark:border-[#444746] hover:bg-[#f1f3f4] dark:hover:bg-[#333537]'
                   }`}
                 >
                   {btn.label}
@@ -408,53 +418,53 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             ).map((t) => (
               <div
                 key={t.id}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm hover:shadow-md hover:border-blue-400 dark:hover:border-slate-700 transition-all flex flex-col justify-between group relative overflow-hidden"
+                className="bg-white dark:bg-[#28292a] rounded-2xl border border-[#dadce0] dark:border-[#444746] p-6 sm:p-7 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
               >
-                {/* Glow bar */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 opacity-80" />
+                {/* Google accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-[#1a73e8]" />
 
                 <div className="space-y-4">
                   {/* Top: Stars and Publication Badge */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-amber-500">
+                    <div className="flex items-center gap-1 text-[#f9ab00]">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        <Star key={i} className="w-4 h-4 fill-[#f9ab00] text-[#f9ab00]" />
                       ))}
                     </div>
-                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
                       {t.publication}
                     </span>
                   </div>
 
                   {/* Quote */}
                   <div className="relative pt-2">
-                    <Quote className="w-8 h-8 text-slate-300 dark:text-slate-700 absolute -top-1 -left-2 opacity-50" />
-                    <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium leading-relaxed relative z-10 pl-3">
+                    <Quote className="w-8 h-8 text-[#dadce0] dark:text-[#444746] absolute -top-1 -left-2 opacity-60" />
+                    <p className="text-xs sm:text-sm text-[#3c4043] dark:text-[#e3e3e3] font-normal leading-relaxed relative z-10 pl-3">
                       &quot;{t.quote[lang]}&quot;
                     </p>
                   </div>
                 </div>
 
                 {/* Bottom Profile with Real Image */}
-                <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                <div className="pt-6 mt-6 border-t border-[#dadce0] dark:border-[#444746] flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={t.photo}
                       alt={t.name.en}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-blue-500/50 shadow-xs shrink-0"
+                      className="w-11 h-11 rounded-full object-cover border border-[#dadce0] dark:border-[#444746] shrink-0"
                     />
                     <div className="min-w-0">
-                      <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate flex items-center gap-1">
+                      <div className="font-semibold text-xs sm:text-sm text-[#202124] dark:text-[#f2f2f2] truncate flex items-center gap-1">
                         <span>{t.name[lang]}</span>
-                        <BadgeCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <BadgeCheck className="w-3.5 h-3.5 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" />
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] truncate">
                         {t.role[lang]}
                       </div>
                     </div>
                   </div>
 
-                  <span className="text-[10px] px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800 shrink-0 font-mono">
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-[#e6f4ea] dark:bg-[#0d2818] text-[#137333] dark:text-[#81c995] font-medium border border-[#ceead6] dark:border-[#137333] shrink-0 font-mono">
                     {t.metric}
                   </span>
                 </div>
@@ -467,21 +477,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       {/* =========================================================================
           7. INTERACTIVE PRINT ENGINE SHOWCASE (TABS WITH VISUAL PROOFS)
           ========================================================================= */}
-      <section id="press-engine" className="py-16 sm:py-24 bg-white dark:bg-[#202124] border-b border-slate-200 dark:border-slate-800">
+      <section id="press-engine" className="py-16 sm:py-24 bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-14">
-            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
               {lang === 'hi'
                 ? 'औद्योगिक स्तर का मुद्रण और संपादकीय इंजन'
                 : 'Industrial-Grade Newspaper Print & Layout Engine'}
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 font-normal">
+            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#c4c7c5] font-normal">
               {lang === 'hi'
                 ? 'वेब-ऑफसेट रोटरी प्रेसों, 8-कॉलम ब्रॉडशीट और नाइट प्रेस शेड्यूल के लिए पूर्ण क्लाउड तकनीक।'
                 : 'Designed for the relentless reality of Indian print runs: 300+ DPI vector PDF plates, CMYK preflight verification, and instant UPI payouts.'}
             </p>
 
-            {/* Interactive feature selector tabs */}
+            {/* Interactive feature selector tabs (Google Pill Chips) */}
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
               {[
                 { id: 'plate', label: lang === 'hi' ? 'नाइट प्रेस प्लेट्स' : 'Night Press Plates' },
@@ -492,10 +502,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveEngineTab(tab.id as any)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                     activeEngineTab === tab.id
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-[#1a73e8] text-white shadow-xs'
+                      : 'bg-white dark:bg-[#28292a] text-[#3c4043] dark:text-[#c4c7c5] border border-[#dadce0] dark:border-[#444746] hover:bg-[#f1f3f4] dark:hover:bg-[#333537]'
                   }`}
                 >
                   {tab.label}
@@ -505,28 +515,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           </div>
 
           {/* Interactive Feature Display */}
-          <div className="bg-slate-50 dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-10 shadow-sm">
+          <div className="bg-[#f8fafd] dark:bg-[#28292a] rounded-3xl border border-[#dadce0] dark:border-[#444746] p-6 sm:p-10 shadow-xs">
             {activeEngineTab === 'plate' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] uppercase tracking-wider">
                     {lang === 'hi' ? 'वेब-ऑफसेट रोटरी प्रेसों के लिए' : 'Web-Offset Rotary Press Pipeline'}
                   </span>
-                  <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2]">
                     {lang === 'hi' ? '300+ DPI वेक्टर PDF और स्वचालित प्रीफ्लाइट' : '300+ DPI Vector PDF/X-1a Preflight Generation'}
                   </h3>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
+                  <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
                     {lang === 'hi'
                       ? 'भारतीय भाषाओं (हिंदी, तमिल, तेलुगु, आदि) के अक्षरों के जटिल विन्यास को बिना किसी टूट-फूट के 8-कॉलम ब्रॉडशीट पर सही ढंग से मुद्रित करने के लिए HarfBuzz इंजन का उपयोग किया जाता है।'
                       : 'HarfBuzz Indic font shaping guarantees zero broken conjuncts or misplaced matras on high-speed broadsheet offset machines. Every plate undergoes rigorous automated checks before midnight lock.'}
                   </p>
-                  <div className="space-y-2 pt-2 text-xs text-slate-700 dark:text-slate-300 font-semibold">
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> CMYK 4-Color Channel Separation</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Embedded Indic Font Subsetting</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> SHA-256 Immutable Audit Signature</div>
+                  <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> CMYK 4-Color Channel Separation</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Embedded Indic Font Subsetting</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> SHA-256 Immutable Audit Signature</div>
                   </div>
                   <div className="pt-4">
-                    <button onClick={() => navigateTo('/production/queue')} className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs cursor-pointer">
+                    <button onClick={() => navigateTo('/production/queue')} className="px-5 py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer">
                       {lang === 'hi' ? 'प्रोडक्शन कतार देखें' : 'View Production Queue'}
                     </button>
                   </div>
@@ -536,7 +546,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <img
                     src="https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&auto=format&fit=crop&q=80"
                     alt="Offset Rotary Printing Press"
-                    className="w-full h-80 object-cover rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md"
+                    className="w-full h-80 object-cover rounded-2xl border border-[#dadce0] dark:border-[#444746] shadow-xs"
                   />
                 </div>
               </div>
@@ -545,24 +555,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             {activeEngineTab === 'ai' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-[#1e8e3e] dark:text-[#81c995] uppercase tracking-wider">
                     {lang === 'hi' ? 'प्रेस परिषद (PCI) के अनुरूप' : 'PCI Ethics Code & Originality'}
                   </span>
-                  <h3 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2]">
                     {lang === 'hi' ? 'साहित्यिक चोरी और मानहानि से पूर्ण सुरक्षा' : 'Anti-Plagiarism & Defamation Screening Engine'}
                   </h3>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
+                  <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
                     {lang === 'hi'
                       ? 'हर खबर को 85% मौलिकता स्कोर पार करना होगा। एआई द्वारा संचालित तथ्य जांच और कॉपी-फिटिंग आपके संपादकों का बहुमूल्य समय बचाती है।'
                       : 'Real-time phrase fingerprinting across 50,000+ daily sources prevents copyright infringement and defamation risks while fitting headlines precisely to newspaper column widths.'}
                   </p>
-                  <div className="space-y-2 pt-2 text-xs text-slate-700 dark:text-slate-300 font-semibold">
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Automated 0-100 Originality Scoring</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Gemini-Powered Headline Auto-Fitter</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Dual-Source Fact Corroboration Guard</div>
+                  <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated 0-100 Originality Scoring</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Gemini-Powered Headline Auto-Fitter</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Dual-Source Fact Corroboration Guard</div>
                   </div>
                   <div className="pt-4">
-                    <button onClick={() => navigateTo('/newsroom/editorial-queue')} className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs cursor-pointer">
+                    <button onClick={() => navigateTo('/newsroom/editorial-queue')} className="px-5 py-2.5 rounded-full bg-[#1e8e3e] hover:bg-[#137333] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer">
                       {lang === 'hi' ? 'संपादकीय कतार देखें' : 'Inspect Editorial Queue'}
                     </button>
                   </div>
@@ -767,109 +777,109 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
             {/* Plan 1 */}
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 flex flex-col justify-between shadow-sm">
+            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-8 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
               <div className="space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
                   {lang === 'hi' ? 'जिला स्टार्टर' : 'District Starter'}
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
                   {lang === 'hi' ? 'जिला व स्वतंत्र समाचार पत्र' : 'Independent District Press'}
                 </h3>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-black text-slate-900 dark:text-white">
+                  <span className="text-4xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
                     ₹{billingPeriod === 'annual' ? '3,999' : '4,999'}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">/ month (+GST)</span>
+                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
                   {lang === 'hi'
                     ? 'अधिकतम 2 क्षेत्रीय संस्करण, 25 रिपोर्टर सीटें और 300 DPI ब्रॉडशीट प्लेट निर्यात।'
                     : 'Up to 2 daily editions, 25 reporter seats, and vector print-ready PDF broadsheet exports.'}
                 </p>
-                <div className="space-y-2.5 pt-4 text-xs text-slate-700 dark:text-slate-300 font-semibold">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 2 Regional Editions</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 25 Accredited Reporter Seats</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 300+ DPI Vector PDF Export</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> HarfBuzz Indic Ligature Shaper</div>
+                <div className="space-y-2.5 pt-4 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 2 Regional Editions</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 25 Accredited Reporter Seats</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 300+ DPI Vector PDF Export</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> HarfBuzz Indic Ligature Shaper</div>
                 </div>
               </div>
               <button
                 onClick={() => navigateTo('/login')}
-                className="mt-8 w-full py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="mt-8 w-full py-3 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
               >
                 {lang === 'hi' ? 'ट्रायल शुरू करें' : 'Start Free 14-Day Trial'}
               </button>
             </div>
 
             {/* Plan 2: Most Popular */}
-            <div className="rounded-3xl border-2 border-blue-600 bg-white dark:bg-slate-900 p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-extrabold uppercase tracking-wider py-1 px-4 rounded-bl-xl shadow-xs">
+            <div className="rounded-3xl border-2 border-[#1a73e8] bg-white dark:bg-[#28292a] p-8 flex flex-col justify-between shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-[#1a73e8] text-white text-[10px] font-bold uppercase tracking-wider py-1 px-4 rounded-bl-xl shadow-xs">
                 {lang === 'hi' ? 'सबसे लोकप्रिय' : 'MOST POPULAR'}
               </div>
               <div className="space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8] dark:text-[#8ab4f8]">
                   {lang === 'hi' ? 'स्टेट प्रो' : 'State Pro Edition'}
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
                   {lang === 'hi' ? 'राज्य स्तरीय दैनिक समाचार पत्र' : 'State Daily Publications'}
                 </h3>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-black text-slate-900 dark:text-white">
+                  <span className="text-4xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
                     ₹{billingPeriod === 'annual' ? '11,999' : '14,999'}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">/ month (+GST)</span>
+                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
                   {lang === 'hi'
                     ? '12 क्षेत्रीय संस्करण, असीमित रिपोर्टर, नाइट प्रेस लॉक और तत्काल UPI संवाददाता रॉयल्टी।'
                     : '12 district editions, unlimited reporters, automated night press lock, and instant UPI wire royalties.'}
                 </p>
-                <div className="space-y-2.5 pt-4 text-xs text-slate-700 dark:text-slate-300 font-semibold">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 12 District Editions & Pullouts</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Unlimited Reporter Mobile Seats</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Automated Night Press Lock (10:00 PM)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Stringer Wire & Instant UPI Settlements</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 99.98% Night Press Lock SLA Guarantee</div>
+                <div className="space-y-2.5 pt-4 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 12 District Editions & Pullouts</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Unlimited Reporter Mobile Seats</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated Night Press Lock (10:00 PM)</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Stringer Wire & Instant UPI Settlements</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 99.98% Night Press Lock SLA Guarantee</div>
                 </div>
               </div>
               <button
                 onClick={() => navigateTo('/dashboard')}
-                className="mt-8 w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/25 transition-all cursor-pointer"
+                className="mt-8 w-full py-3.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer"
               >
                 {lang === 'hi' ? 'प्रो संस्करण शुरू करें' : 'Launch State Pro'}
               </button>
             </div>
 
             {/* Plan 3 */}
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 flex flex-col justify-between shadow-sm">
+            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-8 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
               <div className="space-y-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
                   {lang === 'hi' ? 'नेशनल एंटरप्राइज' : 'National Enterprise'}
                 </span>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
                   {lang === 'hi' ? 'राष्ट्रीय मीडिया नेटवर्क' : 'Multi-Language Media Groups'}
                 </h3>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-black text-slate-900 dark:text-white">
+                  <span className="text-4xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
                     ₹{billingPeriod === 'annual' ? '31,999' : '39,999'}
                   </span>
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">/ month (+GST)</span>
+                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-normal">
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
                   {lang === 'hi'
                     ? 'असीमित संस्करण, कस्टम प्रेस क्लस्टर, समर्पित सर्वर और 24/7 आपातकालीन सहायता।'
                     : 'Unlimited editions, dedicated high-speed rendering clusters, custom font libraries, and 24/7 emergency hotline.'}
                 </p>
-                <div className="space-y-2.5 pt-4 text-xs text-slate-700 dark:text-slate-300 font-semibold">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Unlimited Editions & Master Brands</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Custom Indic Font Library Integration</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Dedicated Cloud Cluster (Mumbai / Delhi)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> 24/7 Emergency Night Press Engineer</div>
+                <div className="space-y-2.5 pt-4 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Unlimited Editions & Master Brands</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Custom Indic Font Library Integration</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Dedicated Cloud Cluster (Mumbai / Delhi)</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 24/7 Emergency Night Press Engineer</div>
                 </div>
               </div>
               <button
                 onClick={() => navigateTo('/developer')}
-                className="mt-8 w-full py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="mt-8 w-full py-3 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
               >
                 {lang === 'hi' ? 'विशेष परामर्श' : 'Contact Enterprise Team'}
               </button>
@@ -881,21 +891,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       {/* =========================================================================
           10. STATUTORY LEGAL & COMPLIANCE PORTAL CARD
           ========================================================================= */}
-      <section className="py-14 bg-slate-50 dark:bg-gradient-to-b dark:from-[#090d16] dark:via-[#0e1628] dark:to-[#090d16] border-b border-slate-200 dark:border-slate-800">
+      <section className="py-14 bg-[#f8fafd] dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 sm:p-10 shadow-sm">
+          <div className="bg-white dark:bg-[#28292a] rounded-3xl border border-[#dadce0] dark:border-[#444746] p-8 sm:p-10 shadow-xs">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] uppercase tracking-wide">
                   <Scale className="w-4 h-4" />
                   <span>Statutory Compliance & Indian Press Regulations</span>
                 </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
+                <h3 className="text-xl sm:text-2xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-1">
                   {lang === 'hi'
                     ? 'भारतीय प्रेस परिषद व डिजिटल मीडिया नियमों के अनुसार नीतियां'
                     : 'Certified Statutory Governance & Indian Legal Policies'}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-2xl font-normal">
+                <p className="text-xs sm:text-sm text-[#5f6368] dark:text-[#c4c7c5] mt-2 max-w-2xl font-normal">
                   {lang === 'hi'
                     ? 'डिजिटल पर्सनल डेटा प्रोटेक्शन एक्ट (DPDP 2023), आईटी नियम 2021 के नियम 11 के तहत शिकायत निवारण अधिकारी और प्रेस काउंसिल आचार संहिता।'
                     : 'Full legal coverage: DPDP Act 2023 Privacy Policy, Newsroom Terms of Service, Press Council of India (PCI) Ethics, Rule 11 Grievance Redressal, and Wire Royalty Terms.'}
@@ -904,14 +914,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
               <button
                 onClick={() => navigateTo('/legal')}
-                className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shrink-0 flex items-center gap-2 shadow-xs cursor-pointer"
+                className="px-6 py-3 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs sm:text-sm font-medium shrink-0 flex items-center gap-2 shadow-none hover:shadow-xs transition-all cursor-pointer"
               >
                 <span>{lang === 'hi' ? 'कानूनी केंद्र खोलें' : 'Open Legal Center'}</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8 pt-8 border-t border-[#dadce0] dark:border-[#444746]">
               {[
                 { label: 'Privacy Policy', sub: 'DPDP Act 2023' },
                 { label: 'Terms of Service', sub: '99.98% Night SLA' },
@@ -923,10 +933,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <div
                   key={idx}
                   onClick={() => navigateTo('/legal')}
-                  className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#292a2d] hover:border-blue-500 transition-all cursor-pointer text-left"
+                  className="p-3.5 rounded-2xl border border-[#dadce0] dark:border-[#444746] bg-[#f8fafd] dark:bg-[#1f1f1f] hover:border-[#1a73e8] transition-all cursor-pointer text-left"
                 >
-                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.label}</div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{item.sub}</div>
+                  <div className="text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] truncate">{item.label}</div>
+                  <div className="text-[10px] text-[#5f6368] dark:text-[#8e918f] truncate mt-0.5">{item.sub}</div>
                 </div>
               ))}
             </div>
@@ -935,27 +945,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       </section>
 
       {/* =========================================================================
-          11. LUXURY NEWSPAPER FOOTER
+          11. CLEAN GOOGLE WORKSPACE FOOTER
           ========================================================================= */}
-      <footer className="bg-[#202124] text-white border-t border-slate-800 pt-16 pb-10">
+      <footer className="bg-[#1f1f1f] text-[#e3e3e3] border-t border-[#3c4043] pt-14 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {/* Brand column */}
             <div className="md:col-span-4 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-sans font-black text-lg shadow-lg">
+                <div className="w-9 h-9 rounded-lg bg-[#1a73e8] text-white flex items-center justify-center font-sans font-bold text-base shadow-none">
                   NP
                 </div>
                 <div>
-                  <div className="font-sans font-bold text-xl tracking-tight">NEWSPRESS PLATFORM</div>
-                  <div className="text-[11px] text-slate-400">Cloud Newsroom OS & News Wire</div>
+                  <div className="font-sans font-bold text-lg tracking-tight text-white">NewsPress Platform</div>
+                  <div className="text-[11px] text-[#9aa0a6]">Cloud Newsroom OS & News Wire</div>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+              <p className="text-xs text-[#9aa0a6] leading-relaxed font-normal">
                 Empowering India&apos;s independent newspapers, regional dailies, and accredited journalists with high-fidelity Indic typography, automated midnight press locks, and direct UPI royalties.
               </p>
-              <div className="flex items-center gap-2 text-xs text-blue-400 font-semibold">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 text-xs text-[#8ab4f8] font-medium">
+                <ShieldCheck className="w-4 h-4 text-[#81c995]" />
                 <span>PCI Norms • RNI Standards • DPDP Act 2023 Compliant</span>
               </div>
             </div>

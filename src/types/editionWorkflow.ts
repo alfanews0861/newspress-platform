@@ -130,6 +130,8 @@ export interface EditionAdvertisementReservation {
   reservedBy: string;
   sponsorName: string;
   rateCents?: number;
+  imageUrl?: string;
+  sizePreset?: '2col_10cm' | '4col_15cm' | 'half_page_horizontal' | 'half_page_vertical' | 'quarter_page' | 'full_page' | 'front_page_bottom_strip' | 'front_page_box' | 'custom';
   dimensions?: {
     columnStart: number;
     columnSpan: number;

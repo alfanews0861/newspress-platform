@@ -64,12 +64,12 @@ const PAPER_SIZES: { id: PaperSizeFormat; name: string; dims: string; cols: numb
   { id: 'a4', name: 'A4 Digital / Print Edition', dims: '210 × 297 mm', cols: 4 },
 ];
 
-const FREQUENCIES: { id: PublicationFrequency; name: string; desc: string }[] = [
-  { id: 'daily', name: 'Daily Morning', desc: 'Published 7 days a week' },
-  { id: 'evening', name: 'Evening Daily', desc: 'Published 6 days a week in afternoon' },
-  { id: 'weekly', name: 'Weekly Magazine', desc: 'Published once a week' },
-  { id: 'biweekly', name: 'Fortnightly', desc: 'Published every two weeks' },
-  { id: 'monthly', name: 'Monthly Journal', desc: 'Published once a month' },
+const FREQUENCIES: { id: PublicationFrequency; name: string; desc: string; defaultSize: PaperSizeFormat; defaultCols: number; defaultPages: number }[] = [
+  { id: 'daily', name: 'దినపత్రిక (Daily Morning)', desc: 'వారంలో 7 రోజులు ఉదయం ప్రచురణ (Broadsheet 8-Cols, 8 Pages)', defaultSize: 'broadsheet', defaultCols: 8, defaultPages: 8 },
+  { id: 'evening', name: 'సాయంత్రం దినపత్రిక (Evening Daily)', desc: 'వారంలో 6 రోజులు మధ్యాహ్నం/సాయంత్రం (Broadsheet 8-Cols, 8 Pages)', defaultSize: 'broadsheet', defaultCols: 8, defaultPages: 8 },
+  { id: 'weekly', name: 'వారపత్రిక (Weekly Magazine / Tabloid)', desc: 'వారానికి ఒకసారి ఆదివారం/వారాంతం (Tabloid 5-Cols, 12 Pages)', defaultSize: 'tabloid', defaultCols: 5, defaultPages: 12 },
+  { id: 'biweekly', name: 'పక్షపత్రిక (Fortnightly)', desc: 'నెలకు రెండుసార్లు (Tabloid 5-Cols, 16 Pages)', defaultSize: 'tabloid', defaultCols: 5, defaultPages: 16 },
+  { id: 'monthly', name: 'మాసపత్రిక (Monthly Journal / Digest)', desc: 'నెలకు ఒకసారి (A4 Format 4-Cols, 24 Pages)', defaultSize: 'a4', defaultCols: 4, defaultPages: 24 },
 ];
 
 const SUPPORTED_LANGUAGES = [
@@ -223,10 +223,14 @@ export const BrandsPage: React.FC = () => {
       masthead: {
         ...(prev.masthead || {
           title: prev.name || 'NEWSPAPER TITLE',
+          style: 'royal_traditional',
+          fontFamily: 'serif',
+          fontSizePt: 48,
           showDate: true,
           showEditionNumber: true,
           showPrice: true,
         }),
+        style: prev.masthead?.style || 'royal_traditional',
         templatePreset: tmpl.id,
         templateLayout: tmpl.layoutStyle,
         logoPlacement: tmpl.logoPlacement,
@@ -1381,19 +1385,35 @@ export const BrandsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Publication Frequency
+                    ప్రచురణ ఫ్రీక్వెన్సీ (Publication Frequency)
                   </label>
                   <select
                     value={formData.frequency || 'daily'}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, frequency: e.target.value as any }))}
+                    onChange={(e) => {
+                      const f = e.target.value as PublicationFrequency;
+                      const matched = FREQUENCIES.find((fr) => fr.id === f);
+                      setFormData((prev) => ({
+                        ...prev,
+                        frequency: f,
+                        paperSize: matched ? matched.defaultSize : prev.paperSize,
+                        defaultColumnCount: matched ? matched.defaultCols : prev.defaultColumnCount,
+                        pageCount: matched ? matched.defaultPages : prev.pageCount,
+                      }));
+                    }}
                     className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none cursor-pointer"
                   >
                     {FREQUENCIES.map((f) => (
                       <option key={f.id} value={f.id}>
-                        {f.name} — ({f.desc})
+                        {f.name}
                       </option>
                     ))}
                   </select>
+                  <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
+                    <span>
+                      RNI నిబంధనలు: {formData.frequency === 'weekly' || formData.frequency === 'biweekly' ? 'ట్యాబ్లాయిడ్ (5 కాలమ్స్)' : formData.frequency === 'monthly' ? 'A4 మ్యాగజైన్ (4 కాలమ్స్)' : 'బ్రాడ్‌షీట్ (8 కాలమ్స్)'} • {formData.pageCount || 8} పేజీలు ఆటోమేటిక్‌గా సెట్ చేయబడ్డాయి.
+                    </span>
+                  </div>
                 </div>
 
                 <div>
@@ -1465,6 +1485,9 @@ export const BrandsPage: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  <span className="text-[11px] text-slate-500 mt-1 block">
+                    ప్రచురణ ఫ్రీక్వెన్సీ ఆధారంగా ప్రామాణిక ప్రెస్ సైజు ఆటోమేటిక్‌గా సెట్ అవుతుంది. (అవసరమైతే ఇక్కడ మార్చుకోవచ్చు)
+                  </span>
                 </div>
 
                 <div>

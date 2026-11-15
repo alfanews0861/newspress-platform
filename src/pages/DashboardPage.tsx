@@ -20,6 +20,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  Youtube,
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card } from '../components/ui/Card';
@@ -129,36 +130,44 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Top Welcome & Quick Actions Bar */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-2xl p-6 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* Top Welcome & Quick Actions Bar (Clean Google Style Card) */}
+      <div className="bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase tracking-wider font-bold bg-white/20 px-2.5 py-0.5 rounded-full">
+            <span className="text-[11px] uppercase tracking-wider font-semibold bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] px-3 py-0.5 rounded-full border border-[#d2e3fc] dark:border-[#1a73e8]">
               {currentTenant.organizationName}
             </span>
-            <span className="text-xs text-blue-100">• Simple Console</span>
+            <span className="text-xs text-[#5f6368] dark:text-[#8e918f]">• Simple Console</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2] mt-1.5">
             Welcome back, {user?.displayName || 'Chief Editor'}! 👋
           </h1>
-          <p className="text-xs sm:text-sm text-blue-100 mt-1 max-w-xl">
+          <p className="text-xs sm:text-sm text-[#5f6368] dark:text-[#c4c7c5] mt-1 max-w-xl font-normal">
             Everything you need in one place. File stories, approve reporters' dispatches in 1 click, and download today's print paper.
           </p>
         </div>
 
-        {/* Minimal Effort 1-Click Action Buttons */}
+        {/* Minimal Effort 1-Click Action Buttons (Google Style Pills) */}
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
           <button
-            onClick={() => setIsQuickStoryOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-blue-700 font-bold text-xs shadow-md hover:bg-blue-50 transition-all cursor-pointer"
+            onClick={() => onNavigate('/newsroom/youtube-studio')}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#fce8e6] hover:bg-[#fad2cf] text-[#d93025] dark:bg-[#3c1410] dark:text-[#f28b82] font-medium text-xs border border-[#f5c2c7] dark:border-[#d93025] transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-blue-600" />
+            <Youtube className="w-4 h-4 text-[#d93025]" />
+            <span>YouTube Studio</span>
+          </button>
+
+          <button
+            onClick={() => setIsQuickStoryOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-xs shadow-none hover:shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
             <span>Write New Story</span>
           </button>
 
           <button
             onClick={handleDownloadPDF}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500/40 hover:bg-blue-500/60 border border-white/20 text-white font-semibold text-xs transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1f1f1f] hover:bg-[#f8fafd] border border-[#dadce0] dark:border-[#444746] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-xs transition-all cursor-pointer"
           >
             <FileDown className="w-4 h-4" />
             <span>Download Paper PDF</span>
@@ -166,96 +175,96 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* 4 Focused Key Metric Cards */}
+      {/* 4 Focused Key Metric Cards (Google 4-Color Brand Design) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Dispatches */}
+        {/* Card 1: Dispatches (Google Blue) */}
         <div
           onClick={() => onNavigate('/newsroom/news')}
-          className="p-4 rounded-xl bg-white dark:bg-[#1a1b1e] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-blue-500 transition-all cursor-pointer group"
+          className="p-5 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#bdc1c6] hover:shadow-sm transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Today's Stories</span>
-            <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+            <span className="text-xs font-medium text-[#5f6368] dark:text-[#8e918f]">Today's Stories</span>
+            <div className="p-2 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa]">
               <Newspaper className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-2">
             {articles.length} Stories
           </div>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#dadce0] dark:border-[#444746] text-xs text-[#5f6368] dark:text-[#8e918f]">
             <span>+18% from yesterday</span>
-            <span className="text-blue-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
+            <span className="text-[#1a73e8] dark:text-[#8ab4f8] font-medium group-hover:translate-x-0.5 transition-transform flex items-center">
               View <ArrowRight className="w-3 h-3 ml-0.5" />
             </span>
           </div>
         </div>
 
-        {/* Card 2: Pending Approvals */}
+        {/* Card 2: Pending Approvals (Google Yellow) */}
         <div
           onClick={() => setActiveTab('queue')}
-          className="p-4 rounded-xl bg-white dark:bg-[#1a1b1e] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-amber-500 transition-all cursor-pointer group"
+          className="p-5 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#bdc1c6] hover:shadow-sm transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Needs Your Review</span>
-            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <span className="text-xs font-medium text-[#5f6368] dark:text-[#8e918f]">Needs Your Review</span>
+            <div className="p-2 rounded-full bg-[#fef7e0] dark:bg-[#382c00] text-[#f9ab00] dark:text-[#fdd663]">
               <CheckCircle2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-2 flex items-center gap-2">
+          <div className="text-2xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-2 flex items-center gap-2">
             <span>{queueItems.length} Stories</span>
             {queueItems.length > 0 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 font-bold animate-pulse">
+              <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#fef7e0] text-[#b06000] dark:bg-[#382c00] dark:text-[#fdd663] font-medium border border-[#fce8b2]">
                 Action Needed
               </span>
             )}
           </div>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#dadce0] dark:border-[#444746] text-xs text-[#5f6368] dark:text-[#8e918f]">
             <span>1-click approve below</span>
-            <span className="text-amber-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
+            <span className="text-[#f9ab00] dark:text-[#fdd663] font-medium group-hover:translate-x-0.5 transition-transform flex items-center">
               Review <ArrowRight className="w-3 h-3 ml-0.5" />
             </span>
           </div>
         </div>
 
-        {/* Card 3: Today's Edition */}
+        {/* Card 3: Today's Edition (Google Green) */}
         <div
           onClick={() => onNavigate('/newspaper/editions')}
-          className="p-4 rounded-xl bg-white dark:bg-[#1a1b1e] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-emerald-500 transition-all cursor-pointer group"
+          className="p-5 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#bdc1c6] hover:shadow-sm transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Today's Print Paper</span>
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-medium text-[#5f6368] dark:text-[#8e918f]">Today's Print Paper</span>
+            <div className="p-2 rounded-full bg-[#e6f4ea] dark:bg-[#0d2818] text-[#1e8e3e] dark:text-[#81c995]">
               <BookOpen className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-2">
             Issue #{MOCK_CURRENT_EDITION.issueNumber}
           </div>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
-            <span className="text-emerald-600 font-medium">{formatTimeLeft(MOCK_CURRENT_EDITION.printDeadline)}</span>
-            <span className="text-emerald-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#dadce0] dark:border-[#444746] text-xs text-[#5f6368] dark:text-[#8e918f]">
+            <span className="text-[#1e8e3e] dark:text-[#81c995] font-medium">{formatTimeLeft(MOCK_CURRENT_EDITION.printDeadline)}</span>
+            <span className="text-[#1e8e3e] dark:text-[#81c995] font-medium group-hover:translate-x-0.5 transition-transform flex items-center">
               Open <ArrowRight className="w-3 h-3 ml-0.5" />
             </span>
           </div>
         </div>
 
-        {/* Card 4: Syndication Revenue */}
+        {/* Card 4: Syndication Revenue (Google Red) */}
         <div
           onClick={() => onNavigate('/marketplace')}
-          className="p-4 rounded-xl bg-white dark:bg-[#1a1b1e] border border-slate-200 dark:border-slate-800 shadow-xs hover:border-purple-500 transition-all cursor-pointer group"
+          className="p-5 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#bdc1c6] hover:shadow-sm transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Wire & Syndication</span>
-            <div className="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+            <span className="text-xs font-medium text-[#5f6368] dark:text-[#8e918f]">Wire & Syndication</span>
+            <div className="p-2 rounded-full bg-[#fce8e6] dark:bg-[#3c1410] text-[#d93025] dark:text-[#f28b82]">
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+          <div className="text-2xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-2">
             ₹3,420
           </div>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#dadce0] dark:border-[#444746] text-xs text-[#5f6368] dark:text-[#8e918f]">
             <span>18 active licenses</span>
-            <span className="text-purple-600 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center">
+            <span className="text-[#d93025] dark:text-[#f28b82] font-medium group-hover:translate-x-0.5 transition-transform flex items-center">
               Market <ArrowRight className="w-3 h-3 ml-0.5" />
             </span>
           </div>
@@ -266,33 +275,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Stories Needing Review (Instant 1-Click Approvals) */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+          <div className="flex items-center justify-between border-b border-[#dadce0] dark:border-[#444746] pb-3">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('queue')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'queue'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ? 'bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#004a77] dark:text-[#a8c7fa] font-semibold shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a]'
                 }`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Pending Editorial Review</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${activeTab === 'queue' ? 'bg-blue-800 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'}`}>
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#1e8e3e]" />
+                <span>Pending Review</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'queue' ? 'bg-[#1a73e8] text-white' : 'bg-[#f1f3f4] dark:bg-[#333537] text-[#3c4043] dark:text-[#e3e3e3]'}`}>
                   {queueItems.length}
                 </span>
               </button>
 
               <button
                 onClick={() => setActiveTab('dispatches')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'dispatches'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ? 'bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#004a77] dark:text-[#a8c7fa] font-semibold shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a]'
                 }`}
               >
                 <Newspaper className="w-3.5 h-3.5" />
-                <span>All Published Dispatches</span>
+                <span>Published Dispatches</span>
               </button>
             </div>
 

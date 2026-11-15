@@ -262,6 +262,28 @@ export class PagePlanningEngine {
         imagePlacement = 'none';
       }
 
+      // Content-driven dynamic row span sizing:
+      // Measure actual text volume so block size adapts dynamically to story volume
+      const textFitting = BodyTextFittingService.fitBodyText({
+        bodyText: story.bodyText || story.summary || '',
+        columnWidthPx: grid.columnWidth,
+        columnSpan: targetColSpan,
+        availableHeightPx: 1200,
+        fontSizePt: bodyFontSizePt,
+      });
+      const estimatedHeadlineH = headlineSizePt > 30 ? 65 : headlineSizePt > 20 ? 45 : 32;
+      const estimatedImgH = imagePlacement !== 'none' ? (role === 'LEAD' ? 165 : 105) : 0;
+      const contentNeededHeight = estimatedHeadlineH + estimatedImgH + textFitting.requiredHeightPx + 40;
+      const dynamicRowSpan = Math.max(6, Math.ceil(contentNeededHeight / grid.baselineGrid));
+
+      if (role === 'LEAD') {
+        targetRowSpan = Math.min(maxRowsPerPage - 6, Math.max(18, dynamicRowSpan));
+      } else if (role === 'SECONDARY_LEAD') {
+        targetRowSpan = Math.min(maxRowsPerPage - 10, Math.max(12, dynamicRowSpan));
+      } else {
+        targetRowSpan = Math.min(maxRowsPerPage - 12, dynamicRowSpan);
+      }
+
       // Check for editor overrides from previous draft if applicable
       const prevDraft = existingPlacements.find((p) => p.newsId === story.articleId);
       if (prevDraft && prevDraft.editorOverride?.isOverridden) {

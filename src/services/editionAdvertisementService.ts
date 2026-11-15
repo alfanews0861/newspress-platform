@@ -29,6 +29,8 @@ export class EditionAdvertisementService {
     sponsorName: string;
     priority?: number;
     rateCents?: number;
+    imageUrl?: string;
+    sizePreset?: EditionAdvertisementReservation['sizePreset'];
     reservedBy: string;
     dimensions?: {
       columnStart: number;
@@ -51,6 +53,8 @@ export class EditionAdvertisementService {
       reservedBy: data.reservedBy,
       sponsorName: data.sponsorName,
       rateCents: data.rateCents,
+      imageUrl: data.imageUrl,
+      sizePreset: data.sizePreset,
       dimensions: data.dimensions,
       isCommerciallyLocked: false,
       status: 'RESERVED',
@@ -156,5 +160,30 @@ export class EditionAdvertisementService {
       }
     }
     return list;
+  }
+
+  /**
+   * Returns all active advertisements for a tenant.
+   */
+  public static getAdvertisementsForTenant(tenantId: string): EditionAdvertisementReservation[] {
+    const list: EditionAdvertisementReservation[] = [];
+    for (const ad of this.adReservations.values()) {
+      if (ad.tenantId === tenantId && ad.status !== 'CANCELLED') {
+        list.push(ad);
+      }
+    }
+    return list;
+  }
+
+  /**
+   * Cancels/deletes an advertisement reservation.
+   */
+  public static cancelAdvertisement(reservationId: string): boolean {
+    const ad = this.adReservations.get(reservationId);
+    if (!ad) return false;
+    ad.status = 'CANCELLED';
+    ad.updatedAt = new Date().toISOString();
+    this.adReservations.set(reservationId, ad);
+    return true;
   }
 }

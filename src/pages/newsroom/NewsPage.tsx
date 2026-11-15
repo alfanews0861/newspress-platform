@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Newspaper, Plus, Search, Filter, Sparkles, CheckCircle2, AlertTriangle, ShieldCheck, MapPin } from 'lucide-react';
+import { Newspaper, Plus, Search, Filter, Sparkles, CheckCircle2, AlertTriangle, ShieldCheck, MapPin, Megaphone, FileText } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -17,12 +17,14 @@ import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
 import { NewsArticle } from '../../types/news';
 import { newsSubmissionService } from '../../services/newsSubmissionService';
+import { AdvertisementUploadManager } from '../../components/advertising/AdvertisementUploadManager';
 
 export const NewsPage: React.FC = () => {
   const { can } = usePermission();
   const { currentTenant } = useTenant();
   const { user } = useAuth();
 
+  const [activeMainTab, setActiveMainTab] = useState<'news_articles' | 'advertisements'>('news_articles');
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -107,7 +109,7 @@ export const NewsPage: React.FC = () => {
           { label: 'News Dispatch' },
         ]}
         actions={
-          can('news.create') ? (
+          activeMainTab === 'news_articles' && can('news.create') ? (
             <Button
               variant="primary"
               size="sm"
@@ -120,8 +122,46 @@ export const NewsPage: React.FC = () => {
         }
       />
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
+      {/* Main Switcher: News Stories Wire vs. Advertisements Upload Tab */}
+      <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+        <button
+          onClick={() => setActiveMainTab('news_articles')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            activeMainTab === 'news_articles'
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>వార్తా కథనాలు (News Stories & Wire)</span>
+          <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
+            {articles.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab('advertisements')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+            activeMainTab === 'advertisements'
+              ? 'bg-amber-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Megaphone className="w-4 h-4" />
+          <span>ప్రకటనల అప్‌లోడ్ & నిర్వహణ (Advertisements Desk)</span>
+          <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
+            కొత్తది
+          </span>
+        </button>
+      </div>
+
+      {/* RENDER ADVERTISEMENTS DESK WHEN TAB IS ACTIVE */}
+      {activeMainTab === 'advertisements' ? (
+        <AdvertisementUploadManager />
+      ) : (
+        <>
+          {/* Filter and Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="w-full sm:w-80">
           <Input
             placeholder="Search headline, reporter byline, or category..."
@@ -226,6 +266,8 @@ export const NewsPage: React.FC = () => {
           </Card>
         ))}
       </div>
+      </>
+      )}
 
       {/* New Story Modal */}
       <Modal

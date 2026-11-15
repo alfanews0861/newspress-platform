@@ -104,61 +104,97 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     currentMembership?.organizationRole || (isPlatformAdmin ? 'Super Admin' : 'Chief Editor');
 
   const navLinks = [
-    { label: lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: lang === 'hi' ? 'समाचार' : 'Stories', path: '/newsroom/news', icon: Newspaper },
-    { label: lang === 'hi' ? 'संस्करण' : 'Editions', path: '/newspaper/editions', icon: BookOpen },
-    { label: lang === 'hi' ? 'मार्केटप्लेस' : 'Marketplace', path: '/marketplace', icon: ShoppingBag },
+    {
+      label: lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard',
+      path: '/dashboard',
+      icon: LayoutDashboard,
+      iconBoxClass: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800',
+    },
+    {
+      label: lang === 'hi' ? 'समाचार' : 'Stories',
+      path: '/newsroom/news',
+      icon: Newspaper,
+      iconBoxClass: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/60 dark:text-purple-400 dark:border-purple-800',
+    },
+    {
+      label: lang === 'hi' ? 'संस्करण' : 'Editions',
+      path: '/newspaper/editions',
+      icon: BookOpen,
+      iconBoxClass: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800',
+    },
+    {
+      label: lang === 'hi' ? 'मार्केटप्लेस' : 'Marketplace',
+      path: '/marketplace',
+      icon: ShoppingBag,
+      iconBoxClass: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800',
+    },
   ];
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-[#1a1b1e] border-b border-slate-200 dark:border-slate-800 transition-colors shadow-xs">
+      <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043] transition-colors shadow-none">
         <div className="h-full px-4 sm:px-6 flex items-center justify-between gap-3">
           {/* Left: Mobile Toggle, Brand & Workspace */}
           <div className="flex items-center gap-3">
             {isInsideNewsroom && onToggleSidebarMobile && (
               <button
                 onClick={onToggleSidebarMobile}
-                className="lg:hidden p-2 -ml-1 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="lg:hidden p-2 -ml-1 rounded-full text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors"
                 aria-label="Toggle sidebar"
               >
                 <MenuIcon className="w-5 h-5" />
               </button>
             )}
 
-            {/* Logo */}
+            {/* Google-Style 4-Color Brand Logo */}
             <div
               className="flex items-center gap-2.5 cursor-pointer group select-none"
               onClick={() => navigateTo(isInsideNewsroom ? '/dashboard' : '/')}
               title="NewsPress Home"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-xs group-hover:scale-105 transition-transform">
-                NP
+              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] flex items-center justify-center shadow-xs group-hover:border-[#1a73e8] transition-all">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="16" rx="3" stroke="#1a73e8" strokeWidth="2" />
+                  <line x1="7" y1="8" x2="12" y2="8" stroke="#ea4335" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="7" y1="12" x2="17" y2="12" stroke="#fbbc04" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="7" y1="16" x2="15" y2="16" stroke="#34a853" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="15.5" cy="8.5" r="1.5" fill="#1a73e8" />
+                </svg>
               </div>
-              <div className="hidden sm:block">
-                <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  NewsPress
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="font-bold text-lg tracking-tight">
+                  <span className="text-[#1a73e8]">N</span>
+                  <span className="text-[#ea4335]">e</span>
+                  <span className="text-[#fbbc04]">w</span>
+                  <span className="text-[#1a73e8]">s</span>
+                  <span className="text-[#34a853]">P</span>
+                  <span className="text-[#202124] dark:text-[#f2f2f2]">ress</span>
+                </span>
+                <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
+                  Workspace
                 </span>
               </div>
             </div>
 
-            {/* Workspace Selector (Clean & Compact) */}
+            {/* Workspace Selector (Google Workspace Style) */}
             {isInsideNewsroom && (
               <button
                 onClick={() => setIsTenantModalOpen(true)}
-                className="hidden md:flex items-center gap-2 ml-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 hover:border-blue-400 transition-all text-xs font-medium text-slate-800 dark:text-slate-200 cursor-pointer"
+                className="hidden md:flex flex-row items-center gap-2 ml-2 px-3 py-1.5 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] hover:bg-[#e8eaed] dark:hover:bg-[#333537] border border-[#dadce0] dark:border-[#444746] transition-all text-xs font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer"
                 title="Switch Workspace"
               >
-                <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span className="truncate max-w-[130px] font-semibold">{currentTenant.organizationName}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <span className="w-5 h-5 rounded-md bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-[#d2e3fc] dark:border-[#1a73e8]">
+                  <Building2 className="w-3 h-3" />
+                </span>
+                <span className="truncate max-w-[130px] font-medium">{currentTenant.organizationName}</span>
+                <ChevronDown className="w-3 h-3 text-[#5f6368]" />
               </button>
             )}
           </div>
 
-          {/* Center: Clean Primary Nav (Only inside newsroom) */}
+          {/* Center: Clean Google-style Pill Nav (Only inside newsroom) */}
           {isInsideNewsroom && (
-            <nav className="hidden lg:flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/60 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
+            <nav className="hidden lg:flex flex-row items-center gap-1.5 bg-[#f1f3f4] dark:bg-[#28292a] p-1 rounded-full border border-[#dadce0]/70 dark:border-[#444746]/70">
               {navLinks.map((item) => {
                 const Icon = item.icon;
                 const isActive =
@@ -170,13 +206,21 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                   <button
                     key={item.path}
                     onClick={() => navigateTo(item.path)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                       isActive
-                        ? 'bg-white dark:bg-blue-600 text-blue-700 dark:text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/50'
+                        ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
+                        : 'text-[#3c4043] dark:text-[#c4c7c5] hover:text-[#202124] dark:hover:text-white hover:bg-white/70 dark:hover:bg-[#333537]'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <span
+                      className={`w-5 h-5 rounded-md flex flex-row items-center justify-center shrink-0 border ${
+                        isActive
+                          ? 'bg-[#1a73e8] text-white border-[#1a73e8] dark:bg-white dark:text-[#1a73e8]'
+                          : item.iconBoxClass
+                      }`}
+                    >
+                      <Icon className="w-3 h-3" />
+                    </span>
                     <span>{item.label}</span>
                   </button>
                 );
@@ -185,37 +229,39 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
           )}
 
           {/* Right: Quick Write Action + Settings + User */}
-          <div className="flex items-center gap-2">
-            {/* Quick Write Story Button (Minimal user work!) */}
+          <div className="flex flex-row items-center gap-2">
+            {/* Quick Write Story Button (Google Primary Pill) */}
             {isInsideNewsroom && (
               <button
                 onClick={() => (onQuickNewStory ? onQuickNewStory() : setIsQuickStoryOpen(true))}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all cursor-pointer"
+                className="flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer"
                 title="Create a new story"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <span className="w-5 h-5 rounded-md bg-white/20 text-white flex items-center justify-center shrink-0">
+                  <Plus className="w-3.5 h-3.5" />
+                </span>
                 <span className="hidden sm:inline">{lang === 'hi' ? 'नया समाचार' : 'Write Story'}</span>
               </button>
             )}
 
             {/* Language Switcher */}
-            <div className="flex items-center rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
+            <div className="flex items-center rounded-full bg-[#f1f3f4] dark:bg-[#28292a] p-0.5 border border-[#dadce0] dark:border-[#444746] text-[11px] font-semibold">
               <button
                 onClick={() => handleLanguageChange('en')}
-                className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                   lang === 'en'
-                    ? 'bg-white dark:bg-blue-600 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
                 }`}
               >
                 EN
               </button>
               <button
                 onClick={() => handleLanguageChange('hi')}
-                className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                   lang === 'hi'
-                    ? 'bg-white dark:bg-blue-600 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                    ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
                 }`}
               >
                 हिं
@@ -225,10 +271,10 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-500" />}
             </button>
 
             {/* User Profile / Menu */}
@@ -236,24 +282,24 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
               <div className="relative">
                 <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center gap-2 p-1 pl-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
                 >
                   <img
                     src={user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&auto=format&fit=crop&q=80'}
                     alt={user?.displayName || 'User'}
-                    className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                    className="w-7 h-7 rounded-full object-cover border border-[#dadce0] dark:border-[#444746]"
                   />
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[#5f6368]" />
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-[#202124] border border-slate-200 dark:border-slate-700 shadow-lg py-1.5 z-50 text-xs">
-                    <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-                      <div className="font-bold text-slate-900 dark:text-white truncate">
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-lg py-1.5 z-50 text-xs">
+                    <div className="px-3 py-2 border-b border-[#dadce0] dark:border-[#444746]">
+                      <div className="font-semibold text-[#202124] dark:text-[#f2f2f2] truncate">
                         {user?.displayName || 'Sofia Chen'}
                       </div>
-                      <div className="text-[11px] text-slate-500 capitalize flex items-center gap-1 mt-0.5">
-                        <ShieldCheck className="w-3 h-3 text-blue-500" />
+                      <div className="text-[11px] text-[#5f6368] dark:text-[#a8aaad] capitalize flex items-center gap-1 mt-0.5">
+                        <ShieldCheck className="w-3 h-3 text-[#1a73e8]" />
                         <span>{roleLabel.replace(/_/g, ' ')}</span>
                       </div>
                     </div>
@@ -263,28 +309,28 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                         setIsProfileMenuOpen(false);
                         setIsPersonaModalOpen(true);
                       }}
-                      className="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium"
                     >
-                      <User className="w-4 h-4 text-slate-400" />
+                      <User className="w-4 h-4 text-[#5f6368]" />
                       <span>Switch Role Persona</span>
                     </button>
 
                     <button
                       onClick={() => navigateTo('/')}
-                      className="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                      className="w-full px-3 py-2 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium"
                     >
-                      <Globe className="w-4 h-4 text-slate-400" />
+                      <Globe className="w-4 h-4 text-[#5f6368]" />
                       <span>View Public Website</span>
                     </button>
 
-                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                    <div className="my-1 border-t border-[#dadce0] dark:border-[#444746]" />
 
                     <button
                       onClick={() => {
                         setIsProfileMenuOpen(false);
                         logout();
                       }}
-                      className="w-full px-3 py-2 text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2 cursor-pointer font-medium"
+                      className="w-full px-3 py-2 text-left text-[#d93025] hover:bg-[#fce8e6] dark:hover:bg-[#3c1410] flex items-center gap-2 cursor-pointer font-medium"
                     >
                       <LogOut className="w-4 h-4" />
                       <span>Sign Out</span>
@@ -295,7 +341,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             ) : (
               <button
                 onClick={() => navigateTo('/login')}
-                className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                className="px-4 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all shadow-none hover:shadow-xs cursor-pointer"
               >
                 Sign In
               </button>

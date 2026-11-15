@@ -6,11 +6,13 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig, isFirebaseConfigured } from '../config/firebase';
 
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
+let storage: FirebaseStorage;
 let googleAuthProvider: GoogleAuthProvider;
 
 if (isFirebaseConfigured) {
@@ -22,6 +24,9 @@ if (isFirebaseConfigured) {
     : undefined;
 
   db = dbId ? getFirestore(app, dbId) : getFirestore(app);
+
+  const bucket = firebaseConfig.storageBucket || 'alfa-news-service-test-project.firebasestorage.app';
+  storage = getStorage(app, bucket.startsWith('gs://') ? bucket : `gs://${bucket}`);
 
   googleAuthProvider = new GoogleAuthProvider();
   googleAuthProvider.setCustomParameters({
@@ -44,4 +49,4 @@ if (isFirebaseConfigured) {
   console.warn('NewsPress: Firebase is not fully configured in environment. Operating in mock seed mode.');
 }
 
-export { app, auth, db, googleAuthProvider };
+export { app, auth, db, storage, googleAuthProvider };

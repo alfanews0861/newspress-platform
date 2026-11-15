@@ -313,12 +313,35 @@ export interface ArticlePlacement {
   placementRole?: StoryLayoutRole;
   status: 'placed' | 'locked' | 'overflow' | 'flagged' | 'draft';
   locked: boolean;
-  styleVariant?: 'lead_banner' | 'anchor_box' | 'photo_feature' | 'column_card' | 'sidebar_brief' | 'standard';
+  styleVariant?: 'lead_banner' | 'anchor_box' | 'photo_feature' | 'column_card' | 'sidebar_brief' | 'standard' | 'pocket_cartoon' | 'infographic_stat';
   kicker?: string;
   subheadline?: string;
   accentColor?: string;
   headlineFont?: string;
   headlineColor?: string;
+  headlineHighlight?: string;
+  statCallout?: {
+    number: string;
+    label: string;
+    unit?: string;
+    color?: string;
+    badge?: string;
+  };
+  cutoutImage?: {
+    url: string;
+    name?: string;
+    role?: string;
+    placement?: 'left' | 'right';
+  };
+  cartoon?: {
+    title: string;
+    subtitle?: string;
+    dialogue?: string;
+    characterA?: string;
+    characterB?: string;
+    cartoonist?: string;
+    cartoonUrl?: string;
+  };
   imageHeight?: number;
   cardBackground?: string;
   bulletPoints?: string[];

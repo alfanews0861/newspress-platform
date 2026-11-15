@@ -8,15 +8,12 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { navigateTo } from '../../utils/navigation';
 import {
-  Wand2,
   Lock,
   Unlock,
-  Save,
   Undo,
   Redo,
-  ZoomIn,
-  ZoomOut,
   Plus,
   Trash2,
   AlertTriangle,
@@ -39,7 +36,6 @@ import {
   ShieldCheck,
   History,
   CornerDownLeft,
-  Printer,
   Download,
   Newspaper,
   Calendar,
@@ -81,40 +77,99 @@ import { PageBalanceService } from '../../services/pageBalanceService';
 import { EditionPersistenceService } from '../../services/editionPersistenceService';
 import { EditionContentEligibilityService } from '../../services/editionContentEligibilityService';
 import { EditionPreflightService, PreflightCheckResult } from '../../services/editionPreflightService';
+import { AdvertisementLayoutAdapter } from '../../services/advertisementLayoutAdapter';
+import { EditionAdvertisementService } from '../../services/editionAdvertisementService';
 
 export const PageDesignerPage: React.FC = () => {
   const { currentTenant } = useTenant();
   const { user } = useAuth();
   const { can } = usePermission();
 
-  // Active Edition, Brand & Template State
-  const [brandsList, setBrandsList] = useState<NewspaperBrand[]>(() => brandManagementService.getBrands());
+  // Active Edition, Brand & Template State derived dynamically from Paper Settings
+  const [brandsList, setBrandsList] = useState<NewspaperBrand[]>(() => {
+    const list = brandManagementService.getBrands();
+    return list.length > 0 ? list : MOCK_BRANDS;
+  });
   const [selectedBrand, setSelectedBrand] = useState<NewspaperBrand>(() => {
     const active = brandManagementService.getActiveBrand();
     return active || TELUGU_NEWSPAPER_BRAND || MOCK_BRANDS[0];
   });
-  const [selectedTemplate, setSelectedTemplate] = useState<NewspaperTemplate>(MOCK_TEMPLATES[0]);
+  const [selectedTemplate, setSelectedTemplate] = useState<NewspaperTemplate>(() => {
+    const active = brandManagementService.getActiveBrand();
+    return GridCalculationService.getTemplateForBrand(active);
+  });
   const [edition, setEdition] = useState<NewspaperEdition>(TELUGU_NEWSPAPER_EDITION || MOCK_CURRENT_EDITION);
-
-  useEffect(() => {
-    const handleUpdate = () => {
-      const refreshed = brandManagementService.getBrands();
-      setBrandsList(refreshed);
-      const active = brandManagementService.getActiveBrand();
-      if (active) setSelectedBrand(active);
-    };
-    window.addEventListener('newspress:brands-updated', handleUpdate);
-    return () => window.removeEventListener('newspress:brands-updated', handleUpdate);
-  }, []);
 
   // Multi-page layout state
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
   const [pages, setPages] = useState<NewspaperPage[]>(() => TELUGU_PREPLANNED_PAGES || []);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
-  // Editor Viewport & Tools State
+
+  // Compute Active Grid (Must be declared before zoom and layout hooks)
+  const grid: PageGrid = useMemo(() => {
+    return GridCalculationService.calculatePageGrid(selectedTemplate);
+  }, [selectedTemplate]);
+
+  // Scroll ref to ensure page view always starts at top on page switch
+  const canvasScrollRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (canvasScrollRef.current) {
+      canvasScrollRef.current.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [currentPageIndex]);
+
+  // ARCHITECTURAL RULE / NOTE (DO NOT REMOVE OR REVERT IN FUTURE UPDATES):
+  // 1. The sub-header must strictly contain ONLY:
+  //    - Newspaper Brand dropdown (patrika peru)
+  //    - Date (publication date)
+  //    - Page Switcher (1/4)
+  //    - Single "Download PDF" button (prints exact configured paper size)
+  // 2. DO NOT restore "ముఖ్యాంశాలు (Front Page)" or section badges in the sub-header.
+  // 3. DO NOT restore manual zoom buttons, presets (Fit, 55%, 75%, 100%), or +/- buttons.
+  //    Canvas sizing is 100% automated & responsive based on available viewport space.
+  // 4. DO NOT restore "Auto Layout" or "Saved" buttons in the sub-header.
+  // 5. DO NOT restore separate dual download buttons. Keep only the single "Download PDF" button.
+
+  // Editor Viewport & 100% Width Canvas Sizing
+  // The canvas fills 100% of available container width, with proportional height enabling natural vertical scrolling.
   const [zoomLevel, setZoomLevel] = useState<number>(0.75);
-  const [printFormat, setPrintFormat] = useState<'broadsheet' | 'a3'>('broadsheet');
+
+  // Automated 100% Width Responsive Canvas Fitting:
+  // Automatically scales the newspaper canvas to fill 100% of the available width.
+  // Users scroll vertically (up and down) to view the entire authentic newspaper page.
+  useEffect(() => {
+    const container = canvasScrollRef.current;
+    if (!container) return;
+
+    const updateFit = () => {
+      // Use clientWidth to automatically exclude vertical scrollbar width
+      const padding = 24;
+      const availW = Math.max(200, container.clientWidth - padding);
+
+      if (grid.pageWidth > 0) {
+        const scaleW = availW / grid.pageWidth;
+        const clampedScale = Math.max(0.2, Math.min(Number(scaleW.toFixed(3)), 3.0));
+        setZoomLevel(clampedScale);
+      }
+    };
+
+    updateFit();
+
+    const observer = new ResizeObserver(() => {
+      updateFit();
+    });
+    observer.observe(container);
+
+    window.addEventListener('resize', updateFit);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateFit);
+    };
+  }, [grid.pageWidth]);
+
   const [showGridLines, setShowGridLines] = useState<boolean>(true);
   const [showGuides, setShowGuides] = useState<boolean>(true);
   const [isDirty, setIsDirty] = useState<boolean>(false);
@@ -142,10 +197,6 @@ export const PageDesignerPage: React.FC = () => {
   const [availableStories, setAvailableStories] = useState<NewsArticle[]>(MOCK_NEWS_ARTICLES);
   const [licenses] = useState<NewsLicense[]>([]);
 
-  // Compute Active Grid
-  const grid: PageGrid = useMemo(() => {
-    return GridCalculationService.calculatePageGrid(selectedTemplate);
-  }, [selectedTemplate]);
 
   // Push new state to undo/redo history
   const pushHistoryState = useCallback((newPages: NewspaperPage[]) => {
@@ -156,6 +207,83 @@ export const PageDesignerPage: React.FC = () => {
     setHistoryIndex((prev) => prev + 1);
     setIsDirty(true);
   }, [historyIndex]);
+
+  // Brand updates & advertisement placement listeners
+  useEffect(() => {
+    const handleUpdate = () => {
+      const refreshed = brandManagementService.getBrands();
+      setBrandsList(refreshed);
+      const active = brandManagementService.getActiveBrand();
+      if (active) {
+        setSelectedBrand(active);
+        const nextTemplate = GridCalculationService.getTemplateForBrand(active);
+        setSelectedTemplate(nextTemplate);
+
+        // If paper size or column count changed, adapt layout seamlessly to fit new dimensions
+        if (active.paperSize !== 'broadsheet' || (active.defaultColumnCount && active.defaultColumnCount !== 8)) {
+          const isTe = active.language === 'te' || active.name?.includes('తెలుగు');
+          const relevantStories = isTe ? availableStories : availableStories.filter((s) => s.category !== 'జాతీయం' && s.category !== 'రాష్ట్రీయం' && s.category !== 'జిల్లా వార్తలు');
+          const adaptedPlan = PagePlanningEngine.planEditionLayout({
+            edition: isTe ? TELUGU_NEWSPAPER_EDITION : MOCK_CURRENT_EDITION,
+            template: nextTemplate,
+            stories: relevantStories,
+            targetPageCount: active.pageCount || 4,
+          });
+          setPages(adaptedPlan.pages);
+          pushHistoryState(adaptedPlan.pages);
+        }
+      }
+    };
+
+    // Listen for custom commercial advertisement events
+    const handleAdPlaced = (e: any) => {
+      const { reservation, targetPage, sizePreset } = e.detail;
+      const targetPNum = typeof targetPage === 'number' ? targetPage : targetPage === 'front_page' ? 1 : 4;
+
+      const adGeom = e.detail?.adResult || AdvertisementLayoutAdapter.calculateAdPlacement(
+        grid,
+        {
+          advertisementId: reservation.advertisementId,
+          sponsorName: reservation.sponsorName,
+          imageUrl: reservation.imageUrl,
+          targetPage: targetPNum,
+          sizePreset: sizePreset || '2col_10cm',
+        },
+        pages.length
+      );
+
+      setPages((prevPages) => {
+        const nextPages = AdvertisementLayoutAdapter.injectAdIntoPages(prevPages, grid, adGeom);
+        pushHistoryState(nextPages);
+        return nextPages;
+      });
+
+      // Switch to the target page index so user immediately sees their advertisement!
+      setCurrentPageIndex(Math.max(0, targetPNum - 1));
+      setIsDirty(true);
+    };
+
+    const handleAdRemoved = (e: any) => {
+      const { reservationId } = e.detail;
+      setPages((prevPages) => {
+        return prevPages.map((p) => ({
+          ...p,
+          adPlacements: (p.adPlacements || []).filter((ad) => !ad.placementId.includes(reservationId)),
+        }));
+      });
+      setIsDirty(true);
+    };
+
+    window.addEventListener('newspress:brands-updated', handleUpdate);
+    window.addEventListener('newspress:advertisement-placed', handleAdPlaced);
+    window.addEventListener('newspress:advertisement-removed', handleAdRemoved);
+
+    return () => {
+      window.removeEventListener('newspress:brands-updated', handleUpdate);
+      window.removeEventListener('newspress:advertisement-placed', handleAdPlaced);
+      window.removeEventListener('newspress:advertisement-removed', handleAdRemoved);
+    };
+  }, [grid, pages.length, availableStories, pushHistoryState]);
 
   // Initial Plan / Load on mount
   useEffect(() => {
@@ -256,12 +384,69 @@ export const PageDesignerPage: React.FC = () => {
     setIsDirty(true);
   };
 
-  // Print & PDF Export Handler with True Broadsheet / A4 Paper Setup
-  const handlePrintPdf = (format: 'a4' | 'broadsheet' = 'a4') => {
-    document.documentElement.setAttribute('data-print-format', format);
+  // Print & PDF Export Handler: Dynamically prints in the exact configured paper size (broadsheet, tabloid, A4, etc.)
+  const handlePrintPdf = () => {
+    const activeBrand = brandManagementService.getActiveBrand() || selectedBrand;
+    const template = GridCalculationService.getTemplateForBrand(activeBrand);
+    const paperFormat = activeBrand.paperSize || template.format || 'broadsheet';
+    const widthMm = template.pageWidthMm || (paperFormat === 'tabloid' ? 280 : paperFormat === 'a4' ? 210 : paperFormat === 'a3' ? 297 : paperFormat === 'berliner' ? 315 : 350);
+    const heightMm = template.pageHeightMm || (paperFormat === 'tabloid' ? 380 : paperFormat === 'a4' ? 297 : paperFormat === 'a3' ? 420 : paperFormat === 'berliner' ? 470 : 540);
+
+    document.documentElement.setAttribute('data-print-format', paperFormat);
+
+    // Dynamically inject @page rule for exact physical paper dimensions
+    // NOTE: Do NOT use !important on properties inside @page — W3C CSS Paged Media spec forbids !important
+    // inside @page rules, and browsers (Chrome/Blink) ignore declarations that contain !important.
+    let styleEl = document.getElementById('newspaper-dynamic-print-page-style') as HTMLStyleElement;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'newspaper-dynamic-print-page-style';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = `
+      @media print {
+        @page {
+          size: ${widthMm}mm ${heightMm}mm;
+          margin: 0;
+        }
+        @page ${paperFormat} {
+          size: ${widthMm}mm ${heightMm}mm;
+          margin: 0;
+        }
+        html, body {
+          width: ${widthMm}mm !important;
+          min-height: ${heightMm}mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .print-newspaper-export-container {
+          display: block !important;
+          position: static !important;
+          width: ${widthMm}mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .print-page-sheet {
+          page: ${paperFormat};
+          width: ${widthMm}mm !important;
+          height: ${heightMm}mm !important;
+          page-break-after: always !important;
+          break-after: page !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+      }
+    `;
+
+    const originalTitle = document.title;
+    document.title = `${activeBrand.name || 'Newspaper'} - ${edition.publicationDate || 'Edition'} (${paperFormat.toUpperCase()})`;
+
     setTimeout(() => {
       window.print();
-    }, 120);
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }, 150);
   };
 
   // Explicit Save Action
@@ -441,7 +626,9 @@ export const PageDesignerPage: React.FC = () => {
     ];
 
     if (currentPage.pageNumber === 1 && (!selectedTemplate.allowedModules || selectedTemplate.allowedModules.includes('masthead'))) {
-      const mastheadRows = Math.ceil((selectedTemplate.headerHeightMm * 2 || 68) / grid.baselineGrid);
+      const headerMm = selectedTemplate.headerHeightMm || 42.3;
+      const mastheadHeightPx = Math.round(headerMm * (grid.pageWidth / selectedTemplate.pageWidthMm));
+      const mastheadRows = Math.ceil(mastheadHeightPx / grid.baselineGrid);
       occupied.push({
         columnStart: 1,
         columnSpan: grid.columnCount,
@@ -620,64 +807,20 @@ export const PageDesignerPage: React.FC = () => {
     canFinalize: true,
   };
 
-  // Helper to group page blocks into dynamic column tracks for natural broadsheet flow
-  interface ColumnTrack {
-    trackKey: string;
-    columnStart: number;
-    columnSpan: number;
-    x: number;
-    width: number;
-    blocks: ArticlePlacement[];
-  }
-
-  const getPageColumnTracks = (pageToRender: NewspaperPage, currentGrid: PageGrid): ColumnTrack[] => {
-    const blocks = pageToRender.blocks || [];
-    if (blocks.length === 0) return [];
-
-    const trackMap = new Map<string, ColumnTrack>();
-
-    // Sort blocks by columnStart, then by rowStart or y
-    const sorted = [...blocks].sort((a, b) => {
-      if (a.columnStart !== b.columnStart) return a.columnStart - b.columnStart;
-      return (a.rowStart ?? a.y) - (b.rowStart ?? b.y);
-    });
-
-    for (const block of sorted) {
-      const key = `${block.columnStart}_${block.columnSpan}`;
-      let track = trackMap.get(key);
-      if (!track) {
-        const colBounds = GridCalculationService.calculateColumnBounds(
-          currentGrid,
-          block.columnStart,
-          block.columnSpan
-        );
-        track = {
-          trackKey: key,
-          columnStart: block.columnStart,
-          columnSpan: block.columnSpan,
-          x: block.x ?? colBounds.x,
-          width: block.width ?? colBounds.width,
-          blocks: [],
-        };
-        trackMap.set(key, track);
-      }
-      track.blocks.push(block);
-    }
-
-    return Array.from(trackMap.values()).sort((a, b) => a.columnStart - b.columnStart);
-  };
-
   // Render Page Content Elements (used for interactive canvas and print export)
   const renderPageCanvasElements = (pageToRender: NewspaperPage, isInteractive: boolean) => {
     if (!pageToRender) return null;
-    const isTelugu = selectedBrand.language === 'te' || selectedBrand.brandId === TELUGU_NEWSPAPER_BRAND.brandId;
-    const tracks = getPageColumnTracks(pageToRender, grid);
+    const isTelugu =
+      selectedBrand.language === 'te' ||
+      selectedBrand.brandId === TELUGU_NEWSPAPER_BRAND.brandId ||
+      selectedBrand.brandId === 'brand-andhra-prabha' ||
+      edition.brandId === TELUGU_NEWSPAPER_BRAND.brandId ||
+      edition.brandId === 'ed-andhra-prabha-today' ||
+      (pageToRender.blocks || []).some((b) => /[\u0C00-\u0C7F]/.test(b.articleTitle || ''));
 
-    const defaultContentTop = pageToRender.pageNumber === 1 ? 142 : 66;
     const footerBottomMargin = grid.margins.bottom - 10;
     const footerHeight = 20;
     const footerTop = grid.pageHeight - footerBottomMargin - footerHeight;
-    const availableHeight = footerTop - defaultContentTop;
 
     return (
       <>
@@ -689,6 +832,7 @@ export const PageDesignerPage: React.FC = () => {
               top: `${grid.margins.top}px`,
               left: `${grid.margins.left}px`,
               width: `${grid.contentWidth}px`,
+              height: '118px',
             }}
           >
             <NewspaperMastheadRenderer
@@ -702,7 +846,7 @@ export const PageDesignerPage: React.FC = () => {
         {/* 1.5. INNER PAGE FOLIO HEADER (Pages > 1) */}
         {pageToRender.pageNumber > 1 && (
           <div
-            className="absolute border-b-2 border-red-800 pb-1 bg-white z-5 overflow-hidden flex items-center justify-between px-2"
+            className="absolute border-b-2 border-red-800 pb-1 bg-white z-5 overflow-hidden flex items-center justify-between px-2 newspaper-telugu-content"
             style={{
               top: `${grid.margins.top}px`,
               left: `${grid.margins.left}px`,
@@ -712,18 +856,26 @@ export const PageDesignerPage: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               <span
-                style={{ fontFamily: isTelugu ? "'Ramabhadra', 'Noto Serif Telugu', serif" : 'Cinzel, serif', letterSpacing: 'normal' }}
+                style={{
+                  fontFamily: isTelugu ? "'Ramabhadra', 'Noto Serif Telugu', serif" : 'Cinzel, serif',
+                  letterSpacing: 'normal',
+                }}
                 className="text-red-700 font-extrabold text-[18px]"
               >
-                {selectedBrand.masthead.title}
+                {selectedBrand.masthead?.title || selectedBrand.name}
               </span>
               <span className="text-slate-400">|</span>
-              <span className="text-[10px] text-slate-600 font-medium">దినపత్రిక</span>
+              <span className="text-[10px] text-slate-600 font-medium" style={{ letterSpacing: 'normal' }}>
+                {isTelugu ? 'దినపత్రిక' : 'DAILY CHRONICLE'}
+              </span>
             </div>
 
             <div
-              style={{ fontFamily: isTelugu ? "'Ramabhadra', 'Noto Serif Telugu', serif" : 'Cinzel, serif', letterSpacing: 'normal' }}
-              className="bg-red-700 text-white font-bold text-[12px] px-4 py-0.5 rounded-xs tracking-normal shadow-xs flex items-center gap-1.5"
+              style={{
+                fontFamily: isTelugu ? "'Ramabhadra', 'Noto Serif Telugu', serif" : 'Cinzel, serif',
+                letterSpacing: 'normal',
+              }}
+              className="bg-red-700 text-white font-bold text-[12px] px-4 py-0.5 rounded-xs shadow-xs flex items-center gap-1.5"
             >
               <span>【</span>
               <span>{pageToRender.sectionName || `పేజీ ${pageToRender.pageNumber}`}</span>
@@ -731,266 +883,571 @@ export const PageDesignerPage: React.FC = () => {
             </div>
 
             <div className="text-[10px] font-semibold text-slate-700 flex items-center gap-2">
-              <span>{edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}</span>
+              <span style={{ letterSpacing: 'normal' }}>{edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}</span>
               <span className="text-slate-400">•</span>
-              <span className="bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded-xs font-bold">
-                పేజీ {pageToRender.pageNumber}
+              <span className="bg-slate-100 text-slate-900 px-1.5 py-0.5 rounded-xs font-bold" style={{ letterSpacing: 'normal' }}>
+                {isTelugu ? `పేజీ ${pageToRender.pageNumber}` : `Page ${pageToRender.pageNumber}`}
               </span>
             </div>
           </div>
         )}
 
-        {/* 2. PLACED STORY COLUMNS (Broadsheet Auto-Flex Photo Architecture - Zero Cutoff, Zero White Space) */}
-        {tracks.map((track, trackIdx) => {
-          const hasNextTrack = trackIdx < tracks.length - 1;
-          const hasAnyImageInTrack = track.blocks.some(b => !!b.imageUrl && b.imagePlacement !== 'none');
+        {/* 2. PLACED STORY BLOCKS (Broadsheet Multi-Column Architecture - Authentic Physical Newspaper Grid) */}
+        {(pageToRender.blocks || []).map((block) => {
+          const isSelected = isInteractive && block.placementId === selectedBlockId;
+          const isLead = block.layoutRole === 'LEAD';
+          const isAnchor = block.styleVariant === 'anchor_box';
+          const isBrief = block.styleVariant === 'sidebar_brief';
+          const isCartoon = block.styleVariant === 'pocket_cartoon';
+          const isWide = block.columnSpan >= 3;
+          const hasImage = !!block.imageUrl && block.imagePlacement !== 'none';
+          const hasBullets = !!block.bulletPoints && block.bulletPoints.length > 0;
+
+          const isBlockTelugu =
+            isTelugu ||
+            /[\u0C00-\u0C7F]/.test(block.articleTitle || '') ||
+            /[\u0C00-\u0C7F]/.test(block.bodyContent || '');
+
+          const headlineFontFamily = isBlockTelugu
+            ? (block.headlineFont
+                ? `${block.headlineFont}, 'Suranna', 'Ramabhadra', 'Noto Serif Telugu', serif`
+                : "'Suranna', 'Ramabhadra', 'Noto Serif Telugu', serif")
+            : (block.headlineFont || "'Cinzel', 'Playfair Display', 'Newsreader', serif");
+
+          const bodyFontFamily = isBlockTelugu
+            ? "'Mallanna', 'Noto Sans Telugu', 'Noto Serif Telugu', sans-serif"
+            : "'Newsreader', 'Georgia', 'Inter', serif";
+
+          const subheadFontFamily = isBlockTelugu
+            ? "'Mallanna', 'Noto Sans Telugu', 'Noto Serif Telugu', sans-serif"
+            : "'Newsreader', 'Georgia', serif";
+
+          const imgHeight = block.imageHeight || (isLead ? 145 : 110);
+
+          // Dedicated Pocket Cartoon Renderer (Matches Telugu Broadsheet bottom-left cartoon like Andhra Prabha "షో..!" or Velugu "తిన్నర్")
+          if (isCartoon) {
+            return (
+              <div
+                key={block.placementId}
+                onClick={(e) => {
+                  if (!isInteractive) return;
+                  e.stopPropagation();
+                  handleSelectBlock(block.placementId);
+                }}
+                data-lang="te"
+                className={`absolute flex flex-col transition-all overflow-hidden border-2 border-slate-800 bg-[#fefce8]/60 p-2 select-none ${
+                  isInteractive ? 'cursor-pointer group' : ''
+                } ${isSelected ? 'ring-2 ring-blue-600 shadow-md z-10' : ''} font-telugu`}
+                style={{
+                  top: `${block.y}px`,
+                  left: `${block.x}px`,
+                  width: `${block.width}px`,
+                  height: `${block.height}px`,
+                  boxSizing: 'border-box',
+                }}
+              >
+                {/* Cartoon Title Header */}
+                <div className="flex items-center justify-between border-b-2 border-slate-900 pb-1 mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="bg-red-800 text-white font-black text-xs px-2 py-0.5 rounded-none shadow-2xs font-telugu">
+                      {block.cartoon?.title || 'షో..!'}
+                    </span>
+                    <span className="text-[7.5px] font-bold text-slate-700">
+                      {block.cartoon?.subtitle || 'ఆంధ్ర ప్రభ వ్యంగ్య చిత్రం'}
+                    </span>
+                  </div>
+                  <span className="text-[7px] font-bold bg-slate-900 text-amber-300 px-1.5 py-0.2 rounded-xs">
+                    {block.cartoon?.cartoonist || 'శేఖర్..!'}
+                  </span>
+                </div>
+
+                {/* Cartoon Drawing Frame */}
+                <div className="flex-1 w-full bg-white border border-slate-300 p-1 flex flex-col justify-between overflow-hidden relative rounded-xs">
+                  {block.imageUrl ? (
+                    <img
+                      src={block.imageUrl}
+                      alt="Pocket Cartoon"
+                      className="w-full flex-1 object-contain"
+                    />
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-2 text-center bg-amber-50/20">
+                      <svg viewBox="0 0 120 60" className="w-24 h-12 opacity-80 my-0.5">
+                        <circle cx="36" cy="24" r="12" fill="#fed7aa" stroke="#0f172a" strokeWidth="1.5" />
+                        <circle cx="32" cy="22" r="1.5" fill="#0f172a" />
+                        <circle cx="40" cy="22" r="1.5" fill="#0f172a" />
+                        <path d="M34,30 Q36,33 40,30" stroke="#b91c1c" strokeWidth="1.5" fill="none" />
+                        <rect x="26" y="36" width="20" height="20" fill="#cbd5e1" stroke="#0f172a" strokeWidth="1.5" />
+                        
+                        <circle cx="84" cy="24" r="12" fill="#fed7aa" stroke="#0f172a" strokeWidth="1.5" />
+                        <circle cx="80" cy="22" r="1.5" fill="#0f172a" />
+                        <circle cx="88" cy="22" r="1.5" fill="#0f172a" />
+                        <path d="M82,29 Q84,26 86,29" stroke="#0f172a" strokeWidth="1.5" fill="none" />
+                        <rect x="74" y="36" width="20" height="20" fill="#fecaca" stroke="#0f172a" strokeWidth="1.5" />
+                      </svg>
+                      <div className="bg-slate-900 text-white text-[8px] p-1.5 rounded font-telugu shadow-xs leading-tight mt-1">
+                        💬 "{block.cartoon?.dialogue || 'అక్కడెలాగో నెగ్గాం.. మరి ఇక్కడ 2047 నాటికి ఎలా గట్టెక్కేది..?!!'}"
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-[7px] text-slate-600 text-right font-medium italic mt-0.5">
+                  - కార్టూన్ వ్యంగ్యాస్త్రం
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div
-              key={track.trackKey}
-              className="absolute flex flex-col justify-between"
+              key={block.placementId}
+              onClick={(e) => {
+                if (!isInteractive) return;
+                e.stopPropagation();
+                handleSelectBlock(block.placementId);
+              }}
+              data-lang={isBlockTelugu ? 'te' : 'en'}
+              className={`absolute flex flex-col transition-all overflow-hidden ${
+                isInteractive ? 'cursor-pointer group' : ''
+              } ${
+                isSelected ? 'ring-2 ring-blue-600 shadow-md z-10' : ''
+              } ${isBlockTelugu ? 'font-telugu newspaper-telugu-content' : ''}`}
               style={{
-                top: `${defaultContentTop}px`,
-                left: `${track.x}px`,
-                width: `${track.width}px`,
-                height: `${availableHeight}px`,
-                borderRight: hasNextTrack ? '1px solid #cbd5e1' : undefined,
-                paddingRight: hasNextTrack ? '8px' : '0px',
-                paddingLeft: trackIdx > 0 ? '8px' : '0px',
+                top: `${block.y}px`,
+                left: `${block.x}px`,
+                width: `${block.width}px`,
+                height: `${block.height}px`,
+                backgroundColor: isAnchor ? '#fffdf5' : (block.cardBackground || '#ffffff'),
+                border: isAnchor ? '1.5px solid #d97706' : undefined,
+                borderRight: isAnchor ? undefined : (block.x + block.width < grid.pageWidth - grid.margins.right - 2 ? '1px solid #cbd5e1' : undefined),
+                borderBottom: isAnchor ? undefined : (block.y + block.height < grid.pageHeight - grid.margins.bottom - 10 ? '1px solid #94a3b8' : undefined),
+                padding: isAnchor ? '8px 10px' : '6px 8px',
                 boxSizing: 'border-box',
               }}
             >
-              {track.blocks.map((block, bIdx) => {
-                const isSelected = isInteractive && block.placementId === selectedBlockId;
-                const isLead = block.layoutRole === 'LEAD';
-                const isAnchor = block.styleVariant === 'anchor_box';
-                const isBrief = block.styleVariant === 'sidebar_brief';
-                const isWide = block.columnSpan >= 3;
-                const hasImage = !!block.imageUrl && block.imagePlacement !== 'none';
-                const hasBullets = !!block.bulletPoints && block.bulletPoints.length > 0;
-                const isLastInTrack = bIdx === track.blocks.length - 1;
-                // Solution 1: Blocks with images flex to absorb vertical height; text-only blocks hug content
-                const isFlexBlock = hasImage || (!hasAnyImageInTrack && isLastInTrack);
+              {/* Lock Indicator - only visible when specifically selected in editor */}
+              {isInteractive && block.locked && isSelected && (
+                <div className="absolute top-1 right-1 bg-blue-600 text-white p-0.5 rounded shadow-xs z-10" title="Locked block">
+                  <Lock className="w-2.5 h-2.5" />
+                </div>
+              )}
+
+              {/* Kicker Badge - Strictly for Special Stories or Investigative Reports (Never on ordinary news) */}
+              {(() => {
+                const isSpecialOrInvestigative = Boolean(
+                  (block as any).isSpecialStory ||
+                  (block as any).isInvestigative ||
+                  block.styleVariant === 'photo_feature' ||
+                  /ప్రత్యేకం|ఇన్వెస్టిగేటివ్|పరిశోధనాత్మక|Special|Investigative/i.test(block.kicker || '') ||
+                  /ప్రత్యేకం|ఇన్వెస్టిగేటివ్|పరిశోధనాత్మక|Special|Investigative/i.test(block.category || '')
+                );
+
+                if (!isSpecialOrInvestigative || !block.kicker) return null;
 
                 return (
-                  <div
-                    key={block.placementId}
-                    onClick={(e) => {
-                      if (!isInteractive) return;
-                      e.stopPropagation();
-                      handleSelectBlock(block.placementId);
-                    }}
-                    className={`relative flex flex-col transition-all ${
-                      isFlexBlock ? 'flex-1 min-h-0' : 'shrink-0'
-                    } ${
-                      isInteractive ? 'cursor-pointer group' : ''
-                    } ${
-                      isSelected ? 'ring-2 ring-blue-600 shadow-md z-10' : ''
-                    }`}
-                    style={{
-                      width: '100%',
-                      overflow: 'visible',
-                      backgroundColor: isAnchor ? '#fffdf5' : 'transparent',
-                      border: isAnchor ? '1.5px solid #d97706' : undefined,
-                      borderBottom: isAnchor ? undefined : (!isLastInTrack ? '1px solid #cbd5e1' : undefined),
-                      paddingBottom: isAnchor ? '8px' : (!isLastInTrack ? '8px' : '0px'),
-                      marginBottom: isAnchor ? '8px' : (!isLastInTrack ? '8px' : '0px'),
-                      padding: isAnchor ? '8px 10px' : undefined,
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {/* Lock Indicator */}
-                    {isInteractive && block.locked && (
-                      <div className="absolute top-1 right-1 bg-blue-600 text-white p-0.5 rounded shadow-xs z-10" title="Locked block">
-                        <Lock className="w-2.5 h-2.5" />
-                      </div>
-                    )}
-
-                    {/* Continuation Marker (when jumped from another page) */}
-                    {block.continuedFromPage && (
-                      <div
-                        className="inline-flex items-center text-[8.5px] font-bold text-red-900 bg-red-100 border border-red-300 px-1.5 py-0.5 mb-1 rounded-xs shrink-0 self-start shadow-2xs"
-                        style={{ fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit', letterSpacing: '-0.01em' }}
-                      >
-                        <span>【 {block.continuedFromPage}వ పేజీ తరువాయి 】</span>
-                      </div>
-                    )}
-
-                    {/* Headline */}
-                    <h2
-                      className={`mb-1 font-normal shrink-0 ${
-                        isLead ? 'border-b border-red-200 pb-0.5' : ''
-                      }`}
+                  <div className="flex justify-center w-full mb-1">
+                    <span
+                      className="inline-flex items-center text-[8.5px] font-bold rounded-xs px-2 py-0.5 text-white shadow-2xs tracking-wide"
                       style={{
-                        fontFamily: isTelugu
-                          ? (block.headlineFont || "'Ramabhadra', 'Mallanna', serif")
-                          : 'inherit',
-                        fontSize: `${block.headlineSize || (isLead ? 28 : 21)}px`,
-                        color: block.headlineColor || (isLead ? '#991b1b' : isAnchor ? '#78350f' : '#0f172a'),
-                        lineHeight: isTelugu ? '1.14' : '1.12',
-                        letterSpacing: '-0.02em',
+                        backgroundColor: block.accentColor || '#991b1b',
+                        fontFamily: headlineFontFamily,
+                        letterSpacing: 'normal',
                       }}
                     >
-                      {block.articleTitle}
+                      ★ {block.kicker} ★
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {/* Cutout Portrait Inset (politician or official headshot cutout as seen in Andhra Prabha) */}
+              {block.cutoutImage && (
+                <div className="float-right ml-2 mb-1 p-1 bg-white border border-slate-300 rounded shadow-2xs text-center shrink-0 w-16">
+                  <img
+                    src={block.cutoutImage.url}
+                    alt={block.cutoutImage.name || 'Portrait'}
+                    className="w-14 h-14 object-contain object-top rounded-full mx-auto border border-slate-400 bg-white"
+                  />
+                  {block.cutoutImage.name && (
+                    <div className="text-[7px] font-bold text-slate-900 mt-0.5 leading-none truncate font-telugu">
+                      {block.cutoutImage.name}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Infographic Stat Callout Card (Big numbers e.g. "24 మంది మృతి", "303 ప్రాజెక్టులు") */}
+              {block.statCallout && (
+                <div className="float-right ml-2 mb-1 p-1.5 rounded border-2 border-sky-600 bg-sky-50 text-center shrink-0 min-w-[70px] shadow-2xs">
+                  <div className="text-xl font-black text-sky-950 leading-none font-telugu">
+                    {block.statCallout.number}
+                  </div>
+                  <div className="text-[8px] font-bold text-sky-900 leading-tight mt-0.5 font-telugu">
+                    {block.statCallout.label}
+                  </div>
+                  {block.statCallout.unit && (
+                    <div className="text-[6.5px] text-slate-600 font-semibold font-telugu">
+                      {block.statCallout.unit}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Dynamic Headline & Layout Sizing - Center Aligned Headings, Flexible Photo Columns, Uncropped Natural Photos */}
+              {(() => {
+                const effectiveHeadlineSize = block.headlineSize || (
+                  isLead ? 44 :
+                  block.columnSpan >= 5 ? 34 :
+                  block.columnSpan >= 4 ? 28 :
+                  block.columnSpan === 3 ? 24 :
+                  block.columnSpan === 2 ? (block.height >= 400 ? 27 : 21) :
+                  (block.height >= 300 ? 20 : 18)
+                );
+
+                // Should bullets show? Only for lead, anchor or special stories
+                const shouldShowBullets = hasBullets && (isLead || isAnchor || (block as any).showBullets || (block as any).isSpecialStory || block.styleVariant === 'anchor_box');
+
+                // Inline jump markers
+                const inlineContinuedFrom = block.continuedFromPage ? (
+                  <span className="text-red-700 font-bold mr-1 inline font-telugu text-[10px] select-none">
+                    【{block.continuedFromPage}వ పేజీ తరువాయి】{' '}
+                  </span>
+                ) : null;
+
+                const inlineContinuedOn = block.continuedOnPage ? (
+                  <span className="font-bold text-red-700 whitespace-nowrap ml-1 font-telugu text-[9.5px] inline select-none">
+                    (మిగతా {block.continuedOnPage}వ పేజీలో...) ➔
+                  </span>
+                ) : null;
+
+                // Flexible Photo Column configuration:
+                // Photo can span 1, 1.5, 2, 2.5, or 3 columns without rigid constraints
+                const photoColSpan = (block as any).photoColumnSpan || (
+                  block.columnSpan >= 5 ? 2.5 :
+                  block.columnSpan === 4 ? 2 :
+                  block.columnSpan === 3 ? (block.imagePlacement === 'left' || block.imagePlacement === 'right' ? 1.5 : 2) :
+                  block.columnSpan === 2 ? 1 : 1
+                );
+                const photoWidthPercent = Math.min(85, Math.max(35, Math.round((photoColSpan / block.columnSpan) * 100)));
+
+                return (
+                  <>
+                    {/* 1. Main Headline - Center Aligned with Two-Tone Punchline */}
+                    <h2
+                      className={`mb-1 font-bold shrink-0 text-center mx-auto ${
+                        isLead ? 'border-b-2 border-red-600 pb-1 font-extrabold' : ''
+                      }`}
+                      style={{
+                        fontFamily: headlineFontFamily,
+                        fontSize: `${effectiveHeadlineSize}px`,
+                        color: block.headlineColor || (isLead ? '#991b1b' : isAnchor ? '#78350f' : '#0f172a'),
+                        lineHeight: isBlockTelugu ? (effectiveHeadlineSize > 26 ? '1.18' : '1.24') : '1.18',
+                        letterSpacing: 'normal',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {block.headlineHighlight && block.articleTitle?.includes(block.headlineHighlight) ? (
+                        <>
+                          <span>{block.articleTitle.split(block.headlineHighlight)[0]}</span>
+                          <span className="text-red-700 font-black">{block.headlineHighlight}</span>
+                          <span>{block.articleTitle.split(block.headlineHighlight)[1]}</span>
+                        </>
+                      ) : block.articleTitle?.includes(':') ? (
+                        <>
+                          <span className="text-slate-950">{block.articleTitle.split(':')[0]}: </span>
+                          <span className={isLead ? 'text-red-700 font-black' : 'text-sky-800 font-black'}>
+                            {block.articleTitle.split(':')[1]}
+                          </span>
+                        </>
+                      ) : (
+                        block.articleTitle
+                      )}
                     </h2>
 
-                    {/* Subheadline */}
+                    {/* 2. Subheadline - Distinct Font, Contrasting Size & Medium Weight, Center Aligned */}
                     {block.subheadline && (
                       <p
-                        className="text-[10px] text-slate-700 font-normal mb-1 italic shrink-0"
+                        className="text-slate-700 dark:text-slate-600 font-medium mb-1.5 text-center shrink-0 px-2 mx-auto"
                         style={{
-                          fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit',
-                          lineHeight: '1.16',
-                          letterSpacing: '-0.015em',
+                          fontFamily: subheadFontFamily,
+                          fontSize: isBlockTelugu ? '11px' : '10px',
+                          lineHeight: isBlockTelugu ? '1.35' : '1.25',
+                          letterSpacing: 'normal',
+                          textAlign: 'center',
                         }}
                       >
                         {block.subheadline}
                       </p>
                     )}
 
-                    {/* Photo Visual (Solution 1: Auto-Flex Visual Anchor - Zero White Space) */}
-                    {hasImage && (
-                      <div
-                        className="my-1 w-full overflow-hidden rounded-xs border border-slate-200 flex-1 min-h-[75px] flex flex-col bg-slate-100"
-                      >
-                        <img
-                          src={block.imageUrl}
-                          alt={block.articleTitle}
-                          loading="eager"
-                          onError={(e) => {
-                            const target = e.currentTarget as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
-                          }}
-                          className="w-full flex-1 min-h-0 object-cover"
-                        />
-                        {block.imageCaption && (
-                          <div
-                            className="text-[8px] text-slate-600 bg-slate-50 border-t border-slate-200 px-1 py-0.5 leading-tight font-normal shrink-0"
-                            style={{
-                              fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit',
-                              letterSpacing: '-0.01em',
-                            }}
-                          >
-                            📷 {block.imageCaption}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Bullet Highlights (Clean Broadsheet Editorial Style) */}
-                    {hasBullets && (
-                      <div
-                        className="my-1 py-1 px-1.5 bg-red-50/70 border-l-2 border-red-700 text-[9.5px] text-slate-900 rounded-r shrink-0"
-                        style={{
-                          fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit',
-                          lineHeight: '1.25',
-                          letterSpacing: '-0.01em',
-                        }}
-                      >
-                        <ul className="space-y-0.5">
-                          {block.bulletPoints?.map((bp, i) => (
-                            <li key={i} className="flex items-start font-normal">
-                              <span className="text-red-700 mr-1.5 text-[8px] leading-relaxed select-none">■</span>
-                              <span>{bp}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Byline & Beat */}
+                    {/* 3. Byline & Beat */}
                     <div
-                      className="text-[8.5px] text-red-900 mb-1 italic flex items-center justify-between border-b border-slate-100 pb-0.5 shrink-0 font-normal"
-                      style={{
-                        fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit',
-                        letterSpacing: '-0.01em',
-                      }}
+                      className="text-[8px] text-red-900 mb-1 italic flex items-center justify-between border-b border-slate-100 pb-0.5 shrink-0 font-normal"
+                      style={{ fontFamily: bodyFontFamily }}
                     >
                       <div className="flex items-center gap-1">
                         <span>✍️</span>
-                        <span>{isTelugu ? (block.byline || 'ఆంధ్ర ప్రభ బ్యూరో') : `By ${block.byline || 'Staff Reporter'}`}</span>
+                        <span>{isBlockTelugu ? (block.byline || 'ఆంధ్ర ప్రభ బ్యూరో') : `By ${block.byline || 'Staff Reporter'}`}</span>
                       </div>
                       {block.category && (
-                        <span className="text-[7px] uppercase tracking-wider text-slate-500 bg-slate-100 px-1 py-0.2 rounded-xs font-normal">
+                        <span className="text-[6.5px] uppercase tracking-wider text-slate-500 bg-slate-100 px-1 py-0.2 rounded-xs font-normal">
                           {block.category}
                         </span>
                       )}
                     </div>
 
-                    {/* Full Body Text & Continuation Jump-Line (Natural Flow - Zero Cutoff) */}
-                    <div
-                      className="text-slate-950 font-normal mt-1 shrink-0"
-                      style={{
-                        fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit',
-                        fontSize: isTelugu ? `${block.bodyFontSize || 10.5}px` : '10px',
-                        lineHeight: isTelugu ? '1.28' : '1.22',
-                        letterSpacing: '-0.01em',
-                        wordBreak: 'break-word',
-                      }}
-                    >
+                    {/* 4. CONTENT & PHOTO FLOW - Natural Uncropped Photos, Zero Cropping, Seamless Text Wrapping */}
+                    {hasImage && block.imagePlacement !== 'top' && block.imagePlacement !== 'middle' ? (
+                      /* A. UNIFIED NATURAL FLOAT TEXT WRAP (Zero White Space Beside Photo, Continuous Story Flow Across Full Height) */
                       <div
+                        className="text-slate-950 font-normal mt-0.5 flex-1 overflow-hidden flex flex-col justify-between text-justify"
                         style={{
-                          columnCount: isWide ? 2 : 1,
-                          columnGap: isWide ? '14px' : 'normal',
-                          columnRule: isWide ? '1px solid #e2e8f0' : 'none',
+                          fontFamily: bodyFontFamily,
+                          fontSize: isBlockTelugu ? `${block.bodyFontSize || (isLead ? 10.5 : 10)}px` : '9.5px',
+                          lineHeight: isBlockTelugu ? (isLead ? '1.5' : '1.45') : '1.35',
                           textAlign: 'justify',
+                          textJustify: 'inter-word',
                         }}
                       >
-                        {block.leadParagraph && (
-                          <span className="text-slate-900 mr-1 inline font-normal">
-                            {block.leadParagraph}{' '}
-                          </span>
-                        )}
-                        <span>{block.bodyContent}</span>
-                      </div>
-
-                      {/* Continued Jump Line */}
-                      {block.continuedOnPage && (
-                        <div className="mt-1.5 text-right shrink-0">
-                          <span
-                            className="inline-block text-[9px] text-red-800 bg-red-50/90 border border-red-200 px-1.5 py-0.2 rounded-xs italic font-normal"
+                        <div className="overflow-hidden flex-1">
+                          {/* Floated Photo - Zero Cropping, Natural Aspect Ratio, True Float Wrap */}
+                          <div
+                            className={`${
+                              block.imagePlacement === 'right' ? 'float-right ml-2.5 mb-1.5' : 'float-left mr-2.5 mb-1.5'
+                            } shrink-0`}
                             style={{
-                              fontFamily: isTelugu ? "'Mallanna', sans-serif" : 'inherit',
-                              letterSpacing: '-0.01em',
+                              width: `${photoWidthPercent}%`,
+                              maxWidth: '100%',
                             }}
                           >
-                            (మిగతా {block.continuedOnPage}వ పేజీలో...) ➔
-                          </span>
+                            <img
+                              src={block.imageUrl}
+                              alt={block.articleTitle}
+                              loading="eager"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
+                              }}
+                              className="w-full h-auto object-contain block mx-auto"
+                            />
+                            {block.imageCaption && (
+                              <div
+                                className="text-[7.5px] text-slate-700 pt-0.5 leading-tight font-normal text-left"
+                                style={{ fontFamily: bodyFontFamily }}
+                              >
+                                📷 {block.imageCaption}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Bullet Highlights directly in the flow beside the photo */}
+                          {shouldShowBullets && (
+                            <div
+                              className="mb-1.5 p-1 bg-red-50/90 border-l-2 border-red-700 text-[8.5px] text-slate-900 rounded-r overflow-hidden"
+                              style={{ fontFamily: bodyFontFamily }}
+                            >
+                              <ul className="space-y-0.5">
+                                {block.bulletPoints?.map((bp, i) => (
+                                  <li key={i} className="flex items-start font-normal">
+                                    <span className="text-red-700 mr-1 text-[6.5px] leading-relaxed select-none">■</span>
+                                    <span>{bp}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {inlineContinuedFrom}
+                          {block.leadParagraph && (
+                            <span className="text-slate-950 mr-1 inline font-semibold">
+                              {block.leadParagraph}{' '}
+                            </span>
+                          )}
+                          <span>{block.bodyContent}</span>
+                          {inlineContinuedOn}
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
+                    ) : hasImage && block.imagePlacement === 'middle' ? (
+                      /* B. MIDDLE PHOTO STORY (Opening paragraph above photo, photo in middle, remainder below) */
+                      <div
+                        className="text-slate-950 font-normal mt-0.5 flex-1 overflow-hidden flex flex-col justify-between text-justify"
+                        style={{
+                          fontFamily: bodyFontFamily,
+                          fontSize: isBlockTelugu ? `${block.bodyFontSize || 10}px` : '9.5px',
+                          lineHeight: isBlockTelugu ? '1.5' : '1.35',
+                          textAlign: 'justify',
+                          textJustify: 'inter-word',
+                        }}
+                      >
+                        <div className="overflow-hidden flex-1">
+                          {inlineContinuedFrom}
+                          {block.leadParagraph && (
+                            <p className="text-slate-950 font-semibold mb-1">
+                              {block.leadParagraph}
+                            </p>
+                          )}
+
+                          <div className="my-1.5 w-full flex flex-col">
+                            <img
+                              src={block.imageUrl}
+                              alt={block.articleTitle}
+                              loading="eager"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
+                              }}
+                              className="w-full h-auto object-contain block mx-auto"
+                            />
+                            {block.imageCaption && (
+                              <div
+                                className="text-[7.5px] text-slate-700 pt-0.5 leading-tight font-normal text-left"
+                                style={{ fontFamily: bodyFontFamily }}
+                              >
+                                📷 {block.imageCaption}
+                              </div>
+                            )}
+                          </div>
+
+                          <span>{block.bodyContent}</span>
+                          {inlineContinuedOn}
+                        </div>
+                      </div>
+                    ) : (
+                      /* C. TOP IMAGE OR MULTI-COLUMN TEXT FLOW (Natural Uncropped Photo, Full Height Content Justification) */
+                      <>
+                        {hasImage && (
+                          <div className="my-1 w-full overflow-hidden shrink-0 flex flex-col">
+                            <img
+                              src={block.imageUrl}
+                              alt={block.articleTitle}
+                              loading="eager"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80';
+                              }}
+                              className="w-full h-auto object-contain block mx-auto"
+                            />
+                            {block.imageCaption && (
+                              <div
+                                className="text-[7.5px] text-slate-700 pt-0.5 leading-tight font-normal shrink-0"
+                                style={{ fontFamily: bodyFontFamily }}
+                              >
+                                📷 {block.imageCaption}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Multi-Column Body Flow with 1-Column Bullet Highlights */}
+                        <div
+                          className="text-slate-950 font-normal mt-0.5 flex-1 overflow-hidden flex flex-col justify-between"
+                          style={{
+                            fontFamily: bodyFontFamily,
+                            fontSize: isBlockTelugu ? `${block.bodyFontSize || 10.5}px` : '10px',
+                            lineHeight: isBlockTelugu ? '1.5' : '1.35',
+                            letterSpacing: 'normal',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          <div
+                            className="overflow-hidden flex-1"
+                            style={{
+                              columnCount: isWide ? (block.columnSpan >= 5 ? 3 : 2) : 1,
+                              columnGap: isWide ? '14px' : 'normal',
+                              columnRule: isWide ? '1px solid #cbd5e1' : 'none',
+                              columnFill: 'balance',
+                              textAlign: 'justify',
+                              textJustify: 'inter-word',
+                            }}
+                          >
+                            {/* Single Column Bullets - Never stretches across multiple columns */}
+                            {shouldShowBullets && (
+                              <div
+                                className="mb-1.5 p-1 bg-red-50/70 border-l-2 border-red-700 text-[8.5px] text-slate-900 rounded-r max-w-[210px]"
+                                style={{
+                                  fontFamily: bodyFontFamily,
+                                  breakInside: 'avoid',
+                                }}
+                              >
+                                <ul className="space-y-0.5">
+                                  {block.bulletPoints?.map((bp, i) => (
+                                    <li key={i} className="flex items-start font-normal">
+                                      <span className="text-red-700 mr-1 text-[6.5px] leading-relaxed select-none">■</span>
+                                      <span>{bp}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+
+                            {inlineContinuedFrom}
+                            {block.leadParagraph && (
+                              <span className="text-slate-950 mr-1 inline font-semibold">
+                                {block.leadParagraph}{' '}
+                              </span>
+                            )}
+                            <span>{block.bodyContent}</span>
+                            {inlineContinuedOn}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
                 );
-              })}
+              })()}
             </div>
           );
         })}
 
-        {/* 3. PLACED ADVERTISEMENTS */}
+        {/* 3. PLACED ADVERTISEMENTS (Supports Custom Uploaded Image & Presets) */}
         {(pageToRender.adPlacements || []).map((ad) => (
           <div
             key={ad.placementId}
-            className="absolute bg-amber-50/70 dark:bg-amber-950/20 border-2 border-dashed border-amber-400/80 flex flex-col items-center justify-center p-2 text-center rounded-xs"
+            className="absolute bg-white border border-amber-500 shadow-xs flex flex-col items-center justify-center overflow-hidden z-10"
             style={{
               top: `${ad.y}px`,
               left: `${ad.x}px`,
               width: `${ad.width}px`,
               height: `${ad.height}px`,
+              boxSizing: 'border-box',
             }}
           >
-            <span className="text-[9px] font-sans uppercase font-bold text-amber-900 dark:text-amber-300 tracking-wider">
-              Commercial Advertisement Zone
-            </span>
-            <span className="text-[8px] font-sans text-slate-600 dark:text-slate-400 italic">
-              Client: {ad.sponsorLabel} • Immovable Hard Grid Constraint
-            </span>
+            {ad.imageUrl ? (
+              <div className="w-full h-full relative group">
+                <img
+                  src={ad.imageUrl}
+                  alt={ad.sponsorLabel || 'Commercial Advertisement'}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-1 right-1 bg-black/70 text-white text-[8px] font-sans px-1.5 py-0.5 rounded uppercase tracking-wider backdrop-blur-xs">
+                  ప్రకటన / Ad
+                </div>
+                <div className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-white text-[8px] px-2 py-0.5 truncate text-center">
+                  {ad.sponsorLabel}
+                </div>
+              </div>
+            ) : (
+              <div className="w-full h-full bg-amber-50/90 border-2 border-dashed border-amber-400 p-2 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider">
+                  వాణిజ్య ప్రకటన / Advertisement
+                </span>
+                <span className="text-[11px] font-bold text-slate-800 mt-1">
+                  {ad.sponsorLabel}
+                </span>
+                <span className="text-[8px] text-slate-500 italic mt-0.5">
+                  కమర్షియల్ యాడ్ జోన్ ({ad.columnSpan} Cols)
+                </span>
+              </div>
+            )}
           </div>
         ))}
 
-        {/* 4. FOOTER (Page Numbering & Imprint - Zero Overlap at Exact Base Rule) */}
+        {/* 4. FOOTER (Page Numbering, Imprint & Authentic CMYK Print Calibration Strip) */}
         <div
-          className="absolute border-t border-slate-400 pt-1 text-[9px] font-sans text-slate-700 flex justify-between px-1 bg-white z-10"
+          className="absolute border-t-2 border-slate-400 pt-1 text-[9px] font-sans text-slate-700 flex items-center justify-between px-2 bg-white z-10"
           style={{
             top: `${footerTop}px`,
             left: `${grid.margins.left}px`,
@@ -998,13 +1455,33 @@ export const PageDesignerPage: React.FC = () => {
             height: `${footerHeight}px`,
           }}
         >
-          <span className="font-bold text-red-800">{selectedBrand.name}</span>
-          <span className="font-medium">
+          {/* Left: Brand Name & CMYK Calibration Dots (as in Prajasakti / Velugu broadsheets) */}
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-red-900" style={{ letterSpacing: 'normal' }}>
+              {selectedBrand.name}
+            </span>
+            <div className="flex items-center gap-1.5" title="Press Registration & CMYK Calibration">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block border border-slate-400 shadow-2xs" title="Cyan"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-pink-500 inline-block border border-slate-400 shadow-2xs" title="Magenta"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block border border-slate-400 shadow-2xs" title="Yellow"></span>
+              <span className="w-2.5 h-2.5 rounded-full bg-slate-950 inline-block border border-slate-400 shadow-2xs" title="Key/Black"></span>
+              <span className="text-[7px] font-mono text-slate-500 uppercase tracking-widest pl-1 font-bold">CMYK</span>
+            </div>
+          </div>
+
+          {/* Center: Page Numbering */}
+          <span className="font-bold text-slate-900" style={{ letterSpacing: 'normal' }}>
             {isTelugu
               ? `పేజీ ${pageToRender.pageNumber} / ${pages.length}`
-              : selectedBrand.headerFooterRules.pageNumberFormat.replace('{n}', String(pageToRender.pageNumber)).replace('{total}', String(pages.length))}
+              : selectedBrand.headerFooterRules?.pageNumberFormat?.replace('{n}', String(pageToRender.pageNumber)).replace('{total}', String(pages.length)) || `PAGE ${pageToRender.pageNumber} OF ${pages.length}`}
           </span>
-          <span>{edition.editionDate || edition.publicationDate || '30 అక్టోబర్ 2026'}</span>
+
+          {/* Right: Imprint / Date */}
+          <div className="flex items-center gap-2">
+            <span className="text-[7.5px] font-mono text-slate-600 font-semibold">{selectedBrand.imprint?.rniNumber || 'RNI: AP/TEL/1894/01'}</span>
+            <span>•</span>
+            <span className="font-medium" style={{ letterSpacing: 'normal' }}>{edition.editionDate || edition.publicationDate || '14 నవంబర్ 2026, శనివారం'}</span>
+          </div>
         </div>
       </>
     );
@@ -1014,7 +1491,7 @@ export const PageDesignerPage: React.FC = () => {
     <div className="flex flex-col h-full w-full bg-[#f8fafd] dark:bg-[#202124] text-[#202124] dark:text-slate-100 overflow-hidden select-none font-sans">
       {/* 1. NEWSPAPER PREVIEW & PDF DOWNLOAD TOPBAR */}
       <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between z-20 shrink-0 shadow-xs print:hidden">
-        {/* Left: Newspaper Name & Publication Date */}
+        {/* Left: Newspaper Brand & Publication Date */}
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <span className="p-1.5 rounded-lg bg-red-600 text-white shadow-xs">
@@ -1025,17 +1502,22 @@ export const PageDesignerPage: React.FC = () => {
               onChange={(e) => {
                 const nextBrand = brandsList.find((b) => b.brandId === e.target.value) || brandsList[0];
                 setSelectedBrand(nextBrand);
-                if (nextBrand.language === 'te' || nextBrand.brandId === TELUGU_NEWSPAPER_BRAND.brandId) {
+                brandManagementService.setActiveBrandId(nextBrand.brandId);
+                const nextTemplate = GridCalculationService.getTemplateForBrand(nextBrand);
+                setSelectedTemplate(nextTemplate);
+
+                if (nextBrand.paperSize === 'broadsheet' && (nextBrand.language === 'te' || nextBrand.brandId === TELUGU_NEWSPAPER_BRAND.brandId || nextBrand.brandId === 'brand-andhra-prabha')) {
                   setEdition(TELUGU_NEWSPAPER_EDITION);
                   setPages(TELUGU_PREPLANNED_PAGES);
                   setCurrentPageIndex(0);
                 } else {
-                  setEdition(MOCK_CURRENT_EDITION);
+                  const isTe = nextBrand.language === 'te' || nextBrand.name?.includes('తెలుగు');
+                  const relevantStories = isTe ? availableStories : availableStories.filter((s) => s.category !== 'జాతీయం' && s.category !== 'రాష్ట్రీయం' && s.category !== 'జిల్లా వార్తలు');
                   const enPlan = PagePlanningEngine.planEditionLayout({
-                    edition: MOCK_CURRENT_EDITION,
-                    template: selectedTemplate,
-                    stories: availableStories.filter((s) => s.category !== 'జాతీయం' && s.category !== 'రాష్ట్రీయం' && s.category !== 'జిల్లా వార్తలు'),
-                    targetPageCount: 2,
+                    edition: isTe ? TELUGU_NEWSPAPER_EDITION : MOCK_CURRENT_EDITION,
+                    template: nextTemplate,
+                    stories: relevantStories,
+                    targetPageCount: nextBrand.pageCount || 4,
                   });
                   setPages(enPlan.pages);
                   setCurrentPageIndex(0);
@@ -1060,10 +1542,9 @@ export const PageDesignerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Center: Page Switcher & Zoom */}
-        <div className="flex items-center space-x-3">
-          {/* Page Switcher: pure 1/4 */}
-          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+        {/* Center: Page Switcher (Pure 1 / 4) */}
+        <div className="flex items-center">
+          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 shadow-2xs">
             <button
               onClick={() => setCurrentPageIndex((prev) => Math.max(0, prev - 1))}
               disabled={currentPageIndex === 0}
@@ -1084,88 +1565,85 @@ export const PageDesignerPage: React.FC = () => {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Simple Zoom Controls */}
-          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-600 dark:text-slate-300">
-            <button
-              onClick={() => setZoomLevel((z) => Math.max(0.4, Number((z - 0.1).toFixed(2))))}
-              className="p-0.5 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <span className="w-10 text-center font-bold text-blue-600 dark:text-blue-400 font-mono">
-              {Math.round(zoomLevel * 100)}%
-            </span>
-            <button
-              onClick={() => setZoomLevel((z) => Math.min(1.8, Number((z + 0.1).toFixed(2))))}
-              className="p-0.5 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-          </div>
         </div>
 
-        {/* Right: PDF Download (A4 standard + Broadsheet Press) */}
-        <div className="flex items-center space-x-2">
+        {/* Right: Single Download PDF Button (Dynamic Print Size: Broadsheet, Tabloid, etc.) */}
+        <div className="flex items-center">
           <button
-            onClick={() => handlePrintPdf('a4')}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold cursor-pointer shadow-xs transition-colors"
-            title="Download Standard A4 PDF (Universal Size)"
+            onClick={handlePrintPdf}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold cursor-pointer shadow-xs transition-colors"
+            title={`Download PDF in ${selectedBrand.paperSize?.toUpperCase() || 'BROADSHEET'} format`}
           >
             <Download className="w-4 h-4" />
-            <span>Download PDF (A4)</span>
-          </button>
-          <button
-            onClick={() => handlePrintPdf('broadsheet')}
-            className="flex items-center space-x-1.5 px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-xs font-medium cursor-pointer shadow-xs transition-colors"
-            title="Download Broadsheet Press PDF (350x540mm)"
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Broadsheet (Press PDF)</span>
+            <span>Download PDF</span>
           </button>
         </div>
       </div>
 
-      {/* NEWSPAPER PAGE PREVIEW CANVAS */}
-      <div className="flex-1 bg-[#d5d8de] dark:bg-[#151518] overflow-auto p-4 sm:p-6 flex flex-col items-center justify-start print:hidden">
-        {/* Scrollable & Centered Physical Print Canvas Sheet Container */}
+      {/* NEWSPAPER PAGE PREVIEW CANVAS - 100% WIDTH WITH NATURAL VERTICAL SCROLL */}
+      <div
+        ref={canvasScrollRef}
+        className="flex-1 bg-[#d5d8de] dark:bg-[#151518] overflow-y-auto overflow-x-hidden p-3 flex flex-col items-center justify-start print:hidden"
+      >
+        {/* 100% Width Responsive Centered Canvas Sheet Container */}
         <div
-          className="shrink-0 relative transition-all duration-150 mb-10 shadow-2xl"
+          className="shrink-0 relative transition-all duration-100 shadow-2xl mx-auto my-3"
+          style={{
+            width: `${Math.round(grid.pageWidth * zoomLevel)}px`,
+            height: `${Math.round(grid.pageHeight * zoomLevel)}px`,
+          }}
+        >
+          <div
+            className="bg-white text-slate-950 shadow-2xl border border-slate-300 dark:border-slate-800 absolute top-0 left-0"
             style={{
-              width: `${Math.round(grid.pageWidth * zoomLevel)}px`,
-              height: `${Math.round(grid.pageHeight * zoomLevel)}px`,
+              width: `${grid.pageWidth}px`,
+              height: `${grid.pageHeight}px`,
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top left',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
             }}
           >
-            <div
-              className="bg-white text-slate-950 shadow-2xl border border-slate-300 dark:border-slate-800 absolute top-0 left-0"
-              style={{
-                width: `${grid.pageWidth}px`,
-                height: `${grid.pageHeight}px`,
-                transform: `scale(${zoomLevel})`,
-                transformOrigin: 'top left',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
-              }}
-            >
-              {/* Page Elements (Masthead/Folio, Placed Stories, Ads, Footer) - Interactive Canvas */}
-              {currentPage && renderPageCanvasElements(currentPage, true)}
-            </div>
+            {/* Page Elements (Masthead/Folio, Placed Stories, Ads, Footer) - Interactive Canvas */}
+            {currentPage && renderPageCanvasElements(currentPage, true)}
           </div>
         </div>
+      </div>
 
-      {/* 4. FULL PRINT EDITION RENDER (All Pages for PDF Export - 100% Centered & Fitted) */}
+      {/* 4. FULL PRINT EDITION RENDER (All Pages for PDF Export - 100% Centered & Fitted to Configured Paper Size) */}
       <div className="hidden print:block print-newspaper-export-container font-sans bg-white text-black">
-        {pages.map((p) => (
-          <div
-            key={`print-${p.pageId}`}
-            className="print-page-sheet bg-white text-slate-950"
-          >
-            <div className="print-page-inner">
-              {renderPageCanvasElements(p, false)}
+        {pages.map((p) => {
+          const activeBrand = brandManagementService.getActiveBrand() || selectedBrand;
+          const template = GridCalculationService.getTemplateForBrand(activeBrand);
+          const paperFormat = activeBrand.paperSize || template.format || 'broadsheet';
+          const widthMm = template.pageWidthMm || (paperFormat === 'tabloid' ? 280 : paperFormat === 'a4' ? 210 : paperFormat === 'a3' ? 297 : paperFormat === 'berliner' ? 315 : 350);
+          const heightMm = template.pageHeightMm || (paperFormat === 'tabloid' ? 380 : paperFormat === 'a4' ? 297 : paperFormat === 'a3' ? 420 : paperFormat === 'berliner' ? 470 : 540);
+          const targetPxWidth = widthMm * 3.779527559;
+          const printScale = grid.pageWidth > 0 ? (targetPxWidth / grid.pageWidth) : 1;
+
+          return (
+            <div
+              key={`print-${p.pageId}`}
+              className="print-page-sheet bg-white text-slate-950"
+              style={{
+                width: `${widthMm}mm`,
+                height: `${heightMm}mm`,
+                page: paperFormat,
+              }}
+            >
+              <div
+                className="print-page-inner"
+                style={{
+                  width: `${grid.pageWidth}px`,
+                  height: `${grid.pageHeight}px`,
+                  transform: `scale(${printScale})`,
+                  transformOrigin: 'top left',
+                }}
+              >
+                {renderPageCanvasElements(p, false)}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

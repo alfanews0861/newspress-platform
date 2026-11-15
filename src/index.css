@@ -3,8 +3,8 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --font-serif: "Google Sans", "Roboto", "Noto Sans", "Noto Sans Telugu", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-sans: "Google Sans", "Roboto", "Noto Sans", "Noto Sans Telugu", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Noto Serif Telugu", "Ramabhadra", "Suranna", "Cinzel", "Playfair Display", "Newsreader", "Georgia", "Merriweather", serif;
+  --font-sans: "Google Sans", "Open Sans", "Roboto", "Noto Sans Telugu", "Mallanna", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --color-canvas: var(--app-canvas);
@@ -31,82 +31,105 @@
 
 :root {
   /* ==========================================================================
-     GOOGLE WORKSPACE & MATERIAL DESIGN 3 THEME (Default)
-     Crisp, high-contrast, pure black text on light Google surfaces
+     GOOGLE SITES & WORKSPACE CLEAN THEME (Default)
+     Airy whitespace, pure white card surfaces, soft Google blue accents,
+     clean Google-standard typography hierarchy and subtle borders.
      ========================================================================== */
-  --app-canvas: #f8fafd;           /* Google Cloud/Workspace soft clean backdrop */
-  --app-canvas-subtle: #f1f3f4;    /* Subtle background for footers / headers */
-  --app-surface: #ffffff;          /* Pure white card and panel surfaces */
-  --app-surface-elevated: #f1f3f4; /* Google light grey for hover & secondary pills */
-  --app-border-subtle: #bdc1c6;    /* Distinct visible border */
-  --app-border-strong: #70757a;    /* Focused border */
-  --app-text-subtle: #000000;      /* Pure black high-contrast text */
-  --app-text-muted: #000000;       /* Pure black high-contrast text */
-  --app-text-secondary: #000000;   /* Pure black high-contrast text */
-  --app-text-body: #000000;        /* Pure black high-contrast text */
-  --app-text-heading-muted: #000000;/* Pure black high-contrast text */
-  --app-text-heading: #000000;     /* Pure black high-contrast text */
+  --app-canvas: #f8fafd;           /* Google Workspace clean soft background */
+  --app-canvas-subtle: #f1f3f4;    /* Light toolbar/header subtle background */
+  --app-surface: #ffffff;          /* Pure crisp white card surface */
+  --app-surface-elevated: #f8fafd; /* Elevated hover card surface */
+  --app-border-subtle: #dadce0;    /* Google standard 1px light outline */
+  --app-border-strong: #bdc1c6;    /* Focused/active Google border */
+  
+  /* Google Clean Typographic Hierarchy */
+  --app-text-heading: #202124;     /* Google primary title text (sharp, readable dark charcoal) */
+  --app-text-heading-muted: #3c4043;/* Google subheadings */
+  --app-text-body: #3c4043;        /* Google main body paragraph text */
+  --app-text-secondary: #444746;   /* Google secondary body text */
+  --app-text-muted: #5f6368;       /* Google standard secondary/muted grey */
+  --app-text-subtle: #70757a;      /* Google caption / subtle hint text */
 
-  /* Google Brand Colors */
-  --app-primary: #1a73e8;          /* Official Google Blue */
+  /* Google 4-Color Brand Palette */
+  --app-primary: #1a73e8;          /* Google Blue */
   --app-primary-dark: #1557b0;     /* Google Blue Hover */
-  --app-primary-light: #e8f0fe;    /* Google Blue Pill/Surface */
+  --app-primary-light: #e8f0fe;    /* Google Blue Pill/Surface container */
+  --app-primary-border: #d2e3fc;   /* Google Blue border */
 
-  --app-google-red: #d93025;
-  --app-google-green: #1e8e3e;
-  --app-google-yellow: #f9ab00;
+  --app-google-red: #d93025;       /* Google Red */
+  --app-google-red-light: #fce8e6;
+  --app-google-green: #1e8e3e;     /* Google Green */
+  --app-google-green-light: #e6f4ea;
+  --app-google-yellow: #f9ab00;    /* Google Yellow/Amber */
+  --app-google-yellow-light: #fef7e0;
   
   --scrollbar-track: #f1f3f4;
-  --scrollbar-thumb: #9aa0a6;
-  --scrollbar-thumb-hover: #5f6368;
+  --scrollbar-thumb: #dadce0;
+  --scrollbar-thumb-hover: #bdc1c6;
 }
 
 [data-theme="dark"] {
   /* ==========================================================================
-     GOOGLE DARK THEME
+     GOOGLE WORKSPACE DARK THEME
+     Consistent with Google Drive/Gmail Dark Theme
      ========================================================================== */
-  --app-canvas: #202124;
-  --app-canvas-subtle: #292a2d;
-  --app-surface: #292a2d;
-  --app-surface-elevated: #35363a;
-  --app-border-subtle: #3c4043;
-  --app-border-strong: #5f6368;
-  --app-text-subtle: #80868b;
-  --app-text-muted: #9aa0a6;
-  --app-text-secondary: #bdc1c6;
-  --app-text-body: #e8eaed;
-  --app-text-heading-muted: #f1f3f4;
-  --app-text-heading: #ffffff;
+  --app-canvas: #1f1f1f;
+  --app-canvas-subtle: #28292a;
+  --app-surface: #28292a;
+  --app-surface-elevated: #333537;
+  --app-border-subtle: #444746;
+  --app-border-strong: #5e5e5e;
+  --app-text-subtle: #8e918f;
+  --app-text-muted: #a8aaad;
+  --app-text-secondary: #c4c7c5;
+  --app-text-body: #e3e3e3;
+  --app-text-heading-muted: #e3e3e3;
+  --app-text-heading: #f2f2f2;
 
-  --app-primary: #8ab4f8;
-  --app-primary-dark: #aecbfa;
-  --app-primary-light: #174ea6;
+  --app-primary: #a8c7fa;
+  --app-primary-dark: #8ab4f8;
+  --app-primary-light: #004a77;
+  --app-primary-border: #1a73e8;
 
-  --scrollbar-track: #202124;
-  --scrollbar-thumb: #3c4043;
-  --scrollbar-thumb-hover: #5f6368;
+  --app-google-red: #f28b82;
+  --app-google-red-light: #3c1410;
+  --app-google-green: #81c995;
+  --app-google-green-light: #0d2818;
+  --app-google-yellow: #fdd663;
+  --app-google-yellow-light: #382c00;
+
+  --scrollbar-track: #1f1f1f;
+  --scrollbar-thumb: #444746;
+  --scrollbar-thumb-hover: #5e5e5e;
 }
 
 @layer base {
   html, body {
     background-color: var(--color-canvas);
-    color: var(--color-text-heading);
+    color: var(--color-text-body);
     font-family: var(--font-sans);
     min-height: 100%;
     letter-spacing: -0.01em;
   }
 
-  /* Google-style subtle scrollbars */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text-heading);
+    font-family: var(--font-sans);
+    letter-spacing: -0.02em;
+  }
+
+  /* Google-style subtle rounded scrollbars */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
-    border-radius: 4px;
+    border-radius: 9999px;
+    border: 2px solid var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
@@ -114,88 +137,128 @@
 }
 
 /* ==========================================================================
-   LIGHT MODE: HIGH-CONTRAST PURE BLACK TEXT & PURE OPAQUE SURFACES
-   Ensures all grey/washed-out text on light backgrounds is crisp pure black (#000000)
+   GOOGLE MATERIAL DESIGN & GOOGLE SITES UTILITY STYLES
+   Clean pill buttons, light borders, subtle hover elevations, and crisp badges.
    ========================================================================== */
-html:not([data-theme="dark"]),
-html[data-theme="light"],
-:root:not([data-theme="dark"]) {
-  /* Force light mode text classes to pure black */
-  .text-slate-400,
-  .text-slate-500,
-  .text-slate-600,
-  .text-slate-700,
-  .text-slate-800,
-  .text-slate-900,
-  .text-gray-400,
-  .text-gray-500,
-  .text-gray-600,
-  .text-gray-700,
-  .text-gray-800,
-  .text-gray-900,
-  .text-zinc-400,
-  .text-zinc-500,
-  .text-zinc-600,
-  .text-zinc-700,
-  .text-zinc-800,
-  .text-zinc-900,
-  .text-\[\#5f6368\],
-  .text-\[\#80868b\],
-  .text-\[\#3c4043\],
-  .text-\[\#202124\] {
-    color: #000000 !important;
-  }
 
-  /* Subtitles, labels, descriptions, and breadcrumbs in light mode */
-  label {
-    color: #000000 !important;
-    font-weight: 600;
-  }
+/* Google Primary Pill Button */
+.google-btn-primary {
+  background-color: #1a73e8;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.google-btn-primary:hover {
+  background-color: #1557b0;
+  box-shadow: 0 1px 3px rgba(60,64,67, 0.3), 0 4px 8px 3px rgba(60,64,67, 0.15);
+}
 
-  p {
-    color: #000000;
-  }
+/* Google Outline / Secondary Button */
+.google-btn-secondary {
+  background-color: #ffffff;
+  color: #1a73e8;
+  border: 1px solid #dadce0;
+  border-radius: 9999px;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.google-btn-secondary:hover {
+  background-color: #f8fafd;
+  border-color: #bdc1c6;
+}
 
-  /* Form inputs in light mode: pure white solid background and crisp black text */
-  input:not([type="checkbox"]):not([type="radio"]),
-  textarea,
-  select {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-color: #bdc1c6 !important;
-  }
+/* Google Clean Card */
+.google-card {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 1rem;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.google-card:hover {
+  border-color: #bdc1c6;
+  box-shadow: 0 1px 3px rgba(60,64,67, 0.08), 0 4px 12px rgba(60,64,67, 0.06);
+}
 
-  input::placeholder,
-  textarea::placeholder {
-    color: #4b5563 !important;
-    opacity: 1 !important;
-  }
+/* Google Pill Chip / Filter */
+.google-chip {
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 9999px;
+  color: #3c4043;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+}
+.google-chip:hover {
+  background-color: #f1f3f4;
+  border-color: #bdc1c6;
+}
+.google-chip-active {
+  background-color: #e8f0fe !important;
+  color: #1a73e8 !important;
+  border-color: #d2e3fc !important;
+  font-weight: 600 !important;
+}
 
-  /* Tables in light mode */
-  th {
-    color: #000000 !important;
-    font-weight: 700 !important;
-  }
+/* Form inputs: Google style with smooth #dadce0 outline */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  border-color: #dadce0;
+  border-radius: 0.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus,
+select:focus {
+  border-color: #1a73e8 !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+}
 
-  td {
-    color: #000000 !important;
-  }
+/* ==========================================================================
+   GLOBAL BUTTON & ICON ALIGNMENT SAFEGUARDS
+   Guarantees all buttons display icons and text side-by-side horizontally.
+   ========================================================================== */
+button, 
+[role="button"],
+.btn {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+}
 
-  /* Solid opaque backgrounds for modals, dialogs, dropdowns, and cards */
-  .modal-dialog,
-  [role="dialog"] {
-    background-color: #ffffff !important;
-    opacity: 1 !important;
-  }
+/* Ensure direct children of buttons stay aligned horizontally */
+button > *,
+[role="button"] > *,
+.btn > * {
+  display: inline-flex;
+  align-items: center;
+}
 
-  /* Telugu Script Typography Integrity (Preserve conjunct glyphs & vattulu) */
-  :lang(te),
-  [data-lang="te"],
-  .font-telugu {
-    letter-spacing: normal !important;
-    word-spacing: normal !important;
-    text-transform: none !important;
-  }
+/* Telugu Script Typography Integrity (Preserve conjunct glyphs & vattulu) */
+:lang(te),
+[data-lang="te"],
+.font-telugu,
+.newspaper-telugu-content,
+.newspaper-telugu-content * {
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-transform: none !important;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "liga" 1, "akhn" 1, "blwf" 1, "half" 1, "pstf" 1, "vatu" 1, "cjct" 1;
 }
 
 /* ==========================================================================
@@ -203,7 +266,31 @@ html[data-theme="light"],
    ========================================================================== */
 @media print {
   @page {
+    margin: 0;
+  }
+
+  @page broadsheet {
     size: 350mm 540mm;
+    margin: 0;
+  }
+
+  @page tabloid {
+    size: 280mm 380mm;
+    margin: 0;
+  }
+
+  @page berliner {
+    size: 315mm 470mm;
+    margin: 0;
+  }
+
+  @page a3 {
+    size: 297mm 420mm;
+    margin: 0;
+  }
+
+  @page a4 {
+    size: 210mm 297mm;
     margin: 0;
   }
 
@@ -215,7 +302,8 @@ html[data-theme="light"],
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     width: 100% !important;
-    height: 100% !important;
+    min-height: 100% !important;
+    height: auto !important;
   }
 
   /* Hide screen-only interactive UI controls */
@@ -233,9 +321,7 @@ html[data-theme="light"],
   /* Dedicated Print Container for continuous pages */
   .print-newspaper-export-container {
     display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+    position: static !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -243,14 +329,55 @@ html[data-theme="light"],
     z-index: 999999 !important;
   }
 
+  .print-page-sheet,
   .print-page-outer-sheet {
     page-break-after: always !important;
     break-after: page !important;
-    margin: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 0 auto !important;
     box-shadow: none !important;
     border: none !important;
     position: relative !important;
     overflow: hidden !important;
     background: #ffffff !important;
+  }
+
+  .print-page-inner {
+    position: relative !important;
+    background: #ffffff !important;
+    margin: 0 auto !important;
+    transform-origin: top left !important;
+  }
+
+  /* Paper size presets for print styling */
+  html[data-print-format="broadsheet"] .print-page-sheet {
+    page: broadsheet;
+    width: 350mm !important;
+    height: 540mm !important;
+  }
+
+  html[data-print-format="tabloid"] .print-page-sheet {
+    page: tabloid;
+    width: 280mm !important;
+    height: 380mm !important;
+  }
+
+  html[data-print-format="berliner"] .print-page-sheet {
+    page: berliner;
+    width: 315mm !important;
+    height: 470mm !important;
+  }
+
+  html[data-print-format="a3"] .print-page-sheet {
+    page: a3;
+    width: 297mm !important;
+    height: 420mm !important;
+  }
+
+  html[data-print-format="a4"] .print-page-sheet {
+    page: a4;
+    width: 210mm !important;
+    height: 297mm !important;
   }
 }

@@ -38,6 +38,11 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         requiredPermission: 'news.read',
       },
       {
+        id: 'youtube_studio',
+        label: 'YouTube News Studio',
+        href: '/newsroom/youtube-studio',
+      },
+      {
         id: 'editorial_queue',
         label: 'Review Queue',
         href: '/newsroom/editorial-queue',

@@ -24,14 +24,14 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantStyles = {
-    default: 'bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-semibold',
-    outline: 'border border-slate-400 dark:border-slate-700 text-black dark:text-slate-200 bg-white dark:bg-slate-800/60 font-semibold shadow-2xs',
-    primary: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 font-semibold',
-    amber: 'bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80 font-semibold',
-    emerald: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 font-semibold',
-    blue: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 font-semibold',
-    purple: 'bg-purple-50 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80 font-semibold',
-    rose: 'bg-rose-50 dark:bg-rose-950/60 text-rose-900 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 font-semibold',
+    default: 'bg-[#f1f3f4] dark:bg-[#28292a] text-[#3c4043] dark:text-[#e3e3e3] border border-[#dadce0] dark:border-[#444746] font-medium',
+    outline: 'border border-[#dadce0] dark:border-[#444746] text-[#3c4043] dark:text-[#e3e3e3] bg-white dark:bg-[#28292a] font-medium',
+    primary: 'bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8] font-medium',
+    amber: 'bg-[#fef7e0] dark:bg-[#382c00] text-[#b06000] dark:text-[#fdd663] border border-[#feefc3] dark:border-[#f9ab00] font-medium',
+    emerald: 'bg-[#e6f4ea] dark:bg-[#0d2818] text-[#137333] dark:text-[#81c995] border border-[#ceead6] dark:border-[#137333] font-medium',
+    blue: 'bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8] font-medium',
+    purple: 'bg-[#f3e8fd] dark:bg-[#2e1065] text-[#7627bb] dark:text-[#d8b4fe] border border-[#e9d5ff] font-medium',
+    rose: 'bg-[#fce8e6] dark:bg-[#3c1410] text-[#c5221f] dark:text-[#f28b82] border border-[#fad2cf] dark:border-[#d93025] font-medium',
   };
 
   return (

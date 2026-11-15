@@ -10,6 +10,7 @@ import { NewsPage } from '../pages/newsroom/NewsPage';
 import { SubmissionsPage } from '../pages/newsroom/SubmissionsPage';
 import { ReportersPage } from '../pages/newsroom/ReportersPage';
 import { EditorialQueuePage } from '../pages/newsroom/EditorialQueuePage';
+import { YouTubeNewsStudioPage } from '../pages/newsroom/YouTubeNewsStudioPage';
 import { EditionsPage } from '../pages/newspaper/EditionsPage';
 import { EditionCalendarPage } from '../pages/newspaper/EditionCalendarPage';
 import { EditionPlanningPage } from '../pages/newspaper/EditionPlanningPage';
@@ -125,42 +126,46 @@ export const AppContent: React.FC = () => {
     );
   }
 
-  if (currentPath === '/login') {
+  const basePath = currentPath.split('?')[0];
+
+  if (basePath === '/login') {
     return <LoginPage onSuccess={() => navigateTo('/dashboard')} />;
   }
 
   // Standalone Public Landing Page (Zero login requirement, full-screen public experience)
-  if (currentPath === '/' || currentPath === '/landing') {
+  if (basePath === '/' || basePath === '/landing') {
     return <LandingPage onNavigate={navigateTo} />;
   }
 
   // Standalone Statutory & Legal Compliance Center
   if (
-    currentPath === '/legal' ||
-    currentPath === '/privacy' ||
-    currentPath === '/terms' ||
-    currentPath === '/editorial-policy' ||
-    currentPath === '/grievance' ||
-    currentPath === '/cookies' ||
-    currentPath === '/marketplace-terms'
+    basePath === '/legal' ||
+    basePath === '/privacy' ||
+    basePath === '/terms' ||
+    basePath === '/editorial-policy' ||
+    basePath === '/grievance' ||
+    basePath === '/cookies' ||
+    basePath === '/marketplace-terms'
   ) {
     let initialTab: LegalTabKey = 'privacy';
-    if (currentPath === '/terms') initialTab = 'terms';
-    else if (currentPath === '/editorial-policy') initialTab = 'editorial';
-    else if (currentPath === '/grievance') initialTab = 'grievance';
-    else if (currentPath === '/cookies') initialTab = 'cookies';
-    else if (currentPath === '/marketplace-terms') initialTab = 'marketplace';
+    if (basePath === '/terms') initialTab = 'terms';
+    else if (basePath === '/editorial-policy') initialTab = 'editorial';
+    else if (basePath === '/grievance') initialTab = 'grievance';
+    else if (basePath === '/cookies') initialTab = 'cookies';
+    else if (basePath === '/marketplace-terms') initialTab = 'marketplace';
 
     return <LegalCenterPage initialTab={initialTab} onNavigate={navigateTo} />;
   }
 
   const renderCurrentPage = () => {
-    switch (currentPath) {
+    switch (basePath) {
       case '/dashboard':
       case '/overview':
         return <DashboardPage onNavigate={navigateTo} />;
       case '/newsroom/news':
         return <NewsPage />;
+      case '/newsroom/youtube-studio':
+        return <YouTubeNewsStudioPage />;
       case '/newsroom/submissions':
         return <SubmissionsPage />;
       case '/newsroom/reporters':
@@ -288,19 +293,19 @@ export const AppContent: React.FC = () => {
       case '/admin/docs':
         return <CustomerHandoverDocumentationPage />;
       default:
-        if (currentPath.startsWith('/developer/apps/')) {
+        if (basePath.startsWith('/developer/apps/')) {
           return <DeveloperAppsPage />;
         }
-        if (currentPath.startsWith('/mobile')) {
+        if (basePath.startsWith('/mobile')) {
           return <MobileOperationsPage />;
         }
-        if (currentPath.startsWith('/marketplace/story/')) {
+        if (basePath.startsWith('/marketplace/story/')) {
           return <MarketplaceStoryDetailPage />;
         }
-        if (currentPath.startsWith('/marketplace/purchase-confirmation/')) {
+        if (basePath.startsWith('/marketplace/purchase-confirmation/')) {
           return <PurchaseConfirmationPage />;
         }
-        if (currentPath.startsWith('/marketplace/license/')) {
+        if (basePath.startsWith('/marketplace/license/')) {
           return <LicenseDetailPage />;
         }
         return <DashboardPage onNavigate={navigateTo} />;
@@ -308,7 +313,7 @@ export const AppContent: React.FC = () => {
   };
 
   return (
-    <DashboardLayout currentPath={currentPath} onNavigate={navigateTo}>
+    <DashboardLayout currentPath={basePath} onNavigate={navigateTo}>
       {renderCurrentPage()}
     </DashboardLayout>
   );

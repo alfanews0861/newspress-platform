@@ -14,6 +14,7 @@ import {
   Globe,
   Save,
   Lock,
+  Youtube,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -31,15 +32,37 @@ import { MOCK_TENANT_MEMBERS, MOCK_USERS, MOCK_SUBSCRIPTION } from '../../servic
 import { formatCurrency, formatDate } from '../../utils/formatters';
 
 import { PublishingPlanSection } from './PublishingPlanSection';
+import { YouTubeChannelSettingsSection } from './YouTubeChannelSettingsSection';
 
 export const SettingsPage: React.FC = () => {
   const { currentTenant, updateCurrentTenant } = useTenant();
   const { can, isPlatformAdmin } = usePermission();
   const { currentMembership } = useAuth();
 
-  const [activeTab, setActiveTab] = useState('general');
+  const getInitialTab = (): string => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam && ['general', 'youtube', 'rbac', 'roles_catalog', 'billing'].includes(tabParam)) {
+        return tabParam;
+      }
+    }
+    return 'general';
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam && ['general', 'youtube', 'rbac', 'roles_catalog', 'billing'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
 
   // Form states
   const [orgName, setOrgName] = useState(currentTenant.organizationName);
@@ -75,6 +98,7 @@ export const SettingsPage: React.FC = () => {
 
   const tabs = [
     { id: 'general', label: 'Organization Profile', icon: <Building2 className="w-4 h-4" /> },
+    { id: 'youtube', label: 'YouTube Channel & Branding', icon: <Youtube className="w-4 h-4 text-red-600" /> },
     { id: 'rbac', label: 'Members & Roles (RBAC)', icon: <Shield className="w-4 h-4" /> },
     { id: 'roles_catalog', label: 'Permission Matrix', icon: <Lock className="w-4 h-4" /> },
     { id: 'billing', label: 'Plan & Entitlements', icon: <CreditCard className="w-4 h-4" /> },
@@ -92,6 +116,9 @@ export const SettingsPage: React.FC = () => {
       />
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      {/* Tab: YouTube Channel & Branding Settings */}
+      {activeTab === 'youtube' && <YouTubeChannelSettingsSection />}
 
       {/* Tab 1: General Organization Info */}
       {activeTab === 'general' && (

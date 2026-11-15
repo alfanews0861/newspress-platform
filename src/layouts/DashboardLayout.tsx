@@ -39,7 +39,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafd] dark:bg-[#151619] text-[#202124] dark:text-slate-100 flex flex-col font-sans transition-colors">
+    <div className="min-h-screen bg-[#f8fafd] dark:bg-[#1f1f1f] text-[#202124] dark:text-[#f2f2f2] flex flex-col font-sans transition-colors">
       {/* 1. Clean Sleek 64px Header */}
       <UnifiedPlatformHeader
         currentPath={currentPath}
@@ -70,9 +70,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </main>
 
           {!isFullBleed && (
-            <footer className="py-3 px-6 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 font-sans flex flex-col sm:flex-row items-center justify-between gap-2 bg-white dark:bg-[#1a1b1e]">
+            <footer className="py-3 px-6 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#8e918f] font-sans flex flex-col sm:flex-row items-center justify-between gap-2 bg-white dark:bg-[#1f1f1f]">
               <span>NewsPress Multi-Tenant Platform</span>
-              <span className="text-blue-600 dark:text-blue-400 font-medium">Simplified Editorial Console</span>
+              <span className="text-[#1a73e8] dark:text-[#8ab4f8] font-medium">Simplified Editorial Console</span>
             </footer>
           )}
         </div>

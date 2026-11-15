@@ -1,4 +1,17 @@
 {
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
   "hosting": {
     "site": "alfa-news-service-test-project",
     "public": "dist",
@@ -9,6 +22,12 @@
     ],
     "rewrites": [
       {
+        "source": "/api/composeVideo",
+        "function": {
+          "functionId": "composeVideo"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -16,5 +35,8 @@
   },
   "firestore": {
     "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }

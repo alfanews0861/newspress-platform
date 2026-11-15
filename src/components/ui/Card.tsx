@@ -25,29 +25,32 @@ export const Card: React.FC<CardProps> = ({
   variant = 'default',
 }) => {
   const variantStyles = {
-    default: 'bg-white dark:bg-slate-900 border border-[#dadce0] dark:border-slate-800 shadow-[0_1px_2px_0_rgba(60,64,67,0.08),0_1px_3px_1px_rgba(60,64,67,0.04)] rounded-xl',
-    editorial: 'bg-white dark:bg-slate-900 border-t-2 border-t-[#1a73e8] border-x border-b border-[#dadce0] dark:border-slate-800 rounded-xl shadow-[0_1px_2px_0_rgba(60,64,67,0.08)]',
-    bordered: 'bg-white dark:bg-slate-900 border border-[#dadce0] dark:border-slate-800 rounded-xl',
+    default: 'border border-[#dadce0] dark:border-[#444746] rounded-2xl shadow-xs transition-shadow hover:shadow-sm',
+    editorial: 'border-t-2 border-t-[#1a73e8] border-x border-b border-[#dadce0] dark:border-[#444746] rounded-2xl shadow-xs',
+    bordered: 'border border-[#dadce0] dark:border-[#444746] rounded-2xl',
   };
 
+  const hasBg = className.includes('bg-');
+  const bgStyle = hasBg ? '' : 'bg-white dark:bg-[#1f1f1f]';
+
   return (
-    <div className={`overflow-hidden text-black dark:text-slate-100 ${variantStyles[variant]} ${className}`}>
+    <div className={`overflow-hidden text-[#3c4043] dark:text-[#e3e3e3] ${bgStyle} ${variantStyles[variant]} ${className}`}>
       {(title || subtitle || action) && (
-        <div className="px-5 py-4 border-b border-[#dadce0] dark:border-slate-800 flex items-center justify-between gap-4">
+        <div className="px-5 py-4 border-b border-[#dadce0] dark:border-[#444746] flex items-center justify-between gap-4">
           <div>
             {title && (
-              <h3 className="text-sm font-bold text-black dark:text-slate-100 font-sans tracking-normal">
+              <h3 className="text-sm font-semibold text-[#202124] dark:text-[#f2f2f2] font-sans tracking-tight">
                 {title}
               </h3>
             )}
-            {subtitle && <p className="text-xs text-black dark:text-slate-300 mt-0.5 font-sans font-medium">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-sans font-normal">{subtitle}</p>}
           </div>
           {action && <div className="flex items-center gap-2">{action}</div>}
         </div>
       )}
-      <div className="p-5">{children}</div>
+      {children}
       {footer && (
-        <div className="px-5 py-3 bg-[#f8fafd] dark:bg-[#202124] border-t border-[#dadce0] dark:border-slate-800 text-xs text-black dark:text-slate-300 font-sans font-medium">
+        <div className="px-5 py-3 bg-[#f8fafd] dark:bg-[#202124] border-t border-[#dadce0] dark:border-[#444746] text-xs text-[#5f6368] dark:text-[#8e918f] font-sans font-normal">
           {footer}
         </div>
       )}
