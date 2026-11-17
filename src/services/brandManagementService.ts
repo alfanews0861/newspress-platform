@@ -133,7 +133,7 @@ class BrandManagementService {
       name: data.name || (isTelugu ? 'ఆంధ్ర ప్రభ దినపత్రిక' : 'The National Chronicle Daily'),
       code: data.code || (isTelugu ? 'AP' : 'NC'),
       tagline: data.tagline || (isTelugu ? 'తెలుగు ప్రజల విశ్వసనీయ వార్తా దినపత్రిక' : 'The Independent Voice of Record & Integrity'),
-      logoUrl: data.logoUrl || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=120&auto=format&fit=crop&q=80',
+      logoUrl: data.logoUrl || `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="18" fill="#991b1b"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="serif" font-size="42" font-weight="700">${(data.code || (isTelugu ? 'ఆప్ర' : 'NP')).slice(0, 3)}</text></svg>`)}`,
       frequency: freq,
       volumeNumber: data.volumeNumber || 1,
       issueNumber: data.issueNumber || 1,
@@ -197,7 +197,6 @@ class BrandManagementService {
         pageBackground: '#ffffff',
         accent: '#dc2626',
       },
-      defaultColumnCount: data.defaultColumnCount || defaultCols,
       defaultMargins: data.defaultMargins || {
         top: 20,
         bottom: 20,

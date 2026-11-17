@@ -92,8 +92,13 @@ export const AppContent: React.FC = () => {
         const nextPath = e.detail;
         setCurrentPath(nextPath);
         // Ensure browser address bar updates to the multi-page URL if not already matching
-        if (typeof window !== 'undefined' && window.location.pathname !== nextPath) {
-          window.history.pushState({ path: nextPath }, '', nextPath);
+        try {
+          const currentFull = `${window.location.pathname}${window.location.search}`;
+          if (typeof window !== 'undefined' && currentFull !== nextPath) {
+            window.history.pushState({ path: nextPath }, '', nextPath);
+          }
+        } catch {
+          // Ignore sandboxed history errors
         }
         updateSEO(nextPath);
       }
@@ -108,10 +113,12 @@ export const AppContent: React.FC = () => {
 
     window.addEventListener('navigate', handleNavigate);
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
 
     return () => {
       window.removeEventListener('navigate', handleNavigate);
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
     };
   }, []);
 

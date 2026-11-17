@@ -30,6 +30,10 @@ import { exclusivityValidationService } from './exclusivityValidationService';
 import { revenueCalculationService } from './revenueCalculationService';
 import { auditService } from './auditService';
 import { MOCK_NEWS_ARTICLES, MOCK_REPORTER_PROFILES } from './mockDataService';
+import { newsSubmissionService } from './newsSubmissionService';
+import { hasLocalStorage, readLocalJson, writeLocalJson } from '../utils/localStore';
+
+const MARKETPLACE_STORAGE_KEY = 'newspress_marketplace_state_v1';
 
 // Default standard subscription plans available for news organizations
 export const DEFAULT_SUBSCRIPTION_PLANS: MarketplaceSubscriptionPlan[] = [
@@ -93,6 +97,60 @@ class MarketplaceService {
     }
 
     this.seedInitialData();
+    this.hydrateFromStorage();
+  }
+
+  private persistState() {
+    if (!hasLocalStorage()) return;
+    writeLocalJson(MARKETPLACE_STORAGE_KEY, {
+      listings: Array.from(this.listings.values()),
+      purchases: Array.from(this.purchases.values()),
+      licenses: Array.from(this.licenses.values()),
+      entitlements: Array.from(this.entitlements.values()),
+      wallets: Array.from(this.wallets.values()),
+      payouts: Array.from(this.payouts.values()),
+      ledger: this.ledger,
+      licenseToEditions: Array.from(this.licenseToEditions.entries()),
+    });
+  }
+
+  private hydrateFromStorage() {
+    if (!hasLocalStorage()) return;
+    const saved = readLocalJson<{
+      listings?: MarketplaceListing[];
+      purchases?: MarketplacePurchase[];
+      licenses?: NewsLicense[];
+      entitlements?: MarketplaceEntitlement[];
+      wallets?: ReporterWallet[];
+      payouts?: PayoutRequest[];
+      ledger?: LedgerTransaction[];
+      licenseToEditions?: Array<[string, string[]]>;
+    } | null>(MARKETPLACE_STORAGE_KEY, null);
+    if (!saved) return;
+    if (saved.listings) {
+      for (const l of saved.listings) this.listings.set(l.listingId, l);
+    }
+    if (saved.purchases) {
+      for (const p of saved.purchases) this.purchases.set(p.purchaseId, p);
+    }
+    if (saved.licenses) {
+      for (const lic of saved.licenses) this.licenses.set(lic.licenseId, lic);
+    }
+    if (saved.entitlements) {
+      for (const ent of saved.entitlements) this.entitlements.set(ent.buyerTenantId, ent);
+    }
+    if (saved.wallets) {
+      for (const w of saved.wallets) this.wallets.set(w.reporterId, w);
+    }
+    if (saved.payouts) {
+      for (const po of saved.payouts) this.payouts.set(po.payoutId, po);
+    }
+    if (saved.ledger && saved.ledger.length > this.ledger.length) {
+      this.ledger = saved.ledger;
+    }
+    if (saved.licenseToEditions) {
+      for (const [k, v] of saved.licenseToEditions) this.licenseToEditions.set(k, v);
+    }
   }
 
   /**
@@ -425,6 +483,8 @@ class MarketplaceService {
     // Update article state
     article.isMarketplaceListed = true;
     article.editorialStatus = 'marketplace_listed';
+    newsSubmissionService.markArticleListedInMarketplace(article.articleId);
+    this.persistState();
 
     // Audit
     await auditService.log({
@@ -457,6 +517,7 @@ class MarketplaceService {
     const previousPrice = listing.price;
     listing.price = newPrice;
     listing.updatedAt = new Date().toISOString();
+    this.persistState();
 
     await auditService.log({
       tenantId: listing.sourceTenantId || 'platform',
@@ -827,6 +888,7 @@ class MarketplaceService {
     this.purchases.set(purchaseId, purchase);
     this.licenses.set(licenseId, license);
     this.idempotencyRecords.set(idempotencyKey, purchase);
+    this.persistState();
 
     // 12. Audit Trail
     await auditService.log({
@@ -1057,6 +1119,7 @@ class MarketplaceService {
 
     this.licenses.set(licenseId, license);
     this.idempotencyRecords.set(idempotencyKey, redemption);
+    this.persistState();
 
     // Ledger record for redemption (Every redemption individually recorded)
     this.ledger.push({
@@ -1123,8 +1186,10 @@ class MarketplaceService {
   } {
     const { newsId, requestingTenantId, requestingUserId, requestingRole } = params;
 
-    // Find the underlying article
-    const article = MOCK_NEWS_ARTICLES.find(a => a.articleId === newsId);
+    // Find the underlying article from dynamic newsSubmissionService first, then seed articles
+    const article =
+      newsSubmissionService.getArticle(newsId) ||
+      MOCK_NEWS_ARTICLES.find(a => a.articleId === newsId);
     const listing = Array.from(this.listings.values()).find(l => l.newsId === newsId);
 
     const headline = article?.headline || listing?.title || 'News Item';
@@ -1220,7 +1285,9 @@ class MarketplaceService {
     return licenses.map(lic => ({
       license: lic,
       listing: lic.listingId ? this.listings.get(lic.listingId) : undefined,
-      article: MOCK_NEWS_ARTICLES.find(a => a.articleId === lic.newsId)
+      article:
+        newsSubmissionService.getArticle(lic.newsId) ||
+        MOCK_NEWS_ARTICLES.find(a => a.articleId === lic.newsId)
     }));
   }
 
@@ -1471,6 +1538,7 @@ class MarketplaceService {
     if (!list.includes(editionCode)) {
       list.push(editionCode);
       this.licenseToEditions.set(licenseId, list);
+      this.persistState();
     }
   }
 

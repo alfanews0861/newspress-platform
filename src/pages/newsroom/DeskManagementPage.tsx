@@ -29,6 +29,7 @@ export const DeskManagementPage: React.FC = () => {
   const [deskName, setDeskName] = useState('');
   const [deskDesc, setDeskDesc] = useState('');
   const [deskSection, setDeskSection] = useState('Metro');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadData = () => {
     if (!currentTenant?.tenantId) return;
@@ -42,6 +43,7 @@ export const DeskManagementPage: React.FC = () => {
 
   const handleCreateDesk = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     try {
       await NewsroomDeskService.createDesk({
         tenantId: currentTenant.tenantId,
@@ -56,7 +58,7 @@ export const DeskManagementPage: React.FC = () => {
       setIsCreateModalOpen(false);
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message);
     }
   };
 
@@ -82,6 +84,15 @@ export const DeskManagementPage: React.FC = () => {
           ) : undefined
         }
       />
+
+      {errorMsg && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button type="button" onClick={() => setErrorMsg(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Desks Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

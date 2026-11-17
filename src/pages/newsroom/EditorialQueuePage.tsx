@@ -101,6 +101,7 @@ export const EditorialQueuePage: React.FC = () => {
   const [isCopyFittingOpen, setIsCopyFittingOpen] = useState(false);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isImageIntelOpen, setIsImageIntelOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Load editorial queue
   const reloadQueue = () => {
@@ -140,6 +141,7 @@ export const EditorialQueuePage: React.FC = () => {
   // Editorial Action Dispatcher
   const handleEditorialAction = async (decision: any, label: string, notes = '') => {
     if (!selectedArticle) return;
+    setActionError(null);
 
     try {
       await newsSubmissionService.editorialAction({
@@ -154,13 +156,14 @@ export const EditorialQueuePage: React.FC = () => {
       setEditorialNoteInput('');
       setConfirmDialog({ ...confirmDialog, isOpen: false });
     } catch (err: any) {
-      alert(`Action failed: ${err.message}`);
+      setActionError(`Action failed: ${err.message}`);
     }
   };
 
   // Toggle Breaking Story Lock
   const handleToggleBreakingLock = async (isLocked: boolean) => {
     if (!eventGroup) return;
+    setActionError(null);
     try {
       await newsSubmissionService.toggleBreakingLock(
         eventGroup.eventId,
@@ -171,7 +174,7 @@ export const EditorialQueuePage: React.FC = () => {
       );
       reloadQueue();
     } catch (err: any) {
-      alert(`Could not toggle lock: ${err.message}`);
+      setActionError(`Could not toggle lock: ${err.message}`);
     }
   };
 
@@ -185,6 +188,19 @@ export const EditorialQueuePage: React.FC = () => {
           { label: 'Editorial Queue' },
         ]}
       />
+
+      {actionError && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between gap-3">
+          <span>{actionError}</span>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-red-600 dark:text-red-400 underline cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Top Queue Triage Selector Strip */}
       <div className="flex items-center gap-3 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800">

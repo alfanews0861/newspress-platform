@@ -143,7 +143,7 @@ export const ApiKeysPage: React.FC = () => {
       setSecretCopied(false);
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Key rotation failed.');
+      setFormError(err.message || 'Key rotation failed.');
     }
   };
 
@@ -161,7 +161,7 @@ export const ApiKeysPage: React.FC = () => {
       setRevokingKey(null);
       loadData();
     } catch (err: any) {
-      alert(err.message || 'Key revocation failed.');
+      setFormError(err.message || 'Key revocation failed.');
     }
   };
 
@@ -185,6 +185,15 @@ export const ApiKeysPage: React.FC = () => {
           </Button>
         }
       />
+
+      {formError && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{formError}</span>
+          <button type="button" onClick={() => setFormError(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Security Guidance Banner */}
       <div className="p-4 bg-indigo-950/40 border border-indigo-800/60 rounded-lg flex items-start gap-3">

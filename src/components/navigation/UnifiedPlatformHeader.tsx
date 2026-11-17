@@ -27,6 +27,7 @@ import { TenantSwitcherModal } from '../../layouts/TenantSwitcherModal';
 import { PersonaSwitcherModal } from '../../layouts/PersonaSwitcherModal';
 import { QuickStoryModal } from '../editorial/QuickStoryModal';
 import { navigateTo as navigateToUtil } from '../../utils/navigation';
+import { getInitialsAvatarDataUrl } from '../../utils/avatarFallback';
 
 export interface UnifiedPlatformHeaderProps {
   currentPath?: string;
@@ -50,7 +51,6 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Theme state: Default to light mode
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('newspress_theme');
@@ -59,11 +59,10 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     return 'light';
   });
 
-  // Language state: English or Hindi
-  const [lang, setLang] = useState<'en' | 'hi'>(() => {
+  const [lang, setLang] = useState<'en' | 'te' | 'hi'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('newspress_lang');
-      return saved === 'hi' ? 'hi' : 'en';
+      if (saved === 'te' || saved === 'hi' || saved === 'en') return saved;
     }
     return 'en';
   });
@@ -77,7 +76,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const handleLanguageChange = (newLang: 'en' | 'hi') => {
+  const handleLanguageChange = (newLang: 'en' | 'te' | 'hi') => {
     setLang(newLang);
     localStorage.setItem('newspress_lang', newLang);
     window.dispatchEvent(new CustomEvent('languagechange', { detail: newLang }));
@@ -105,26 +104,30 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
 
   const navLinks = [
     {
-      label: lang === 'hi' ? 'डैशबोर्ड' : 'Dashboard',
+      label: lang === 'te' ? 'హోమ్' : lang === 'hi' ? 'होम' : 'Home',
       path: '/dashboard',
+      matchPrefix: '/dashboard',
       icon: LayoutDashboard,
       iconBoxClass: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800',
     },
     {
-      label: lang === 'hi' ? 'समाचार' : 'Stories',
+      label: lang === 'te' ? 'వార్తలు' : lang === 'hi' ? 'समाचार' : 'Stories',
       path: '/newsroom/news',
+      matchPrefix: '/newsroom/news',
       icon: Newspaper,
       iconBoxClass: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/60 dark:text-purple-400 dark:border-purple-800',
     },
     {
-      label: lang === 'hi' ? 'संस्करण' : 'Editions',
+      label: lang === 'te' ? 'న్యూస్ పేపర్' : lang === 'hi' ? 'अख़बार' : 'Newspaper',
       path: '/newspaper/editions',
+      matchPrefix: '/newspaper',
       icon: BookOpen,
       iconBoxClass: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800',
     },
     {
-      label: lang === 'hi' ? 'मार्केटप्लेस' : 'Marketplace',
+      label: lang === 'te' ? 'మార్కెట్‌ప్లేస్' : lang === 'hi' ? 'मार्केटप्लेस' : 'Marketplace',
       path: '/marketplace',
+      matchPrefix: '/marketplace',
       icon: ShoppingBag,
       iconBoxClass: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800',
     },
@@ -180,14 +183,14 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             {isInsideNewsroom && (
               <button
                 onClick={() => setIsTenantModalOpen(true)}
-                className="hidden md:flex flex-row items-center gap-2 ml-2 px-3 py-1.5 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] hover:bg-[#e8eaed] dark:hover:bg-[#333537] border border-[#dadce0] dark:border-[#444746] transition-all text-xs font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer"
+                className="hidden md:flex flex-row items-center gap-2 ml-2 px-3 py-1.5 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] hover:bg-[#e8eaed] dark:hover:bg-[#333537] border border-[#dadce0] dark:border-[#444746] transition-all text-xs font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer whitespace-nowrap shrink-0"
                 title="Switch Workspace"
               >
                 <span className="w-5 h-5 rounded-md bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-[#d2e3fc] dark:border-[#1a73e8]">
                   <Building2 className="w-3 h-3" />
                 </span>
-                <span className="truncate max-w-[130px] font-medium">{currentTenant.organizationName}</span>
-                <ChevronDown className="w-3 h-3 text-[#5f6368]" />
+                <span className="truncate max-w-[160px] font-medium">{currentTenant.organizationName}</span>
+                <ChevronDown className="w-3 h-3 text-[#5f6368] shrink-0" />
               </button>
             )}
           </div>
@@ -200,7 +203,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                 const isActive =
                   item.path === '/dashboard'
                     ? currentPath === '/dashboard' || currentPath === '/overview'
-                    : currentPath.startsWith(item.path);
+                    : currentPath.startsWith(item.matchPrefix);
 
                 return (
                   <button
@@ -234,13 +237,15 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             {isInsideNewsroom && (
               <button
                 onClick={() => (onQuickNewStory ? onQuickNewStory() : setIsQuickStoryOpen(true))}
-                className="flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer"
+                className="flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
                 title="Create a new story"
               >
                 <span className="w-5 h-5 rounded-md bg-white/20 text-white flex items-center justify-center shrink-0">
                   <Plus className="w-3.5 h-3.5" />
                 </span>
-                <span className="hidden sm:inline">{lang === 'hi' ? 'नया समाचार' : 'Write Story'}</span>
+                <span className="hidden sm:inline whitespace-nowrap">
+                  {lang === 'te' ? 'కొత్త వార్త' : lang === 'hi' ? 'नया समाचार' : 'Write Story'}
+                </span>
               </button>
             )}
 
@@ -255,6 +260,16 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                 }`}
               >
                 EN
+              </button>
+              <button
+                onClick={() => handleLanguageChange('te')}
+                className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                  lang === 'te'
+                    ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
+                }`}
+              >
+                తె
               </button>
               <button
                 onClick={() => handleLanguageChange('hi')}
@@ -285,7 +300,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                   className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
                 >
                   <img
-                    src={user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&auto=format&fit=crop&q=80'}
+                    src={user?.avatarUrl || getInitialsAvatarDataUrl(user?.displayName)}
                     alt={user?.displayName || 'User'}
                     className="w-7 h-7 rounded-full object-cover border border-[#dadce0] dark:border-[#444746]"
                   />

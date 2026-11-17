@@ -89,125 +89,168 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
 
   // =========================================================================
   // DESIGN 2A: ANDHRA PRABHA AUTHENTIC BROADSHEET MASTHEAD (Matches Real Telugu Broadsheet)
-  // Left Publication Ear + Center Blue Calligraphic Title + Right Bullion Sponsor Ear
+  // Top Deck: Left Commercial Ear Ad + Giant Center Newspaper Logo + Right Commercial Ear Ad
+  // Bottom Deck: Standard Double-Rule Dateline Strip (Published from, Vol, Issue, Date, Pages, Price, RNI)
   // =========================================================================
-  if (isAndhraPrabha) {
+  if (isAndhraPrabha || isDesign2Vernacular) {
     return (
       <div
-        className={`bg-white text-slate-900 border-b-4 border-double border-slate-900 shadow-2xs relative overflow-hidden select-none font-sans ${className} ${isTelugu ? 'font-telugu newspaper-telugu-content' : ''}`}
-        style={{ height: '124px', boxSizing: 'border-box' }}
+        className={`bg-white text-slate-950 relative overflow-hidden select-none font-sans flex flex-col justify-between ${className} ${isTelugu ? 'font-telugu newspaper-telugu-content' : ''}`}
+        style={{ height: '168px', boxSizing: 'border-box', fontWeight: 400, fontSynthesis: 'none' }}
       >
-        <div className="h-full flex items-stretch justify-between px-2 py-1 gap-2">
-          {/* LEFT EAR BOX: Publication Metadata, Amber Date Ribbon & Centers */}
-          <div className="w-[210px] shrink-0 border border-slate-300 bg-white p-1 flex flex-col justify-between text-left box-border rounded-xs">
-            <div className="flex items-center justify-between text-[8px] font-bold text-slate-800 border-b border-slate-200 pb-0.5">
-              <span>సంపుటి (Volume): <strong className="text-slate-950 font-black">{vol || 65}</strong></span>
-              <span>సంచిక (Issue): <strong className="text-slate-950 font-black">{issue || 203}</strong></span>
-            </div>
-            
-            <div className="text-[9px] font-black text-slate-900 leading-tight">
-              {displayEdition?.includes('విజయవాడ') ? 'విజయవాడ (Vijayawada)' : 'హైదరాబాద్ (Hyderabad)'}
-            </div>
-            
-            <div className="flex items-center justify-between text-[7.5px] font-semibold text-slate-700">
-              <span>పేజీలు (Pages): {brand.pageCount || 10}</span>
-              <span>వెల (Price): {price || '5.00'}</span>
+        {/* MAIN MASTHEAD DECK (110px tall): Left Ear Ad + Massive Full-Space Center Title + Right Ear Ad */}
+        <div
+          className="flex items-stretch justify-between gap-2.5 shrink-0"
+          style={{ height: '110px' }}
+        >
+          {/* LEFT EAR PANEL ADVERTISEMENT: Commercial Jewellery & Silk Sarees Ad */}
+          <div className="w-[232px] h-full shrink-0 border-[1.5px] border-red-800 bg-gradient-to-br from-[#fffbeb] via-white to-[#fef2f2] p-1.5 flex flex-col justify-between text-left box-border relative overflow-hidden">
+            <div className="flex items-center justify-between bg-red-800 text-white px-1.5 py-0.5 leading-none shrink-0">
+              <span className="text-[9px] tracking-wide">★ లలితా జ్యువెలరీ మార్ట్</span>
+              <span className="text-[7px] bg-amber-300 text-slate-950 px-1 py-0.2">EAR AD</span>
             </div>
 
-            {/* Solid Golden-Yellow / Amber Date Ribbon */}
-            <div className="bg-[#f59e0b] text-slate-950 font-black text-[9.5px] text-center py-0.5 rounded-xs tracking-wider shadow-2xs leading-none">
-              {publicationDate || '14-11-2026 శనివారం'}
+            <div className="flex items-center gap-2 my-0.5 flex-1 min-h-0">
+              <img
+                src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=240&auto=format&fit=crop&q=80"
+                alt="Lalitha Jewellery Ear Ad"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.onerror = null;
+                  img.src = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="#fef3c7"/><text x="40" y="44" text-anchor="middle" fill="#991b1b" font-family="serif" font-size="14">★ GOLD</text></svg>')}`;
+                }}
+                className="w-14 h-14 object-cover border border-amber-500 shrink-0"
+              />
+              <div className="flex flex-col justify-center min-w-0 leading-tight">
+                <div className="text-[10.5px] text-red-900 leading-snug">
+                  బంగారు ఆభరణాలపై తరుగు (VA) కేవలం 4% మాత్రమే!
+                </div>
+                <div className="text-[8px] text-slate-800 mt-0.5 leading-tight">
+                  వజ్రాభరణాలపై క్యారెట్‌కు రూ.15,000 తగ్గింపు • పాత బంగారానికి 100% విలువ
+                </div>
+              </div>
             </div>
 
-            {/* Published from list */}
-            <div className="text-[6.5px] text-slate-600 leading-tight border-t border-slate-100 pt-0.5">
-              <span className="font-bold text-red-800">Published from:</span> Hyderabad | Nizamabad | Karimnagar | Vijayawada | Guntur | Rajahmundry | Visakhapatnam | Tirupati | Kurnool | Anantapur | Nellore
-            </div>
-
-            {/* E-paper link */}
-            <div className="text-[7.5px] font-bold text-sky-700 text-center tracking-wide">
-              www.prabhanews.com
+            <div className="flex items-center justify-between text-[7.5px] text-slate-950 bg-amber-200/85 px-1.5 py-0.5 leading-none border-t border-amber-300 shrink-0">
+              <span>సోమాజిగూడ • కూకట్‌పల్లి • విజయవాడ</span>
+              <span className="font-mono text-red-950">📞 040-2331116</span>
             </div>
           </div>
 
-          {/* CENTER: Iconic Andhra Prabha Calligraphic Logo & Motto (Matches AP.jpg / AP2.jpg) */}
-          <div className="flex-1 flex flex-col items-center justify-between text-center px-2 py-0.5 overflow-hidden relative">
-            <div className="w-full flex items-center justify-end pr-8">
-              <span className="text-[11px] font-serif italic text-[#0369a1] font-bold leading-none">
-                Estd. 1938
+          {/* CENTER: MASSIVE NEWSPAPER TITLE LOGO COVERING THE FULL MASTHEAD CENTER SPACE */}
+          <div className="flex-1 min-w-0 h-full flex flex-col items-center justify-between text-center px-3 pt-0.5 pb-1 relative overflow-visible bg-white">
+            {/* Compact Top Motto & Establishment Ribbon */}
+            <div className="w-full flex items-center justify-between px-2 text-[9.5px] text-slate-800 leading-none shrink-0 border-b border-slate-200 pb-0.5">
+              <span className="text-red-800">☀ స్థాపన (Estd): 1938</span>
+              <span className="text-[#0369a1]">✦ సత్యమేవ జయతే • ప్రజా పక్షాన నిరంతర గళం • దినపత్రిక ✦</span>
+              <span className="text-red-800 font-serif italic">Journalism First!</span>
+            </div>
+
+            {/* Giant Center Newspaper Title Logo */}
+            <div className="w-full flex-1 min-h-0 flex items-center justify-center overflow-hidden pt-0.5 pb-1">
+              <h1
+                className="font-normal font-telugu select-none whitespace-nowrap text-center"
+                style={{
+                  fontFamily: masthead.fontFamily || "'Ramabhadra', 'Suranna', 'Noto Serif Telugu', serif",
+                  fontSize: (masthead.title || brand.name || '').length > 14 ? '52px' : (masthead.title || brand.name || '').length > 10 ? '64px' : '74px',
+                  fontWeight: 400,
+                  fontSynthesis: 'none',
+                  color: titleColor === '#0f172a' ? '#0369a1' : titleColor,
+                  lineHeight: '1.18',
+                  letterSpacing: 'normal',
+                  transform: isAndhraPrabha ? 'scaleX(1.22) translateY(-2px)' : 'translateY(-2px)',
+                  transformOrigin: 'center center',
+                  textShadow: '1px 1px 0px rgba(15, 23, 42, 0.08)',
+                }}
+              >
+                {masthead.title?.trim() || brand.name || 'ఆంధ్రప్రభ'}
+              </h1>
+            </div>
+          </div>
+
+          {/* RIGHT EAR PANEL ADVERTISEMENT: Manepally Jewellers & Bullion Spot Ad */}
+          <div className="w-[232px] h-full shrink-0 border-[1.5px] border-amber-700 bg-gradient-to-br from-[#fffdfa] via-amber-50/40 to-rose-50/40 p-1.5 flex flex-col justify-between text-left box-border relative overflow-hidden">
+            <div className="flex items-center justify-between bg-rose-900 text-amber-200 px-1.5 py-0.5 leading-none shrink-0">
+              <span className="text-[9px] uppercase tracking-wide">★ MANEPALLY JEWELLERS</span>
+              <span className="text-[7px] bg-amber-300 text-slate-950 px-1 py-0.2">BULLION AD</span>
+            </div>
+
+            <div className="flex items-center gap-2 my-0.5 flex-1 min-h-0">
+              <img
+                src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=240&auto=format&fit=crop&q=80"
+                alt="Manepally Jewellers Ear Ad"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.onerror = null;
+                  img.src = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="#fffbeb"/><text x="40" y="44" text-anchor="middle" fill="#b45309" font-family="serif" font-size="13">24K</text></svg>')}`;
+                }}
+                className="w-14 h-14 object-cover border border-amber-500 shrink-0"
+              />
+              <div className="flex-1 min-w-0 bg-white/95 border border-amber-300 px-1.5 py-1 text-[8px] leading-snug space-y-0.5">
+                <div className="flex justify-between text-slate-900">
+                  <span>24K బంగారం (10g):</span>
+                  <span className="text-red-800">₹ 81,450</span>
+                </div>
+                <div className="flex justify-between text-slate-900">
+                  <span>22K ఆభరణ బంగారం:</span>
+                  <span className="text-red-800">₹ 74,650</span>
+                </div>
+                <div className="flex justify-between text-slate-900">
+                  <span>వెండి (Silver 1Kg):</span>
+                  <span className="text-slate-950">₹ 96,200</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[7.5px] text-slate-950 bg-amber-200/85 px-1.5 py-0.5 leading-none border-t border-amber-300 shrink-0">
+              <span>పంజాగుట్ట • సికింద్రాబాద్ • తిరుపతి</span>
+              <span className="font-mono text-rose-950">📞 99120 10888</span>
+            </div>
+          </div>
+        </div>
+
+        {/* CLEAR 16PX GAP ABOVE THE DOUBLE-RULE DATELINE & PUBLICATION METADATA STRIP */}
+        <div
+          className="w-full bg-[#f8fafc] border-t-[2px] border-b-[2.5px] border-slate-950 px-2.5 py-1 flex flex-col justify-center gap-0.5 shrink-0 mt-4"
+          style={{ height: '42px', boxSizing: 'border-box' }}
+        >
+          {/* Line 1 inside Double Rule: Published From Centers & RNI Registration */}
+          <div className="flex items-center justify-between text-[8.5px] text-slate-800 leading-tight border-b border-slate-300 pb-0.5">
+            <div className="truncate">
+              <span className="text-red-800 mr-1">Published from:</span>
+              <span>
+                {brand.editionsList && brand.editionsList.length > 0 && !isAndhraPrabha
+                  ? brand.editionsList.join(' • ')
+                  : 'హైదరాబాద్ • విజయవాడ • విశాఖపట్నం • తిరుపతి • వరంగల్ • గుంటూరు • రాజమండ్రి • కరీంనగర్ • నిజామాబాద్ • కర్నూలు • నెల్లూరు • అనంతపురం'}
               </span>
             </div>
-
-            {showLogo && logoUrl && !logoUrl.includes('images.unsplash.com') ? (
-              <img
-                src={logoUrl}
-                alt="Andhra Prabha Masthead"
-                style={{ maxHeight: '78px' }}
-                className="object-contain max-w-[98%] drop-shadow-xs"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center w-full -my-1">
-                <h1
-                  className="font-black tracking-normal font-telugu leading-none select-none"
-                  style={{
-                    fontFamily: "'Ramabhadra', 'Suranna', 'Noto Serif Telugu', serif",
-                    fontSize: '74px',
-                    color: '#0284c7',
-                    textShadow: '2px 2px 0px #ffffff, -1px -1px 0px #ffffff, 0px 3px 6px rgba(3, 105, 161, 0.35)',
-                    letterSpacing: '0.02em',
-                    lineHeight: '0.95',
-                  }}
-                >
-                  {masthead.title || 'ఆంధ్రప్రభ'}
-                </h1>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between w-full max-w-[460px] text-[12px] font-bold text-[#0284c7] px-4 leading-none">
-              <span className="font-serif tracking-wide">Andhraprabha</span>
-              <span className="font-serif italic">Journalism first!</span>
+            <div className="shrink-0 ml-2 font-mono text-[8px] text-slate-900">
+              {brand.imprint?.rniNumber || 'RNI No. TELTEL/2014/56891'}
             </div>
           </div>
 
-          {/* RIGHT EAR BOX: Manepally Jewellers Gold & Silver Rates Commercial Ear */}
-          <div className="w-[205px] shrink-0 border border-amber-600/70 bg-[#fffdfa] p-1 flex flex-col justify-between text-left box-border rounded-xs">
-            {/* Top Jeweller Branding */}
-            <div className="flex items-center justify-between border-b border-amber-200 pb-0.5">
-              <div className="flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full bg-rose-700"></div>
-                <span className="text-[8.5px] font-black text-rose-950 uppercase tracking-tight">manepally</span>
-              </div>
-              <span className="text-[6.5px] font-bold text-slate-600">Jewellers Pvt. Ltd.</span>
+          {/* Line 2 inside Double Rule: Volume, Issue, Edition, Date, Pages, Price & Web URL */}
+          <div className="flex items-center justify-between text-[9.5px] text-slate-950 leading-tight pt-0.5">
+            <div className="flex items-center gap-2">
+              <span>Vol: <span className="text-red-800">{vol || 65}</span></span>
+              <span className="text-slate-400">|</span>
+              <span>Issue: <span className="text-red-800">{issue || 203}</span></span>
+              <span className="text-slate-400">|</span>
+              <span className="text-[#0369a1]">{displayEdition}</span>
             </div>
 
-            <div className="bg-rose-900 text-amber-200 text-[7px] font-black px-1 py-0.2 rounded-xs uppercase tracking-wider text-center">
-              MANEPALLY DIGITAL GOLD APP
+            <div className="bg-amber-300/95 text-slate-950 px-2.5 py-0.5 text-[9.5px] leading-none">
+              {publicationDate}
             </div>
 
-            {/* Gold & Silver Bullion Rates Table */}
-            <div className="bg-amber-50/80 border border-amber-300/80 p-0.5 rounded-xs space-y-0.2">
-              <div className="text-[7px] font-black text-rose-950 uppercase tracking-wider text-center border-b border-amber-200/80 pb-0.2">
-                GOLD &amp; SILVER RATES
-              </div>
-              <div className="grid grid-cols-12 text-[7.5px] text-slate-800 leading-tight px-1 font-medium">
-                <span className="col-span-4 font-bold text-slate-900">24 kt</span>
-                <span className="col-span-5 font-black text-red-900">₹ 1,37,350/-</span>
-                <span className="col-span-3 text-right text-[6.5px] text-slate-500">10gms</span>
-              </div>
-              <div className="grid grid-cols-12 text-[7.5px] text-slate-800 leading-tight px-1 font-medium">
-                <span className="col-span-4 font-bold text-slate-900">22 kt</span>
-                <span className="col-span-5 font-black text-red-900">₹ 1,25,900/-</span>
-                <span className="col-span-3 text-right text-[6.5px] text-slate-500">10gms</span>
-              </div>
-              <div className="grid grid-cols-12 text-[7.5px] text-slate-800 leading-tight px-1 font-medium">
-                <span className="col-span-4 font-bold text-slate-900">SILVER</span>
-                <span className="col-span-5 font-black text-slate-950">₹ 1,84,900/-</span>
-                <span className="col-span-3 text-right text-[6.5px] text-slate-500">1kg</span>
-              </div>
-            </div>
-
-            <div className="text-[6.5px] font-bold text-slate-700 text-center leading-none">
-              Contact: <span className="font-mono text-slate-950 font-extrabold">6309 111299 | 99120 10888</span>
+            <div className="flex items-center gap-2">
+              <span>Pages: <span className="text-red-800">{brand.pageCount || 4}</span></span>
+              <span className="text-slate-400">|</span>
+              <span>Price: <span className="text-red-800">{price || '₹6.00'}</span></span>
+              <span className="text-slate-400">|</span>
+              <span className="text-[#0369a1] font-sans text-[8.5px]">{brand.imprint?.contactEmail?.split('@')[1] ? `www.${brand.imprint.contactEmail.split('@')[1]}` : 'www.prabhanews.com'}</span>
             </div>
           </div>
         </div>

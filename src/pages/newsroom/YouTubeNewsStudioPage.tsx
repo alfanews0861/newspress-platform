@@ -45,6 +45,9 @@ import { YouTubeService } from '../../services/youtubeService';
 import { AIVideoEditorialService, PolicyComplianceResult } from '../../services/aiVideoEditorialService';
 import { ThumbnailGeneratorService } from '../../services/thumbnailGeneratorService';
 import { VideoCompositorService } from '../../services/videoCompositorService';
+import { newsSubmissionService } from '../../services/newsSubmissionService';
+import { marketplaceService } from '../../services/marketplaceService';
+import { useTenant } from '../../hooks/useTenant';
 import {
   YouTubeConnectedAccount,
   YouTubeChannelBrandingSettings,
@@ -56,6 +59,7 @@ import {
 import { navigateTo } from '../../utils/navigation';
 
 export const YouTubeNewsStudioPage: React.FC = () => {
+  const { currentTenant } = useTenant();
   const [settings, setSettings] = useState<YouTubeChannelBrandingSettings>(() => YouTubeService.getSettings());
   const [account, setAccount] = useState<YouTubeConnectedAccount>(() => YouTubeService.getConnectedAccount());
 
@@ -82,6 +86,39 @@ export const YouTubeNewsStudioPage: React.FC = () => {
     const acc = YouTubeService.getConnectedAccount();
     setAccount(acc);
   }, []);
+
+  // Newsroom + Purchased Marketplace stories for zero-friction script loading
+  const newsroomStories = React.useMemo(() => {
+    const tenantId = currentTenant?.tenantId;
+    const own = newsSubmissionService
+      .getArticles(tenantId)
+      .filter((a) => ['approved', 'published', 'marketplace_listed', 'submitted'].includes(a.editorialStatus));
+    const purchased = tenantId
+      ? marketplaceService
+          .getPurchasedNewsForTenant(tenantId)
+          .map((p) => p.article)
+          .filter((a): a is NonNullable<typeof a> => Boolean(a))
+      : [];
+    const seen = new Set<string>();
+    return [...own, ...purchased].filter((a) => {
+      if (seen.has(a.articleId)) return false;
+      seen.add(a.articleId);
+      return true;
+    }).slice(0, 30);
+  }, [currentTenant?.tenantId]);
+
+  const handleLoadStoryManuscript = (articleId: string) => {
+    if (!articleId) return;
+    const art = newsroomStories.find((a) => a.articleId === articleId);
+    if (!art) return;
+    const combined = [art.headline, art.leadParagraph, art.bodyContent].filter(Boolean).join('\n\n');
+    setNewsText(combined);
+    if (/[\u0C00-\u0C7F]/.test(combined)) {
+      setSelectedLanguage('te');
+    } else if (/[\u0900-\u097F]/.test(combined)) {
+      setSelectedLanguage('hi');
+    }
+  };
 
   const activeClips = clips.filter((c): c is NewsVideoClipItem => Boolean(c));
   const totalFootageDuration = activeClips.reduce((acc, c) => acc + c.durationSec, 0);
@@ -270,12 +307,15 @@ export const YouTubeNewsStudioPage: React.FC = () => {
 
       // Step 5 & 6: Studio Composition & Direct Channel Publication
       setCurrentStep(`Mastering broadcast package (${activeClips.length} sequential clips + bumpers) and preparing transmission...`);
+      const { introVideoBlob, outroVideoBlob } = await YouTubeService.getHydratedIntroOutroBlobs();
       const broadcastResult = await VideoCompositorService.composeAndPublishDirectToYouTube({
         mainVideoBlob: activeClips[0]?.file,
         videoClips: activeClips.map((c) => c.file),
         voiceOverAudioBlob: voiceResult.audioBlob,
         voiceScriptText: editorialPkg.scriptText,
         language: selectedLanguage,
+        introVideoBlob,
+        outroVideoBlob,
         introVideoUrl: settings.introVideoUrl,
         outroVideoUrl: settings.outroVideoUrl,
         watermarkSettings: settings.watermark,
@@ -305,9 +345,11 @@ export const YouTubeNewsStudioPage: React.FC = () => {
       setPublishedResult({
         videoId: broadcastResult.videoId,
         youtubeUrl: broadcastResult.youtubeUrl,
+        embedUrl: `https://www.youtube.com/embed/${broadcastResult.videoId}`,
         title: broadcastResult.title,
+        privacyStatus: 'public',
         publishedAt: broadcastResult.publishedAt,
-        status: 'published',
+        thumbnailUploaded: true,
       });
     } catch (err: any) {
       clearInterval(progressInterval);
@@ -850,22 +892,38 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                   <span>2. News Story Manuscript (Source Text)</span>
                 </label>
 
-                {/* Language Selector */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-5 h-5 rounded-md bg-[#f1f3f4] dark:bg-[#28292a] text-[#5f6368] flex items-center justify-center shrink-0 border border-[#dadce0] dark:border-[#444746]">
-                    <Languages className="w-3 h-3" />
-                  </span>
-                  <select
-                    value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value as SupportedIndianLanguage)}
-                    className="px-2.5 py-1 bg-[#f1f3f4] dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] rounded-full text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] cursor-pointer"
-                  >
-                    {SUPPORTED_INDIAN_LANGUAGES.map((l) => (
-                      <option key={l.code} value={l.code}>
-                        {l.name} ({l.nativeName})
-                      </option>
-                    ))}
-                  </select>
+                {/* Quick Newsroom Story Loader + Language Selector */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {newsroomStories.length > 0 && (
+                    <select
+                      defaultValue=""
+                      onChange={(e) => handleLoadStoryManuscript(e.target.value)}
+                      className="px-2.5 py-1 max-w-[240px] bg-blue-50 dark:bg-[#004a77] border border-[#d2e3fc] dark:border-[#1a73e8] rounded-full text-xs font-semibold text-[#1a73e8] dark:text-[#c2e7ff] cursor-pointer truncate"
+                    >
+                      <option value="">Load Story from Newsroom...</option>
+                      {newsroomStories.map((st) => (
+                        <option key={st.articleId} value={st.articleId}>
+                          {st.headline.slice(0, 55)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-md bg-[#f1f3f4] dark:bg-[#28292a] text-[#5f6368] flex items-center justify-center shrink-0 border border-[#dadce0] dark:border-[#444746]">
+                      <Languages className="w-3 h-3" />
+                    </span>
+                    <select
+                      value={selectedLanguage}
+                      onChange={(e) => setSelectedLanguage(e.target.value as SupportedIndianLanguage)}
+                      className="px-2.5 py-1 bg-[#f1f3f4] dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] rounded-full text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] cursor-pointer"
+                    >
+                      {SUPPORTED_INDIAN_LANGUAGES.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.name} ({l.nativeName})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 

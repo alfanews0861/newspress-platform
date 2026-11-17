@@ -16,17 +16,20 @@ import { useTenant } from '../../hooks/useTenant';
 import { marketplaceService } from '../../services/marketplaceService';
 import { MarketplacePurchase, NewsLicense } from '../../types/marketplace';
 import { formatINR, formatDate } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 export const PurchaseConfirmationPage: React.FC = () => {
   const { currentTenant } = useTenant();
 
-  const getPurchaseIdFromHash = (): string => {
-    const hash = window.location.hash;
-    const parts = hash.split('/marketplace/purchase-confirmation/');
+  const getPurchaseIdFromUrl = (): string => {
+    const raw = window.location.pathname.includes('/marketplace/purchase-confirmation/')
+      ? window.location.pathname
+      : window.location.hash;
+    const parts = raw.split('/marketplace/purchase-confirmation/');
     return parts[1] ? parts[1].split('?')[0] : '';
   };
 
-  const purchaseId = getPurchaseIdFromHash();
+  const purchaseId = getPurchaseIdFromUrl();
   const [purchase, setPurchase] = useState<MarketplacePurchase | undefined>(undefined);
   const [license, setLicense] = useState<NewsLicense | undefined>(undefined);
 
@@ -46,7 +49,7 @@ export const PurchaseConfirmationPage: React.FC = () => {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => (window.location.hash = '#/marketplace')}
+          onClick={() => navigateTo('/marketplace')}
         >
           <ChevronLeft className="w-4 h-4 mr-1" /> Return to Wire
         </Button>
@@ -112,7 +115,7 @@ export const PurchaseConfirmationPage: React.FC = () => {
           {license && (
             <Button
               variant="primary"
-              onClick={() => (window.location.hash = `#/marketplace/story/${license.listingId}`)}
+              onClick={() => navigateTo(`/marketplace/story/${license.listingId}`)}
             >
               <FileText className="w-4 h-4 mr-1.5" /> OPEN STORY
             </Button>
@@ -120,14 +123,14 @@ export const PurchaseConfirmationPage: React.FC = () => {
 
           <Button
             variant="secondary"
-            onClick={() => (window.location.hash = '#/newspaper/edition-planning')}
+            onClick={() => navigateTo('/newspaper/editions')}
           >
             <Layers className="w-4 h-4 mr-1.5" /> ADD TO EDITION
           </Button>
 
           <Button
             variant="secondary"
-            onClick={() => (window.location.hash = '#/marketplace/licensed')}
+            onClick={() => navigateTo('/marketplace/licensed')}
           >
             VIEW LICENSED WORKSPACE
           </Button>

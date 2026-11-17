@@ -43,6 +43,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useTenant } from '../../hooks/useTenant';
 import { usePermission } from '../../hooks/usePermission';
 import {
@@ -104,6 +105,14 @@ export const BrandsPage: React.FC = () => {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [activeModalTab, setActiveModalTab] = useState<'templates' | 'masthead' | 'basic' | 'dimensions' | 'imprint'>('templates');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    variant?: 'primary' | 'danger';
+    onConfirm: () => void;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
 
   // Form State
   const [formData, setFormData] = useState<Partial<NewspaperBrand>>({});
@@ -254,7 +263,7 @@ export const BrandsPage: React.FC = () => {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size exceeds 5MB limit. Please choose a smaller image.');
+      setErrorMsg('File size exceeds 5MB limit. Please choose a smaller image.');
       return;
     }
 
@@ -317,9 +326,10 @@ export const BrandsPage: React.FC = () => {
   // Handle Save
   const handleSaveBrand = () => {
     if (!formData.name?.trim()) {
-      alert('Please enter a valid Publication Full Name.');
+      setErrorMsg('Please enter a valid Publication Full Name.');
       return;
     }
+    setErrorMsg(null);
 
     const processedEditions = editionsInput
       .split(',')
@@ -380,25 +390,39 @@ export const BrandsPage: React.FC = () => {
   // Delete Brand
   const handleDeleteBrand = (brandId: string) => {
     if (brands.length <= 1) {
-      alert('At least one publication brand must remain active. You cannot delete the last brand.');
+      setErrorMsg('At least one publication brand must remain active. You cannot delete the last brand.');
       return;
     }
-    if (window.confirm(`Are you sure you want to delete the publication brand '${selectedBrand.name}'?`)) {
-      brandManagementService.deleteBrand(brandId);
-      const remaining = brandManagementService.getBrands();
-      setBrands(remaining);
-      setSelectedBrand(remaining[0]);
-    }
+    setConfirmState({
+      isOpen: true,
+      title: 'Delete Publication Brand',
+      message: `Are you sure you want to delete '${selectedBrand.name}'?`,
+      variant: 'danger',
+      onConfirm: () => {
+        brandManagementService.deleteBrand(brandId);
+        const remaining = brandManagementService.getBrands();
+        setBrands(remaining);
+        setSelectedBrand(remaining[0]);
+        setConfirmState((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   // Reset Defaults
   const handleResetDefaults = () => {
-    if (window.confirm('Reset all newspaper brand settings to factory default presets?')) {
-      const refreshed = brandManagementService.resetToDefaults();
-      setBrands(refreshed);
-      setSelectedBrand(refreshed[0]);
-      setActiveBrandId(refreshed[0].brandId);
-    }
+    setConfirmState({
+      isOpen: true,
+      title: 'Reset Brand Settings',
+      message: 'Reset all newspaper brand settings to factory default presets?',
+      variant: 'danger',
+      onConfirm: () => {
+        const refreshed = brandManagementService.resetToDefaults();
+        setBrands(refreshed);
+        setSelectedBrand(refreshed[0]);
+        setActiveBrandId(refreshed[0].brandId);
+        setConfirmState((prev) => ({ ...prev, isOpen: false }));
+      },
+    });
   };
 
   const previewBrand: NewspaperBrand = {
@@ -442,6 +466,22 @@ export const BrandsPage: React.FC = () => {
           </div>
         }
       />
+
+      {/* Error Notification */}
+      {errorMsg && (
+        <div className="bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 p-3.5 rounded-xl flex items-center justify-between text-red-800 dark:text-red-200 text-sm shadow-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+            <span className="font-semibold">{errorMsg}</span>
+          </div>
+          <button
+            onClick={() => setErrorMsg(null)}
+            className="text-xs text-red-600 hover:text-red-900 font-bold px-2 py-0.5 rounded cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Success Notification */}
       {saveSuccessMsg && (
@@ -1861,6 +1901,16 @@ export const BrandsPage: React.FC = () => {
           )}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        onClose={() => setConfirmState((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        message={confirmState.message}
+        variant={confirmState.variant}
+        confirmLabel="Confirm"
+      />
     </div>
   );
 };

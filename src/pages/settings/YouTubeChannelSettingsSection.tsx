@@ -9,7 +9,7 @@
  * configure opening Intro and closing Outro clips, and set editorial preferences.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Youtube,
   Upload,
@@ -29,6 +29,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { YouTubeService } from '../../services/youtubeService';
+import { saveMediaBlob, loadMediaBlob, deleteMediaBlob } from '../../utils/mediaBlobStore';
+import { getInitialsAvatarDataUrl } from '../../utils/avatarFallback';
 import {
   YouTubeChannelBrandingSettings,
   YouTubeConnectedAccount,
@@ -55,6 +57,26 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
   // File upload refs/states
   const [introFileName, setIntroFileName] = useState<string>(settings.introVideoFileName || '');
   const [outroFileName, setOutroFileName] = useState<string>(settings.outroVideoFileName || '');
+
+  // Rehydrate saved Intro & Outro blobs from IndexedDB so previews work after page reload
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [introBlob, outroBlob] = await Promise.all([
+        loadMediaBlob('youtube_intro_video_blob'),
+        loadMediaBlob('youtube_outro_video_blob'),
+      ]);
+      if (!active) return;
+      setSettings((prev) => ({
+        ...prev,
+        introVideoUrl: introBlob ? URL.createObjectURL(introBlob) : undefined,
+        outroVideoUrl: outroBlob ? URL.createObjectURL(outroBlob) : undefined,
+      }));
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleConnectChannel = async () => {
     setIsConnecting(true);
@@ -111,41 +133,55 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
-        setSettings((prev) => ({
-          ...prev,
-          watermark: {
-            ...prev.watermark,
-            logoDataUrl: dataUrl,
-          },
-        }));
+        setSettings((prev) => {
+          const updated = {
+            ...prev,
+            watermark: {
+              ...prev.watermark,
+              logoDataUrl: dataUrl,
+            },
+          };
+          YouTubeService.saveSettings(updated);
+          return updated;
+        });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleIntroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIntroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      await saveMediaBlob('youtube_intro_video_blob', file);
       const url = URL.createObjectURL(file);
       setIntroFileName(file.name);
-      setSettings((prev) => ({
-        ...prev,
-        introVideoUrl: url,
-        introVideoFileName: file.name,
-      }));
+      setSettings((prev) => {
+        const updated = {
+          ...prev,
+          introVideoUrl: url,
+          introVideoFileName: file.name,
+        };
+        YouTubeService.saveSettings(updated);
+        return updated;
+      });
     }
   };
 
-  const handleOutroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOutroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      await saveMediaBlob('youtube_outro_video_blob', file);
       const url = URL.createObjectURL(file);
       setOutroFileName(file.name);
-      setSettings((prev) => ({
-        ...prev,
-        outroVideoUrl: url,
-        outroVideoFileName: file.name,
-      }));
+      setSettings((prev) => {
+        const updated = {
+          ...prev,
+          outroVideoUrl: url,
+          outroVideoFileName: file.name,
+        };
+        YouTubeService.saveSettings(updated);
+        return updated;
+      });
     }
   };
 
@@ -386,7 +422,7 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
           <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800 grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/70 dark:bg-neutral-800/50 p-4 rounded-xl">
             <div className="flex items-center gap-3 md:col-span-2">
               <img
-                src={account.channelAvatar || 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=100&h=100&fit=crop'}
+                src={account.channelAvatar || getInitialsAvatarDataUrl(account.channelTitle || 'YT')}
                 alt={account.channelTitle}
                 className="w-12 h-12 rounded-full border-2 border-red-500 object-cover"
               />
@@ -689,7 +725,13 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
               {settings.introVideoUrl && (
                 <button
                   type="button"
-                  onClick={() => setSettings({ ...settings, introVideoUrl: undefined, introVideoFileName: undefined })}
+                  onClick={async () => {
+                    await deleteMediaBlob('youtube_intro_video_blob');
+                    const updated = { ...settings, introVideoUrl: undefined, introVideoFileName: undefined };
+                    setIntroFileName('');
+                    setSettings(updated);
+                    YouTubeService.saveSettings(updated);
+                  }}
                   className="text-xs text-red-600 hover:underline cursor-pointer"
                 >
                   Remove
@@ -721,7 +763,13 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
               {settings.outroVideoUrl && (
                 <button
                   type="button"
-                  onClick={() => setSettings({ ...settings, outroVideoUrl: undefined, outroVideoFileName: undefined })}
+                  onClick={async () => {
+                    await deleteMediaBlob('youtube_outro_video_blob');
+                    const updated = { ...settings, outroVideoUrl: undefined, outroVideoFileName: undefined };
+                    setOutroFileName('');
+                    setSettings(updated);
+                    YouTubeService.saveSettings(updated);
+                  }}
                   className="text-xs text-red-600 hover:underline cursor-pointer"
                 >
                   Remove

@@ -14,6 +14,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
 import { usePermission } from '../../hooks/usePermission';
@@ -37,6 +38,7 @@ export const StaffManagementPage: React.FC = () => {
   const [generatedInviteLink, setGeneratedInviteLink] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
+  const [pendingDeactivateId, setPendingDeactivateId] = useState<string | null>(null);
 
   const loadData = () => {
     if (!currentTenant?.tenantId) return;
@@ -83,18 +85,24 @@ export const StaffManagementPage: React.FC = () => {
     }
   };
 
-  const handleDeactivate = async (memberId: string) => {
-    if (!window.confirm('Are you sure you want to deactivate this staff member? Historical stories and assignments will remain intact.')) return;
+  const handleDeactivate = (memberId: string) => {
+    setPendingDeactivateId(memberId);
+  };
+
+  const confirmDeactivate = async () => {
+    if (!pendingDeactivateId) return;
     try {
       await NewsroomStaffService.deactivateStaffMember(
         currentTenant.tenantId,
-        memberId,
+        pendingDeactivateId,
         user?.uid || 'admin',
         user?.displayName || 'Admin'
       );
+      setPendingDeactivateId(null);
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message);
+      setPendingDeactivateId(null);
     }
   };
 
@@ -130,6 +138,15 @@ export const StaffManagementPage: React.FC = () => {
           ) : undefined
         }
       />
+
+      {errorMsg && !isInviteModalOpen && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button type="button" onClick={() => setErrorMsg(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Subscription Capacity Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -349,6 +366,16 @@ export const StaffManagementPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDeactivateId)}
+        onClose={() => setPendingDeactivateId(null)}
+        onConfirm={confirmDeactivate}
+        title="Deactivate Staff Member"
+        message="Are you sure you want to deactivate this staff member? Historical stories and assignments will remain intact."
+        variant="danger"
+        confirmLabel="Deactivate"
+      />
     </div>
   );
 };

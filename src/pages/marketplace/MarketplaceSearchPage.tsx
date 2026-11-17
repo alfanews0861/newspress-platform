@@ -23,19 +23,21 @@ import {
   MarketplaceSearchResult
 } from '../../services/marketplaceSearchService';
 import { MarketplaceListing, LicenseType, ListingType } from '../../types/marketplace';
+import { navigateTo } from '../../utils/navigation';
 
 export const MarketplaceSearchPage: React.FC = () => {
   const { currentTenant } = useTenant();
   const { user } = useAuth();
 
-  // Parse initial query params from URL hash
-  const getInitialQueryFromHash = (): string => {
-    const hash = window.location.hash;
-    const match = hash.match(/[?&]q=([^&]+)/);
-    return match ? decodeURIComponent(match[1]) : '';
+  // Parse initial query params from URL search or hash
+  const getInitialQuery = (): string => {
+    const searchMatch = window.location.search.match(/[?&]q=([^&]+)/);
+    if (searchMatch) return decodeURIComponent(searchMatch[1]);
+    const hashMatch = window.location.hash.match(/[?&]q=([^&]+)/);
+    return hashMatch ? decodeURIComponent(hashMatch[1]) : '';
   };
 
-  const [keywords, setKeywords] = useState<string>(getInitialQueryFromHash());
+  const [keywords, setKeywords] = useState<string>(getInitialQuery());
   const [category, setCategory] = useState<string>('all');
   const [district, setDistrict] = useState<string>('all');
   const [listingType, setListingType] = useState<string>('all');
@@ -263,7 +265,7 @@ export const MarketplaceSearchPage: React.FC = () => {
               listing={listing}
               purchaseState={purchaseState}
               onSelect={(l) => setSelectedListing(l)}
-              onViewDetail={(id) => (window.location.hash = `#/marketplace/story/${id}`)}
+              onViewDetail={(id) => navigateTo(`/marketplace/story/${id}`)}
             />
           ))}
         </div>

@@ -43,6 +43,7 @@ export const AssignmentManagementPage: React.FC = () => {
   const [deadline, setDeadline] = useState('');
   const [selectedReporterId, setSelectedReporterId] = useState('');
   const [selectedDeskId, setSelectedDeskId] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadData = () => {
     if (!currentTenant?.tenantId) return;
@@ -68,6 +69,7 @@ export const AssignmentManagementPage: React.FC = () => {
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReporterId || !selectedDeskId) return;
+    setErrorMsg(null);
 
     try {
       await NewsAssignmentService.createAssignment({
@@ -92,7 +94,7 @@ export const AssignmentManagementPage: React.FC = () => {
       setIsCreateModalOpen(false);
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message);
     }
   };
 
@@ -118,6 +120,15 @@ export const AssignmentManagementPage: React.FC = () => {
           ) : undefined
         }
       />
+
+      {errorMsg && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button type="button" onClick={() => setErrorMsg(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Assignment List */}
       <Card variant="editorial">

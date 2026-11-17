@@ -28,6 +28,7 @@ import { PersonaSwitcherModal } from './PersonaSwitcherModal';
 import { formatTimeLeft } from '../utils/formatters';
 import { MOCK_CURRENT_EDITION } from '../services/mockDataService';
 import { navigateTo } from '../utils/navigation';
+import { getInitialsAvatarDataUrl } from '../utils/avatarFallback';
 
 export interface TopHeaderProps {
   onToggleMobileMenu: () => void;
@@ -223,10 +224,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onToggleMobileMenu }) => {
           {/* User Profile display */}
           <div className="flex items-center gap-2 pl-1.5 border-l border-slate-200 dark:border-slate-700">
             <img
-              src={
-                user?.avatarUrl ||
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&auto=format&fit=crop&q=80'
-              }
+              src={user?.avatarUrl || getInitialsAvatarDataUrl(user?.displayName)}
               alt={user?.displayName || 'User'}
               className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
             />

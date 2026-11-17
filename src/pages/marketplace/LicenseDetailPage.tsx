@@ -18,17 +18,20 @@ import {
   DetailedLicenseView
 } from '../../services/marketplaceLicenseViewService';
 import { formatDate } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 export const LicenseDetailPage: React.FC = () => {
   const { currentTenant } = useTenant();
 
-  const getLicenseIdFromHash = (): string => {
-    const hash = window.location.hash;
-    const parts = hash.split('/marketplace/license/');
+  const getLicenseIdFromUrl = (): string => {
+    const raw = window.location.pathname.includes('/marketplace/license/')
+      ? window.location.pathname
+      : window.location.hash;
+    const parts = raw.split('/marketplace/license/');
     return parts[1] ? parts[1].split('?')[0] : '';
   };
 
-  const licenseId = getLicenseIdFromHash();
+  const licenseId = getLicenseIdFromUrl();
   const [detail, setDetail] = useState<DetailedLicenseView | undefined>(undefined);
 
   useEffect(() => {
@@ -47,7 +50,7 @@ export const LicenseDetailPage: React.FC = () => {
         <Award className="w-10 h-10 text-amber-400 mx-auto" />
         <h3 className="text-lg font-bold text-slate-100 font-serif">License Certificate Not Found</h3>
         <p className="text-xs text-slate-400">The requested license certificate ID was not found or is restricted.</p>
-        <Button variant="secondary" size="sm" onClick={() => (window.location.hash = '#/marketplace/licensed')}>
+        <Button variant="secondary" size="sm" onClick={() => navigateTo('/marketplace/licensed')}>
           Return to Licensed Content
         </Button>
       </div>
@@ -62,7 +65,7 @@ export const LicenseDetailPage: React.FC = () => {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => (window.location.hash = '#/marketplace/licensed')}
+          onClick={() => navigateTo('/marketplace/licensed')}
         >
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Licensed Content
         </Button>
@@ -168,7 +171,7 @@ export const LicenseDetailPage: React.FC = () => {
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
           <Button
             variant="primary"
-            onClick={() => (window.location.hash = `#/marketplace/story/${license.listingId}`)}
+            onClick={() => navigateTo(`/marketplace/story/${license.listingId}`)}
           >
             <FileText className="w-4 h-4 mr-1.5" /> Open Full Story
           </Button>

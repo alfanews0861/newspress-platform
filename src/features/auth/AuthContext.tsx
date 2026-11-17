@@ -10,6 +10,9 @@ import { AppPermission, OrganizationRole, PlatformRole, ReporterRole, Marketplac
 import { AuthService } from '../../services/authService';
 import { RBACService } from '../../services/rbacService';
 import { MOCK_USERS, MOCK_PERSONS, MOCK_TENANT_MEMBERS } from '../../services/mockDataService';
+import { readLocalString, writeLocalString } from '../../utils/localStore';
+
+const AUTH_SIMULATED_USER_KEY = 'newspress_active_user_id_v1';
 
 export interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
@@ -38,7 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; activeTenantId:
   activeTenantId,
 }) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [simulatedUserId, setSimulatedUserId] = useState<string>('user-alfa-superadmin');
+  const [simulatedUserId, setSimulatedUserId] = useState<string>(() =>
+    readLocalString(AUTH_SIMULATED_USER_KEY, 'user-alfa-superadmin')
+  );
   const [session, setSession] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -116,10 +121,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; activeTenantId:
     setFirebaseUser(null);
     // Reset to default simulated user for demo inspection
     setSimulatedUserId('user-alfa-superadmin');
+    writeLocalString(AUTH_SIMULATED_USER_KEY, 'user-alfa-superadmin');
   };
 
   const switchSimulatedPersona = (userId: string) => {
     setSimulatedUserId(userId);
+    writeLocalString(AUTH_SIMULATED_USER_KEY, userId);
   };
 
   const hasPermission = (permission: AppPermission) => {

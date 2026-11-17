@@ -38,6 +38,7 @@ export const MarketplaceFinanceDashboard: React.FC = () => {
   const [searchTerm, setSearchType] = useState('');
   const [filterAccountType, setFilterAccountType] = useState<string>('all');
   const [isReconciling, setIsReconciling] = useState(false);
+  const [reconNotice, setReconNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const loadDashboard = () => {
     const rep = revenueReportingService.generatePlatformReport();
@@ -56,12 +57,13 @@ export const MarketplaceFinanceDashboard: React.FC = () => {
 
   const handleRunReconciliation = async () => {
     setIsReconciling(true);
+    setReconNotice(null);
     try {
       const res = await financialReconciliationService.reconcileAll();
       setFindings(res.findings);
-      alert(`Reconciliation scan complete. Total findings: ${res.totalFindings}`);
+      setReconNotice({ type: 'success', text: `Reconciliation scan complete. Total findings: ${res.totalFindings}` });
     } catch (err: any) {
-      alert(`Reconciliation error: ${err.message}`);
+      setReconNotice({ type: 'error', text: `Reconciliation error: ${err.message}` });
     } finally {
       setIsReconciling(false);
     }
@@ -93,6 +95,21 @@ export const MarketplaceFinanceDashboard: React.FC = () => {
           { label: 'Marketplace Settlement' }
         ]}
       />
+
+      {reconNotice && (
+        <div
+          className={`p-3 rounded-xl border text-xs font-medium flex items-center justify-between ${
+            reconNotice.type === 'error'
+              ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300'
+              : 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300'
+          }`}
+        >
+          <span>{reconNotice.text}</span>
+          <button type="button" onClick={() => setReconNotice(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Hero Financial Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

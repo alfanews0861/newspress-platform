@@ -15,6 +15,7 @@ import { MarketplaceListing, LicenseType, MarketplacePurchase, NewsLicense } fro
 import { marketplacePurchaseFlowService } from '../../services/marketplacePurchaseFlowService';
 import { LicenseComparisonPanel } from './LicenseComparisonPanel';
 import { formatINR } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 interface MarketplacePurchaseModalProps {
   isOpen: boolean;
@@ -390,7 +391,7 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
                 variant="primary"
                 onClick={() => {
                   onClose();
-                  window.location.hash = '#/marketplace/licensed';
+                  navigateTo('/marketplace/licensed');
                 }}
               >
                 Open in Licensed Workspace

@@ -17,6 +17,7 @@ import {
   Youtube,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
+import { getInitialsAvatarDataUrl } from '../../utils/avatarFallback';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -257,7 +258,7 @@ export const SettingsPage: React.FC = () => {
                   return (
                     <div className="flex items-center gap-3">
                       <img
-                        src={user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&auto=format&fit=crop&q=80'}
+                        src={user?.avatarUrl || getInitialsAvatarDataUrl(user?.displayName || 'User')}
                         alt={user?.displayName || 'User'}
                         className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                       />

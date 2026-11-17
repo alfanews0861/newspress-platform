@@ -300,7 +300,7 @@ export class VideoCompositorService {
 
     onProgress?.(5, 'Preparing media assets and broadcast timelines...');
 
-    const mainVideoUrl = URL.createObjectURL(mainVideoBlob);
+    const mainVideoUrl = URL.createObjectURL(primaryClip);
     const mainVideoEl = await this.loadVideoElement(mainVideoUrl);
 
     const width = 1920;

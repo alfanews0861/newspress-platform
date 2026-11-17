@@ -6,7 +6,7 @@
  * Handles deterministic column geometries, snapping, boundary verification, and collision detection.
  */
 
-import { PageGrid, NewspaperTemplate, NewspaperBrand, PaperSizeFormat } from '../types/edition';
+import { PageGrid, NewspaperTemplate, NewspaperBrand, PaperSizeFormat, SectionStyle } from '../types/edition';
 
 // Standard 96 DPI pixel-to-millimeter ratio (1 inch = 25.4 mm = 96 px => ~3.7795 px/mm)
 // For editorial canvas: 2.0x for compact preview, 3.78x for true high-density 8-column broadsheet (Eenadu/Sakshi standard).
@@ -82,8 +82,12 @@ export class GridCalculationService {
    */
   public static getTemplateForBrand(brand?: Partial<NewspaperBrand> | null): NewspaperTemplate {
     const paperSize: PaperSizeFormat = brand?.paperSize || 'broadsheet';
-    const isTelugu = brand?.language === 'te' || brand?.name?.includes('తెలుగు') || brand?.brandId?.includes('andhra') || brand?.brandId === 'brand-telugu-standard' || true;
-    
+    const lang = (brand?.language || 'en').toLowerCase().slice(0, 2);
+    const isTelugu =
+      lang === 'te' ||
+      Boolean(brand?.name && /[\u0C00-\u0C7F]/.test(brand.name)) ||
+      Boolean(brand?.brandId?.includes('andhra') || brand?.brandId === 'brand-telugu-standard');
+
     const cols = brand?.defaultColumnCount || (
       paperSize === 'broadsheet' ? 8 :
       paperSize === 'tabloid' ? 5 :
@@ -92,27 +96,48 @@ export class GridCalculationService {
       paperSize === 'a4' ? 4 : 8
     );
 
+    const fontMap: Record<string, { headline: string; body: string; accent: string }> = {
+      te: { headline: "'Ramabhadra', 'Noto Serif Telugu', serif", body: "'Mandali', 'Noto Sans Telugu', sans-serif", accent: "'Ramabhadra', serif" },
+      hi: { headline: "'Rozha One', 'Noto Serif Devanagari', serif", body: "'Mukta', 'Noto Sans Devanagari', sans-serif", accent: "'Rozha One', serif" },
+      ta: { headline: "'Noto Serif Tamil', 'Catamaran', serif", body: "'Catamaran', 'Noto Sans Tamil', sans-serif", accent: "'Noto Serif Tamil', serif" },
+      kn: { headline: "'Noto Serif Kannada', 'Noto Sans Kannada', serif", body: "'Noto Sans Kannada', sans-serif", accent: "'Noto Serif Kannada', serif" },
+      ml: { headline: "'Noto Serif Malayalam', 'Manjari', serif", body: "'Manjari', 'Noto Sans Malayalam', sans-serif", accent: "'Noto Serif Malayalam', serif" },
+      bn: { headline: "'Noto Serif Bengali', 'Hind Siliguri', serif", body: "'Hind Siliguri', 'Noto Sans Bengali', sans-serif", accent: "'Noto Serif Bengali', serif" },
+      gu: { headline: "'Rasa', 'Noto Serif Gujarati', serif", body: "'Mukta Vaani', 'Noto Sans Gujarati', sans-serif", accent: "'Rasa', serif" },
+      pa: { headline: "'Noto Serif Gurmukhi', sans-serif", body: "'Mukta Mahee', sans-serif", accent: "'Noto Serif Gurmukhi', serif" },
+      or: { headline: "'Noto Serif Oriya', sans-serif", body: "'Noto Sans Oriya', sans-serif", accent: "'Noto Serif Oriya', serif" },
+      en: { headline: "'Playfair Display', 'Newsreader', Georgia, serif", body: "'Newsreader', Georgia, serif", accent: "'Cinzel', serif" },
+    };
+    const resolvedFontSet = fontMap[isTelugu ? 'te' : lang] || fontMap.en;
+
     const typography = {
-      headlineFont: isTelugu ? "'Ramabhadra', 'Noto Serif Telugu', serif" : 'Newsreader, serif',
-      bodyFont: isTelugu ? "'Mallanna', 'Noto Sans Telugu', sans-serif" : 'Inter, sans-serif',
-      accentFont: isTelugu ? "'Ramabhadra', serif" : 'Cinzel, serif',
+      headlineFont: brand?.defaultFonts?.headlineFont || resolvedFontSet.headline,
+      bodyFont: brand?.defaultFonts?.bodyFont || resolvedFontSet.body,
+      accentFont: brand?.defaultFonts?.accentFont || resolvedFontSet.accent,
       baseFontSizePt: paperSize === 'a4' ? 9.5 : 10.5,
-      lineHeights: { headline: 1.3, body: 1.45, caption: 1.2 },
+      lineHeights: { headline: 1.25, body: 1.4, caption: 1.2 },
     };
 
-    const sectionStyles = {
-      'ముఖ్యాంశాలు': { name: 'ముఖ్యాంశాలు (Front Page)', headingFont: "'Ramabhadra', serif", accentColor: '#991b1b', dividerStyle: 'thick_thin' },
-      'జాతీయం': { name: 'జాతీయం (National)', headingFont: "'Ramabhadra', serif", accentColor: '#0f172a', dividerStyle: 'solid' },
-      'రాష్ట్రీయం': { name: 'రాష్ట్రీయం (State News)', headingFont: "'Ramabhadra', serif", accentColor: '#047857', dividerStyle: 'double' },
-      'జిల్లా స్రవంతి': { name: 'జిల్లా స్రవంతి (District Round-up)', headingFont: "'Ramabhadra', serif", accentColor: '#b45309', dividerStyle: 'solid' },
-    };
+    const sectionStyles: Record<string, SectionStyle> = isTelugu
+      ? {
+          'ముఖ్యాంశాలు': { name: 'ముఖ్యాంశాలు (Front Page)', headingFont: resolvedFontSet.headline, accentColor: '#991b1b', dividerStyle: 'thick_thin' },
+          'జాతీయం': { name: 'జాతీయం (National)', headingFont: resolvedFontSet.headline, accentColor: '#0f172a', dividerStyle: 'solid' },
+          'రాష్ట్రీయం': { name: 'రాష్ట్రీయం (State News)', headingFont: resolvedFontSet.headline, accentColor: '#047857', dividerStyle: 'double' },
+          'జిల్లా స్రవంతి': { name: 'జిల్లా స్రవంతి (District Round-up)', headingFont: resolvedFontSet.headline, accentColor: '#b45309', dividerStyle: 'solid' },
+        }
+      : {
+          'Front Page': { name: 'Front Page', headingFont: resolvedFontSet.headline, accentColor: '#991b1b', dividerStyle: 'thick_thin' },
+          'National': { name: 'National', headingFont: resolvedFontSet.headline, accentColor: '#0f172a', dividerStyle: 'solid' },
+          'Regional': { name: 'Regional & Metro', headingFont: resolvedFontSet.headline, accentColor: '#047857', dividerStyle: 'double' },
+          'Business & Sports': { name: 'Business & Sports', headingFont: resolvedFontSet.headline, accentColor: '#b45309', dividerStyle: 'solid' },
+        };
 
     switch (paperSize) {
       case 'tabloid':
         return {
           templateId: `tmpl-tabloid-${cols}col`,
           tenantId: brand?.tenantId || 'tenant-metro-chronicle',
-          name: `${brand?.name || 'Newspaper'} ట్యాబ్లాయిడ్ (${cols}-కాలమ్స్ Tabloid)`,
+          name: `${brand?.name || 'Newspaper'} Tabloid (${cols}-Column)`,
           description: `Compact Tabloid layout (280×380mm, ${cols} columns) for metro & evening editions`,
           pageSize: 'Tabloid',
           format: 'tabloid',

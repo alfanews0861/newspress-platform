@@ -135,7 +135,7 @@ export const WebhooksPage: React.FC = () => {
       setRotatedSecretInfo({ newSecret: res.newSecret });
       loadEndpoints();
     } catch (err: any) {
-      alert(err.message || 'Secret rotation failed.');
+      setFormError(err.message || 'Secret rotation failed.');
     }
   };
 
@@ -150,7 +150,7 @@ export const WebhooksPage: React.FC = () => {
       setDeletingEndpoint(null);
       loadEndpoints();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete endpoint.');
+      setFormError(err.message || 'Failed to delete endpoint.');
     }
   };
 
@@ -194,6 +194,15 @@ export const WebhooksPage: React.FC = () => {
           </div>
         }
       />
+
+      {formError && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{formError}</span>
+          <button type="button" onClick={() => setFormError(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {pingResult && (
         <div className="p-3 bg-indigo-950/70 border border-indigo-700/80 rounded-md text-sm text-indigo-200 flex items-center justify-between">

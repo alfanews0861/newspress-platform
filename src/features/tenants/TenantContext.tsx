@@ -7,6 +7,9 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { Tenant } from '../../types/tenant';
 import { TenantService } from '../../services/tenantService';
 import { MOCK_TENANTS } from '../../services/mockDataService';
+import { readLocalString, writeLocalString } from '../../utils/localStore';
+
+const ACTIVE_TENANT_STORAGE_KEY = 'newspress_active_tenant_id_v1';
 
 export interface TenantContextValue {
   currentTenant: Tenant;
@@ -23,7 +26,9 @@ export const TenantProvider: React.FC<{
   children: (activeTenantId: string) => React.ReactNode;
 }> = ({ children }) => {
   const [allTenants, setAllTenants] = useState<Tenant[]>(MOCK_TENANTS);
-  const [currentTenantId, setCurrentTenantId] = useState<string>(MOCK_TENANTS[0].tenantId);
+  const [currentTenantId, setCurrentTenantId] = useState<string>(() =>
+    readLocalString(ACTIVE_TENANT_STORAGE_KEY, MOCK_TENANTS[0].tenantId)
+  );
   const [isLoadingTenants, setIsLoadingTenants] = useState<boolean>(false);
 
   const currentTenant = allTenants.find((t) => t.tenantId === currentTenantId) || allTenants[0];
@@ -48,6 +53,7 @@ export const TenantProvider: React.FC<{
     const exists = allTenants.some((t) => t.tenantId === tenantId);
     if (exists) {
       setCurrentTenantId(tenantId);
+      writeLocalString(ACTIVE_TENANT_STORAGE_KEY, tenantId);
     }
   };
 

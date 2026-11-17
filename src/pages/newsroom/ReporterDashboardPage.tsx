@@ -28,6 +28,7 @@ export const ReporterDashboardPage: React.FC = () => {
   const [assignments, setAssignments] = useState<NewsAssignment[]>([]);
   const [submissions, setSubmissions] = useState<NewsArticle[]>([]);
   const [comments, setComments] = useState<EditorialComment[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = () => {
     if (!currentTenant?.tenantId) return;
@@ -51,20 +52,22 @@ export const ReporterDashboardPage: React.FC = () => {
   }, [currentTenant?.tenantId, reporterId]);
 
   const handleAcceptAssignment = async (assignmentId: string) => {
+    setErrorMessage(null);
     try {
       await NewsAssignmentService.acceptAssignment(assignmentId, user?.uid || 'user-sofia-chen', user?.displayName || 'Sofia Chen');
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMessage(err.message);
     }
   };
 
   const handleStartAssignment = async (assignmentId: string) => {
+    setErrorMessage(null);
     try {
       await NewsAssignmentService.startAssignment(assignmentId, user?.uid || 'user-sofia-chen', user?.displayName || 'Sofia Chen');
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMessage(err.message);
     }
   };
 
@@ -78,6 +81,15 @@ export const ReporterDashboardPage: React.FC = () => {
           { label: 'Reporter Dashboard' },
         ]}
       />
+
+      {errorMessage && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button type="button" onClick={() => setErrorMessage(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Assignment Overview Bar */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

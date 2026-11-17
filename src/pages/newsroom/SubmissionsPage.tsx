@@ -92,6 +92,7 @@ export const SubmissionsPage: React.FC = () => {
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
   // Load submissions and metrics
   const refreshData = () => {
@@ -109,7 +110,7 @@ export const SubmissionsPage: React.FC = () => {
   // Geolocation Acquisition (Opt-in)
   const handleAcquireGps = () => {
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+      setErrorBanner('Geolocation is not supported by your browser.');
       return;
     }
     setIsAcquiringGps(true);
@@ -145,7 +146,7 @@ export const SubmissionsPage: React.FC = () => {
         evidenceType: newEvidenceType,
         title: newEvidenceTitle,
         description: newEvidenceDesc,
-        fileUrl: `https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600`,
+        fileUrl: `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="360" viewBox="0 0 600 360"><rect width="600" height="360" fill="#e2e8f0"/><text x="300" y="175" text-anchor="middle" fill="#334155" font-family="sans-serif" font-size="18" font-weight="700">FIELD EVIDENCE CAPTURE</text><text x="300" y="205" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="13">${newEvidenceTitle.slice(0, 40)}</text></svg>`)}`,
         originalFilename: `${newEvidenceTitle.toLowerCase().replace(/\s+/g, '_')}_raw.jpg`,
         visibility: newEvidenceVisibility,
         gpsCoords: gpsCoords ? { ...gpsCoords, capturedAt: new Date().toISOString() } : undefined,
@@ -221,16 +222,17 @@ export const SubmissionsPage: React.FC = () => {
       setSuccessBanner('Draft saved securely to newsroom workspace.');
       setTimeout(() => setSuccessBanner(null), 4000);
     } catch (err: any) {
-      alert(`Error saving draft: ${err.message}`);
+      setErrorBanner(`Error saving draft: ${err.message}`);
     }
   };
 
   // Submit Flow
   const handleSubmitStory = async (forceProceed = false) => {
     if (!headline || !bodyContent) {
-      alert('Please provide both a headline and full story copy.');
+      setErrorBanner('Please provide both a headline and full story copy.');
       return;
     }
+    setErrorBanner(null);
 
     // Step 1: Pre-check duplicate warning if not force-proceeding
     if (!forceProceed) {
@@ -296,7 +298,7 @@ export const SubmissionsPage: React.FC = () => {
       setGpsCoords(null);
     } catch (err: any) {
       setIsSubmitting(false);
-      alert(`Submission error: ${err.message}`);
+      setErrorBanner(`Submission error: ${err.message}`);
     }
   };
 
@@ -322,6 +324,16 @@ export const SubmissionsPage: React.FC = () => {
           ) : undefined
         }
       />
+
+      {/* Error Notification Banner */}
+      {errorBanner && (
+        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 text-xs flex items-center justify-between font-medium">
+          <span>{errorBanner}</span>
+          <button onClick={() => setErrorBanner(null)} className="text-xs underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Success Notification Banner */}
       {successBanner && (

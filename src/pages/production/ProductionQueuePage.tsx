@@ -152,7 +152,7 @@ export const ProductionQueuePage: React.FC = () => {
       setActionMessage(`Job ${jobId} cancelled.`);
       loadJobs();
     } else {
-      alert(`Cannot cancel job: ${res.reason}`);
+      setActionMessage(`Cannot cancel job: ${res.reason}`);
     }
   };
 

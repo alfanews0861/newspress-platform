@@ -30,6 +30,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
 import { SubscriptionEntitlementService } from '../../services/subscriptionEntitlementService';
@@ -56,6 +57,7 @@ export const PublisherBillingPage: React.FC = () => {
   const [selectedPlanForChange, setSelectedPlanForChange] = useState<PlanRecord | null>(null);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Usage state
   const [aiUsage, setAiUsage] = useState({ used: 0, limit: 0, remaining: 0 });
@@ -149,13 +151,17 @@ export const PublisherBillingPage: React.FC = () => {
 
   const handleCancelSubscription = () => {
     if (!currentTenant || !subscription) return;
-    if (confirm('Are you sure you want to cancel your subscription at the end of the billing period?')) {
-      subscription.cancelAtPeriodEnd = true;
-      subscription.updatedAt = new Date().toISOString();
-      SubscriptionEntitlementService.setSubscription(currentTenant.tenantId, subscription);
-      setActionSuccess('Subscription set to cancel at current period end.');
-      loadBillingData();
-    }
+    setShowCancelConfirm(true);
+  };
+
+  const confirmCancelSubscription = () => {
+    if (!currentTenant || !subscription) return;
+    subscription.cancelAtPeriodEnd = true;
+    subscription.updatedAt = new Date().toISOString();
+    SubscriptionEntitlementService.setSubscription(currentTenant.tenantId, subscription);
+    setActionSuccess('Subscription set to cancel at current period end.');
+    setShowCancelConfirm(false);
+    loadBillingData();
   };
 
   const getStatusBadge = (status: PublisherSubscription['status']) => {
@@ -527,6 +533,16 @@ export const PublisherBillingPage: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={confirmCancelSubscription}
+        title="Cancel Subscription"
+        message="Are you sure you want to cancel your subscription at the end of the billing period?"
+        variant="danger"
+        confirmLabel="Cancel Subscription"
+      />
     </div>
   );
 };

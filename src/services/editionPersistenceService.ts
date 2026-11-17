@@ -29,12 +29,23 @@ import { ProductionQueueService } from './productionQueueService';
 import { AuditService } from './auditService';
 import { NotificationService } from './notificationService';
 import { MOCK_BRANDS, MOCK_TEMPLATES, MOCK_CURRENT_EDITION, MOCK_NEWS_ARTICLES, TELUGU_NEWSPAPER_EDITION, TELUGU_PREPLANNED_PAGES } from './mockDataService';
+import { hasLocalStorage, readLocalJson, writeLocalJson } from '../utils/localStore';
+
+const EDITIONS_STORAGE_KEY = 'newspress_editions_state_v1';
 
 // In-memory persistent caches for developer reactivity & isolated unit testing
 const _inMemoryEditions = new Map<string, NewspaperEdition>();
 const _inMemoryPages = new Map<string, NewspaperPage[]>();
 const _inMemoryRevisions = new Map<string, EditionRevision[]>();
 const _inMemorySnapshots = new Map<string, ProductionSnapshot[]>();
+
+function persistEditionsState() {
+  if (!hasLocalStorage()) return;
+  writeLocalJson(EDITIONS_STORAGE_KEY, {
+    editions: Array.from(_inMemoryEditions.values()),
+    pages: Array.from(_inMemoryPages.entries()),
+  });
+}
 
 // Seed default mock edition and Telugu sample edition if not present
 if (!_inMemoryEditions.has(MOCK_CURRENT_EDITION.editionId)) {
@@ -43,6 +54,23 @@ if (!_inMemoryEditions.has(MOCK_CURRENT_EDITION.editionId)) {
 if (!_inMemoryEditions.has(TELUGU_NEWSPAPER_EDITION.editionId)) {
   _inMemoryEditions.set(TELUGU_NEWSPAPER_EDITION.editionId, TELUGU_NEWSPAPER_EDITION);
   _inMemoryPages.set(TELUGU_NEWSPAPER_EDITION.editionId, TELUGU_PREPLANNED_PAGES);
+}
+
+if (hasLocalStorage()) {
+  const saved = readLocalJson<{ editions?: NewspaperEdition[]; pages?: Array<[string, NewspaperPage[]]> } | null>(
+    EDITIONS_STORAGE_KEY,
+    null
+  );
+  if (saved?.editions) {
+    for (const ed of saved.editions) {
+      _inMemoryEditions.set(ed.editionId, ed);
+    }
+  }
+  if (saved?.pages) {
+    for (const [id, pgs] of saved.pages) {
+      _inMemoryPages.set(id, pgs);
+    }
+  }
 }
 
 let autosaveTimeout: any = null;
@@ -131,6 +159,7 @@ export class EditionPersistenceService {
 
     existingRevs.push(revision);
     _inMemoryRevisions.set(edition.editionId, existingRevs);
+    persistEditionsState();
 
     return { edition: updatedEdition, revision };
   }
@@ -350,6 +379,7 @@ export class EditionPersistenceService {
       updatedAt: now,
     };
     _inMemoryEditions.set(editionId, finalizedEdition);
+    persistEditionsState();
 
     // Enqueue Production Job
     const productionJob = await ProductionQueueService.enqueueJob({
@@ -517,5 +547,22 @@ export class EditionPersistenceService {
     if (pages) {
       _inMemoryPages.set(edition.editionId, pages);
     }
+    persistEditionsState();
+  }
+
+  /**
+   * Retrieves all persisted editions (optionally filtered by tenantId).
+   */
+  public static getAllEditions(tenantId?: string): NewspaperEdition[] {
+    const all = Array.from(_inMemoryEditions.values());
+    if (!tenantId) return all;
+    return all.filter((e) => e.tenantId === tenantId);
+  }
+
+  /**
+   * Retrieves saved pages for an edition.
+   */
+  public static getPagesForEdition(editionId: string): NewspaperPage[] {
+    return _inMemoryPages.get(editionId) || _inMemoryEditions.get(editionId)?.pages || [];
   }
 }

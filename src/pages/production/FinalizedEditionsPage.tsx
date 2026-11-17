@@ -52,6 +52,7 @@ export const FinalizedEditionsPage: React.FC = () => {
   const [correctionSummary, setCorrectionSummary] = useState<string>('');
   const [correctionLoading, setCorrectionLoading] = useState<boolean>(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
   const loadData = async () => {
     const list = await EditionPersistenceService.getFinalizedEditions(currentTenant.tenantId);
@@ -74,6 +75,7 @@ export const FinalizedEditionsPage: React.FC = () => {
     if (!targetEdition) return;
     setCorrectionLoading(true);
 
+    setErrorNotice(null);
     try {
       const res = await EditionPersistenceService.createCorrectionRevision(
         targetEdition.editionId,
@@ -90,10 +92,10 @@ export const FinalizedEditionsPage: React.FC = () => {
         );
         await loadData();
       } else {
-        alert(res.errors?.join('\n') || 'Failed to create correction revision.');
+        setErrorNotice(res.errors?.join(' ') || 'Failed to create correction revision.');
       }
     } catch (err: any) {
-      alert(`Correction error: ${err.message}`);
+      setErrorNotice(`Correction error: ${err.message}`);
     } finally {
       setCorrectionLoading(false);
     }
@@ -120,6 +122,19 @@ export const FinalizedEditionsPage: React.FC = () => {
           </Button>
         }
       />
+
+      {/* Error Notification */}
+      {errorNotice && (
+        <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-xl flex items-center justify-between text-xs font-sans">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorNotice}</span>
+          </div>
+          <button onClick={() => setErrorNotice(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Action Notification */}
       {actionNotice && (

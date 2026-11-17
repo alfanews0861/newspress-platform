@@ -24,7 +24,7 @@ interface MobileCameraCaptureProps {
 const SAMPLE_PHOTO_PRESETS = [
   {
     title: 'Metro Transit Platform Incident',
-    uri: 'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=800&auto=format&fit=crop&q=80',
+    uri: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80',
     location: { latitude: 40.7527, longitude: -73.9772, label: 'Grand Central Station Platform 4B', timestamp: new Date().toISOString(), disclosedByUser: true },
   },
   {

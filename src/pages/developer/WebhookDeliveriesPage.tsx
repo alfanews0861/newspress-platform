@@ -57,7 +57,7 @@ export const WebhookDeliveriesPage: React.FC = () => {
       loadDeliveries();
       setTimeout(() => setReplaySuccessMessage(null), 4000);
     } catch (err: any) {
-      alert(err.message || 'Failed to replay webhook delivery.');
+      setReplaySuccessMessage(err.message || 'Failed to replay webhook delivery.');
     } finally {
       setIsReplaying(false);
     }

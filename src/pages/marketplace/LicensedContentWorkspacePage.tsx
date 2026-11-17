@@ -36,7 +36,14 @@ import {
 } from '../../services/marketplaceContentWorkspaceService';
 import { marketplaceLicenseViewService, LicenseAlert } from '../../services/marketplaceLicenseViewService';
 import { marketplaceService } from '../../services/marketplaceService';
+import { EditionPersistenceService } from '../../services/editionPersistenceService';
+import { newsSubmissionService } from '../../services/newsSubmissionService';
+import { PagePlanningEngine } from '../../services/pagePlanningEngine';
+import { brandManagementService } from '../../services/brandManagementService';
+import { GridCalculationService } from '../../services/gridCalculationService';
 import { formatDate } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
+import { writeLocalString } from '../../utils/localStore';
 
 export const LicensedContentWorkspacePage: React.FC = () => {
   const { currentTenant } = useTenant();
@@ -58,8 +65,16 @@ export const LicensedContentWorkspacePage: React.FC = () => {
 
   // Add to Edition Modal
   const [addToEditionItem, setAddToEditionItem] = useState<LicensedWorkspaceItem | null>(null);
-  const [selectedEditionCode, setSelectedEditionCode] = useState<string>('MC-2026-10-05');
+  const availableEditions = React.useMemo(() => {
+    const all = EditionPersistenceService.getAllEditions();
+    return all.length > 0 ? all : [];
+  }, [currentTenant?.tenantId]);
+  const [selectedEditionCode, setSelectedEditionCode] = useState<string>(() => {
+    const all = EditionPersistenceService.getAllEditions();
+    return all[0]?.editionCode || 'MC-2026-10-05';
+  });
   const [additionSuccess, setAdditionSuccess] = useState<string | null>(null);
+  const [additionError, setAdditionError] = useState<string | null>(null);
 
   const refreshWorkspace = () => {
     if (currentTenant) {
@@ -119,28 +134,74 @@ export const LicensedContentWorkspacePage: React.FC = () => {
     }
   };
 
-  const handleAddToEditionConfirm = () => {
-    if (!addToEditionItem || !currentTenant) return;
+  const handleAddToEditionConfirm = async () => {
+    if (!addToEditionItem || !currentTenant || !user) return;
+    setAdditionError(null);
 
-    // Validate license scope prior to reservation
     if (addToEditionItem.usageStatus.status === 'EXPIRED') {
-      alert('License has expired! Cannot reserve for print edition.');
+      setAdditionError('License has expired! Cannot reserve for print edition.');
       return;
     }
 
     if (!addToEditionItem.license.allowedMedia?.includes('print_broadsheet') && addToEditionItem.license.type === 'DIGITAL_ONLY') {
-      alert('This license is DIGITAL_ONLY and strictly prohibited from print edition placement.');
+      setAdditionError('This license is DIGITAL_ONLY and cannot be placed in a print edition.');
       return;
     }
 
-    // Link edition code
     marketplaceService.linkLicenseToEdition(addToEditionItem.license.licenseId, selectedEditionCode);
-    setAdditionSuccess(`Reserved for edition ${selectedEditionCode}. Print preflight verified.`);
-    setTimeout(() => {
-      setAddToEditionItem(null);
-      setAdditionSuccess(null);
-      refreshWorkspace();
-    }, 1200);
+
+    // Adapt licensed story and inject into the active/selected persisted edition so it renders in Page Designer
+    const adapted = marketplaceContentWorkspaceService.adaptToNewsroomStory({
+      licenseId: addToEditionItem.license.licenseId,
+      tenantId: currentTenant.tenantId,
+      userId: user.uid,
+    });
+
+    if (adapted.articleId && adapted.headline) {
+      newsSubmissionService.upsertVerifiedArticle({
+        articleId: adapted.articleId,
+        tenantId: currentTenant.tenantId,
+        headline: adapted.headline,
+        slug: adapted.articleId,
+        summary: adapted.leadParagraph || adapted.headline,
+        leadParagraph: adapted.leadParagraph || '',
+        bodyContent: adapted.bodyContent || adapted.leadParagraph || '',
+        authorId: addToEditionItem.license.sellerReporterId || user.uid,
+        byline: adapted.byline || 'Syndicated Wire',
+        authorType: 'syndicated',
+        category: adapted.category || 'General',
+        district: adapted.district || 'Regional',
+        editorialStatus: 'approved',
+        originalityVerdict: 'verified_original',
+        originalityStatus: 'VERIFIED_ORIGINAL',
+        wordCount: (adapted.bodyContent || '').split(/\s+/).filter(Boolean).length,
+        tags: [adapted.category || 'Syndicated'],
+        isMarketplaceListed: false,
+        isMarketplaceEligible: false,
+        createdAt: adapted.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    const targetEd = availableEditions.find((e) => e.editionCode === selectedEditionCode) || availableEditions[0];
+    if (targetEd) {
+      const activeBrand = brandManagementService.getActiveBrand();
+      const template = GridCalculationService.getTemplateForBrand(activeBrand);
+      const stories = newsSubmissionService
+        .getArticles(currentTenant.tenantId)
+        .filter((a) => ['approved', 'published', 'marketplace_listed'].includes(a.editorialStatus));
+      const planned = PagePlanningEngine.planEditionLayout({
+        edition: targetEd,
+        template,
+        stories,
+        targetPageCount: targetEd.totalPages || activeBrand?.pageCount || 4,
+      });
+      await EditionPersistenceService.saveEdition(targetEd, planned.pages, user.uid, `Added licensed story: ${adapted.headline}`);
+      writeLocalString('newspress_active_edition_id_v1', targetEd.editionId);
+    }
+
+    setAdditionSuccess(`Added "${addToEditionItem.articlePreview.headline}" to edition ${selectedEditionCode}.`);
+    refreshWorkspace();
   };
 
   return (
@@ -258,7 +319,7 @@ export const LicensedContentWorkspacePage: React.FC = () => {
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             Acquire rights from the syndication wire or adjust your status filters.
           </p>
-          <Button variant="primary" size="sm" onClick={() => (window.location.hash = '#/marketplace')}>
+          <Button variant="primary" size="sm" onClick={() => navigateTo('/marketplace')}>
             Browse Syndication Wire
           </Button>
         </Card>
@@ -462,16 +523,39 @@ export const LicensedContentWorkspacePage: React.FC = () => {
       {addToEditionItem && (
         <Modal
           isOpen={Boolean(addToEditionItem)}
-          onClose={() => setAddToEditionItem(null)}
-          title={`Reserve for Newspaper Edition: ${addToEditionItem.articlePreview.headline}`}
-          subtitle="Select upcoming print publication date and edition code."
+          onClose={() => { setAddToEditionItem(null); setAdditionSuccess(null); setAdditionError(null); }}
+          title={`Add to Newspaper Edition: ${addToEditionItem.articlePreview.headline}`}
+          subtitle="Select target edition to place this licensed story directly into your paper layout."
           maxWidth="md"
         >
           <div className="space-y-4">
+            {additionError && (
+              <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-sans">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{additionError}</span>
+              </div>
+            )}
             {additionSuccess ? (
-              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 font-sans">
-                <CheckCircle className="w-5 h-5 shrink-0" />
-                <span>{additionSuccess}</span>
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 font-sans">
+                  <CheckCircle className="w-5 h-5 shrink-0" />
+                  <span>{additionSuccess}</span>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="secondary" onClick={() => { setAddToEditionItem(null); setAdditionSuccess(null); }}>
+                    Close
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setAddToEditionItem(null);
+                      setAdditionSuccess(null);
+                      navigateTo('/newspaper/page-designer');
+                    }}
+                  >
+                    <Layers className="w-4 h-4 mr-1.5" /> Open Newspaper
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
@@ -482,15 +566,18 @@ export const LicensedContentWorkspacePage: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium font-sans block">Target Edition Issue Code:</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium font-sans block">Target Edition:</label>
                   <Select
                     value={selectedEditionCode}
                     onChange={(e) => setSelectedEditionCode(e.target.value)}
-                    options={[
-                      { value: 'MC-2026-10-05', label: 'MC-2026-10-05 (Tomorrow Morning Daily)' },
-                      { value: 'MC-2026-10-06', label: 'MC-2026-10-06 (Wednesday Metro)' },
-                      { value: 'SE-2026-10-08', label: 'SE-2026-10-08 (Sunday Special Broadsheet)' },
-                    ]}
+                    options={
+                      availableEditions.length > 0
+                        ? availableEditions.map((ed) => ({
+                            value: ed.editionCode,
+                            label: `${ed.editionCode} — ${ed.brandName} (${ed.publicationDate})`,
+                          }))
+                        : [{ value: 'MC-2026-10-05', label: 'MC-2026-10-05 (Morning Daily)' }]
+                    }
                   />
                 </div>
 
@@ -499,7 +586,7 @@ export const LicensedContentWorkspacePage: React.FC = () => {
                     Cancel
                   </Button>
                   <Button variant="primary" onClick={handleAddToEditionConfirm}>
-                    Confirm Reservation
+                    Add & Assemble into Paper
                   </Button>
                 </div>
               </>

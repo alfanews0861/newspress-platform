@@ -16,6 +16,7 @@ import {
   YouTubePublishResult,
   SupportedIndianLanguage,
 } from '../types/youtube';
+import { loadMediaBlob } from '../utils/mediaBlobStore';
 
 const SETTINGS_STORAGE_KEY = 'newspress_youtube_branding_settings_v1';
 const ACCOUNT_STORAGE_KEY = 'newspress_youtube_connected_account_v1';
@@ -271,7 +272,7 @@ export class YouTubeService {
         err?.message?.includes('Error 403')
       ) {
         throw new Error(
-          'Google OAuth 403 (Access Denied): The Google Cloud project "alfa-news-service-test-project" requires test user authorization. Please add your email (meegada.avinash7@gmail.com) under "Test Users" in Google Cloud Console -> APIs & Services -> OAuth consent screen.'
+          'Google OAuth 403 (Access Denied): Please ensure your Google account is listed under "Test Users" in your OAuth consent screen configuration, or use the Permanent Token option.'
         );
       }
 
@@ -591,5 +592,23 @@ export class YouTubeService {
         console.error('YouTube Data API execution error:', err);
         throw new Error(err?.message || 'Failed to complete video upload to YouTube Data API.');
       }
+  }
+
+  /**
+   * Rehydrates persisted intro & outro video blobs from IndexedDB
+   * so user bumpers work seamlessly after browser refreshes.
+   */
+  static async getHydratedIntroOutroBlobs(): Promise<{
+    introVideoBlob?: Blob;
+    outroVideoBlob?: Blob;
+  }> {
+    const [introBlob, outroBlob] = await Promise.all([
+      loadMediaBlob('youtube_intro_video_blob'),
+      loadMediaBlob('youtube_outro_video_blob'),
+    ]);
+    return {
+      introVideoBlob: introBlob || undefined,
+      outroVideoBlob: outroBlob || undefined,
+    };
   }
 }

@@ -31,18 +31,21 @@ import { marketplaceService } from '../../services/marketplaceService';
 import { marketplaceContentWorkspaceService } from '../../services/marketplaceContentWorkspaceService';
 import { MarketplaceListing, LicenseType } from '../../types/marketplace';
 import { formatINR, formatDate } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 export const MarketplaceStoryDetailPage: React.FC = () => {
   const { currentTenant } = useTenant();
   const { user } = useAuth();
 
-  const getListingIdFromHash = (): string => {
-    const hash = window.location.hash;
-    const parts = hash.split('/marketplace/story/');
-    return parts[1] ? parts[1].split('?')[0] : '';
+  const getListingIdFromUrl = (): string => {
+    const raw = window.location.hash.includes('/marketplace/story/')
+      ? window.location.hash
+      : window.location.pathname;
+    const parts = raw.split('/marketplace/story/');
+    return parts[1] ? parts[1].split('?')[0].split('/')[0] : '';
   };
 
-  const listingId = getListingIdFromHash();
+  const listingId = getListingIdFromUrl();
   const [listing, setListing] = useState<MarketplaceListing | undefined>(undefined);
   const [selectedLicense, setSelectedLicense] = useState<LicenseType>('DIGITAL_AND_PRINT');
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState<boolean>(false);
@@ -67,7 +70,7 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
         <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
         <h3 className="text-lg font-bold text-slate-100 font-serif">Marketplace Dispatch Not Found</h3>
         <p className="text-xs text-slate-400">The requested listing ID may have been withdrawn or archived.</p>
-        <Button variant="secondary" size="sm" onClick={() => (window.location.hash = '#/marketplace')}>
+        <Button variant="secondary" size="sm" onClick={() => navigateTo('/marketplace')}>
           Return to Marketplace Wire
         </Button>
       </div>
@@ -97,7 +100,7 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => (window.location.hash = '#/marketplace')}
+          onClick={() => navigateTo('/marketplace')}
         >
           <ChevronLeft className="w-4 h-4 mr-1" /> Back to Wire
         </Button>
@@ -254,7 +257,7 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
           buyerUserName={user.displayName}
           onSuccess={() => {
             setIsPurchaseModalOpen(false);
-            window.location.hash = '#/marketplace/licensed';
+            navigateTo('/marketplace/licensed');
           }}
         />
       )}

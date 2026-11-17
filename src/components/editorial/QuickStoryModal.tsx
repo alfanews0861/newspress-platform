@@ -42,6 +42,7 @@ export const QuickStoryModal: React.FC<QuickStoryModalProps> = ({
   const [bodyContent, setBodyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleReset = () => {
     setHeadline('');
@@ -49,11 +50,13 @@ export const QuickStoryModal: React.FC<QuickStoryModalProps> = ({
     setLeadParagraph('');
     setBodyContent('');
     setSuccessMessage('');
+    setErrorMessage('');
   };
 
   const handleSubmit = async (publishImmediately: boolean = true) => {
     if (!headline.trim() || !leadParagraph.trim()) return;
 
+    setErrorMessage('');
     setIsSubmitting(true);
     try {
       const draft = await newsSubmissionService.createDraft({
@@ -93,7 +96,7 @@ export const QuickStoryModal: React.FC<QuickStoryModalProps> = ({
         if (onStoryCreated) onStoryCreated();
       }, 1000);
     } catch (err: any) {
-      alert(`Could not save story: ${err.message}`);
+      setErrorMessage(`Could not save story: ${err.message}`);
       setIsSubmitting(false);
     }
   };
@@ -148,6 +151,11 @@ export const QuickStoryModal: React.FC<QuickStoryModalProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
+          {errorMessage && (
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium">
+              {errorMessage}
+            </div>
+          )}
           {/* Headline */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">

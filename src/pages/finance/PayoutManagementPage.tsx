@@ -85,7 +85,8 @@ export const PayoutManagementPage = () => {
       setIsModalOpen(false);
       refreshRequests();
     } catch (err: any) {
-      alert(`Error executing action: ${err.message}`);
+      setFeedback(`Error executing action: ${err.message}`);
+      setIsModalOpen(false);
     } finally {
       setIsSubmitting(false);
     }

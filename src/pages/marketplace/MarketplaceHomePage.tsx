@@ -18,6 +18,7 @@ import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
 import { marketplaceService } from '../../services/marketplaceService';
 import { MarketplaceListing, MarketplaceEntitlement } from '../../types/marketplace';
+import { navigateTo } from '../../utils/navigation';
 
 export const MarketplaceHomePage: React.FC = () => {
   const { currentTenant } = useTenant();
@@ -46,44 +47,63 @@ export const MarketplaceHomePage: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.hash = `#/marketplace/search?q=${encodeURIComponent(searchQuery)}`;
+      navigateTo(`/marketplace/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
 
   const handleViewDetail = (listingId: string) => {
-    window.location.hash = `#/marketplace/story/${listingId}`;
+    navigateTo(`/marketplace/story/${listingId}`);
   };
 
-  const categories = [
-    'all',
-    'Public Works',
-    'Agriculture & Transit',
-    'Investigative & Infrastructure',
-    'Investigation',
-    'Politics',
-    'Business',
-    'Sports'
-  ];
+  const categories = React.useMemo(() => {
+    const base = new Set<string>(['all']);
+    for (const item of listings) {
+      if (item.category) base.add(item.category);
+    }
+    return Array.from(base);
+  }, [listings]);
 
-  const filteredListings = listings.filter(l => {
+  const filteredListings = listings.filter((l) => {
     if (activeCategory !== 'all' && l.category.toLowerCase() !== activeCategory.toLowerCase()) {
       return false;
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      return (
+        l.title.toLowerCase().includes(q) ||
+        l.shortDescription.toLowerCase().includes(q) ||
+        (l.reporterByline || l.reporterName || '').toLowerCase().includes(q) ||
+        l.category.toLowerCase().includes(q) ||
+        (l.district || '').toLowerCase().includes(q)
+      );
     }
     return true;
   });
 
-  const featuredListings = listings.filter(l => l.listingType === 'EXCLUSIVE' || l.listingType === 'PREMIUM');
-  const standardListings = filteredListings.filter(l => l.listingType === 'STANDARD');
+  const featuredListings = filteredListings.filter(
+    (l) => l.listingType === 'EXCLUSIVE' || l.listingType === 'PREMIUM'
+  );
+  const standardListings = filteredListings.filter((l) => l.listingType === 'STANDARD' || (l.listingType !== 'EXCLUSIVE' && l.listingType !== 'PREMIUM'));
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="NewsPress Syndication Wire & Public Marketplace"
-        subtitle="B2B news acquisition platform for publishers. Discover, inspect, and license verified dispatches, investigations, and exclusive field reporting."
+        title="News Marketplace"
+        subtitle="Buy verified stories when your edition needs more news — or publish independent stories for every publisher to buy."
         breadcrumbs={[
-          { label: 'Marketplace', href: '#/marketplace' },
-          { label: 'Wire Discovery' }
+          { label: 'Marketplace', href: '/marketplace' },
+          { label: 'Browse Wire' }
         ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => navigateTo('/marketplace/licensed')}>
+              My Purchased Stories
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => navigateTo('/marketplace/my-listings')}>
+              Sell / My Listings
+            </Button>
+          </div>
+        }
       />
 
       {/* SEO Schema.org JSON-LD */}
@@ -147,8 +167,8 @@ export const MarketplaceHomePage: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => (window.location.hash = '#/marketplace/search')}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline flex items-center gap-1 font-medium"
+              onClick={() => navigateTo('/marketplace/search')}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline flex items-center gap-1 font-medium cursor-pointer"
             >
               <Filter className="w-3.5 h-3.5" /> Advanced Search & Filters →
             </button>

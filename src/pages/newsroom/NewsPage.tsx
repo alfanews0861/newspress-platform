@@ -36,6 +36,7 @@ export const NewsPage: React.FC = () => {
   const [category, setCategory] = useState('Metro & Transit');
   const [bodyContent, setBodyContent] = useState('');
   const [location, setLocation] = useState('Central District');
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const reload = () => {
     setArticles(newsSubmissionService.getArticles(currentTenant.tenantId));
@@ -69,6 +70,7 @@ export const NewsPage: React.FC = () => {
 
   const handleCreateArticle = async () => {
     if (!headline || !leadParagraph) return;
+    setModalError(null);
 
     try {
       await newsSubmissionService.submitNews({
@@ -95,7 +97,7 @@ export const NewsPage: React.FC = () => {
       setLeadParagraph('');
       setBodyContent('');
     } catch (err: any) {
-      alert(`Error creating article: ${err.message}`);
+      setModalError(`Error creating article: ${err.message}`);
     }
   };
 
@@ -292,6 +294,11 @@ export const NewsPage: React.FC = () => {
         }
       >
         <div className="space-y-4">
+          {modalError && (
+            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium">
+              {modalError}
+            </div>
+          )}
           <Input
             label="Article Headline"
             placeholder="e.g. Municipal Transit Authority Approves Clean Fleet Timetable"

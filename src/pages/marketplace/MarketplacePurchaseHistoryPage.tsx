@@ -17,6 +17,7 @@ import { useTenant } from '../../hooks/useTenant';
 import { marketplaceService } from '../../services/marketplaceService';
 import { MarketplacePurchase, NewsLicense } from '../../types/marketplace';
 import { formatINR, formatDate } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 interface PurchaseHistoryRow {
   purchase: MarketplacePurchase;
@@ -86,7 +87,7 @@ export const MarketplacePurchaseHistoryPage: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
             Your organization has not completed any paid purchases or invoice transactions yet.
           </p>
-          <Button variant="primary" size="sm" onClick={() => (window.location.hash = '#/marketplace')}>
+          <Button variant="primary" size="sm" onClick={() => navigateTo('/marketplace')}>
             Acquire Rights on Wire
           </Button>
         </Card>
@@ -136,7 +137,7 @@ export const MarketplacePurchaseHistoryPage: React.FC = () => {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => (window.location.hash = `#/marketplace/license/${license.licenseId}`)}
+                    onClick={() => navigateTo(`/marketplace/license/${license.licenseId}`)}
                   >
                     View Certificate
                   </Button>

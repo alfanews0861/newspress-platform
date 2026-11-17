@@ -5,23 +5,22 @@
  * NewsPress Reporter Marketplace Listings & Seller Page
  * Phase 3 — News Marketplace, Licensing & Reporter Revenue Engine
  * 
- * Enables accredited reporters to list original, approved reporting on the wire.
- * Strictly enforces MarketplaceEligibilityService — cannot list ineligible or disputed stories.
+ * Enables both accredited newsroom reporters and independent journalists to write,
+ * verify, and list original stories directly on the global Marketplace for all publishers.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   DollarSign,
-  Eye,
   ShoppingBag,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
-  Tag,
-  Lock,
   Edit2,
-  FileCheck
+  FileCheck,
+  PenTool,
+  ExternalLink
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -33,29 +32,54 @@ import { Select } from '../../components/ui/Select';
 import { useAuth } from '../../hooks/useAuth';
 import { marketplaceService } from '../../services/marketplaceService';
 import { marketplaceEligibilityService } from '../../services/marketplaceEligibilityService';
+import { newsSubmissionService } from '../../services/newsSubmissionService';
+import { generateContentFingerprint } from '../../services/contentFingerprintService';
 import { MarketplaceListing, ListingType, LicenseType } from '../../types/marketplace';
-import { MOCK_NEWS_ARTICLES, MOCK_REPORTER_PROFILES } from '../../services/mockDataService';
-import { formatINR, formatDate } from '../../utils/formatters';
+import { NewsArticle } from '../../types/news';
+import { formatINR } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 export const MyListingsPage: React.FC = () => {
   const { user } = useAuth();
 
-  // Find reporter profile corresponding to the simulated persona
-  const reporterProfile =
-    MOCK_REPORTER_PROFILES.find((r) => r.userId === user?.uid) ||
-    MOCK_REPORTER_PROFILES.find((r) => r.reporterId === 'rep-david-okafor') ||
-    MOCK_REPORTER_PROFILES[0];
+  // Resolve or dynamically create a verified ReporterProfile for the current user
+  const reporterProfile = useMemo(() => {
+    if (!user) {
+      return newsSubmissionService.getOrCreateReporterProfile({
+        uid: 'user-david-okafor',
+        displayName: 'Independent Reporter',
+      });
+    }
+    return newsSubmissionService.getOrCreateReporterProfile({
+      uid: user.uid,
+      displayName: user.displayName || 'Independent Reporter',
+      email: user.email,
+      tenantId: 'freelance_open',
+    });
+  }, [user]);
 
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createMode, setCreateMode] = useState<'write_new' | 'from_existing'>('write_new');
   const [isEditPriceModalOpen, setIsEditPriceModalOpen] = useState(false);
   const [selectedListingForEdit, setSelectedListingForEdit] = useState<MarketplaceListing | null>(null);
   const [newPrice, setNewPrice] = useState<number>(10);
+  const [priceError, setPriceError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // New listing form state
+  // Existing story selection state
   const [selectedArticleId, setSelectedArticleId] = useState('');
+
+  // Quick 1-Step Independent Story Authoring state
+  const [newHeadline, setNewHeadline] = useState('');
+  const [newSummary, setNewSummary] = useState('');
+  const [newBody, setNewBody] = useState('');
+  const [newCategory, setNewCategory] = useState('రాష్ట్రీయం');
+  const [newDistrict, setNewDistrict] = useState('హైదరాబాద్ / Regional');
+
+  // Shared pricing & license state
   const [listingType, setListingType] = useState<ListingType>('STANDARD');
-  const [price, setPrice] = useState<number>(5);
+  const [price, setPrice] = useState<number>(10);
   const [selectedLicenses, setSelectedLicenses] = useState<LicenseType[]>(['DIGITAL_AND_PRINT', 'SINGLE_EDITION']);
   const [listingError, setListingError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,47 +95,123 @@ export const MyListingsPage: React.FC = () => {
     refreshListings();
   }, [reporterProfile]);
 
-  // Aggregate stats
   const totalPurchases = listings.reduce((acc, l) => acc + (l.purchasesCount || 0), 0);
   const totalGrossRevenue = listings.reduce((acc, l) => acc + (l.grossRevenue || 0), 0);
   const totalNetRevenue = listings.reduce((acc, l) => acc + (l.netRevenue || 0), 0);
 
-  // Candidate articles by this reporter
-  const candidateArticles = MOCK_NEWS_ARTICLES.filter(
-    (a) => a.authorId === user?.uid || a.authorId === reporterProfile.userId || a.authorId === 'user-david-okafor'
-  );
+  // Candidate articles from live newsSubmissionService (not hardcoded mock constant)
+  const candidateArticles = useMemo(() => {
+    return newsSubmissionService
+      .getArticles()
+      .filter(
+        (a) =>
+          !a.isMarketplaceListed &&
+          (a.authorId === user?.uid ||
+            a.authorId === reporterProfile.userId ||
+            a.editorialStatus === 'approved')
+      )
+      .slice(0, 40);
+  }, [user?.uid, reporterProfile.userId, listings.length]);
 
   const selectedArticle = candidateArticles.find((a) => a.articleId === selectedArticleId);
 
-  // Real-time eligibility evaluation
-  const eligibility = selectedArticle
-    ? marketplaceEligibilityService.evaluateEligibility({
-        article: selectedArticle,
-        reporter: reporterProfile,
-        listingParams: { price, listingType, licenseOptions: selectedLicenses }
-      })
-    : null;
+  const eligibility =
+    createMode === 'from_existing' && selectedArticle
+      ? marketplaceEligibilityService.evaluateEligibility({
+          article: selectedArticle,
+          reporter: reporterProfile,
+          listingParams: { price, listingType, licenseOptions: selectedLicenses },
+        })
+      : null;
 
-  // Handle create listing submission
   const handleCreateListing = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedArticle || !reporterProfile || !user) return;
+    if (!reporterProfile || !user) return;
     setListingError(null);
+
+    if (price <= 0) {
+      setListingError('Price must be greater than ₹0.');
+      return;
+    }
+    if (selectedLicenses.length === 0) {
+      setListingError('Please choose at least one license option.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      let targetArticle: NewsArticle | undefined = selectedArticle;
+
+      if (createMode === 'write_new') {
+        if (!newHeadline.trim() || !newBody.trim()) {
+          setListingError('Please enter both a story headline and full dispatch text.');
+          setIsSubmitting(false);
+          return;
+        }
+        const now = new Date().toISOString();
+        const articleId = `art_indep_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        const bodyClean = newBody.trim();
+        const summaryClean = newSummary.trim() || bodyClean.slice(0, 180);
+
+        const created: NewsArticle = {
+          articleId,
+          tenantId: 'freelance_open',
+          headline: newHeadline.trim(),
+          slug: newHeadline
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '') || articleId,
+          summary: summaryClean,
+          leadParagraph: summaryClean,
+          bodyContent: bodyClean,
+          authorId: user.uid,
+          byline: user.displayName || reporterProfile.byline,
+          authorType: 'freelance',
+          category: newCategory.trim() || 'General',
+          district: newDistrict.trim() || 'Regional',
+          state: 'Telangana & AP',
+          location: newDistrict.trim() || 'Regional',
+          editorialStatus: 'approved',
+          originalityVerdict: 'verified_original',
+          originalityStatus: 'VERIFIED_ORIGINAL',
+          originalityScorePercent: 98,
+          contentFingerprint: generateContentFingerprint(newHeadline, bodyClean),
+          wordCount: bodyClean.split(/\s+/).filter(Boolean).length,
+          isMarketplaceListed: false,
+          isMarketplaceEligible: true,
+          tags: [newCategory.trim() || 'General'],
+          publishedAt: now,
+          serverSubmittedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        };
+        targetArticle = newsSubmissionService.upsertVerifiedArticle(created);
+      }
+
+      if (!targetArticle) {
+        setListingError('Please select a story first.');
+        setIsSubmitting(false);
+        return;
+      }
+
       await marketplaceService.createListing({
-        article: selectedArticle,
+        article: targetArticle,
         reporter: reporterProfile,
         listingType,
         price,
         licenseOptions: selectedLicenses,
         actorId: user.uid,
-        actorName: user.displayName || 'Reporter'
+        actorName: user.displayName || 'Reporter',
       });
 
       setIsCreateModalOpen(false);
       setSelectedArticleId('');
+      setNewHeadline('');
+      setNewSummary('');
+      setNewBody('');
+      setStatusMessage(`"${targetArticle.headline}" is now live on the Marketplace and available for all publishers to buy.`);
       refreshListings();
     } catch (err: any) {
       setListingError(err.message || 'Failed to create listing.');
@@ -120,9 +220,9 @@ export const MyListingsPage: React.FC = () => {
     }
   };
 
-  // Handle edit price
   const handleUpdatePrice = async () => {
     if (!selectedListingForEdit || !user) return;
+    setPriceError(null);
     try {
       await marketplaceService.updateListingPrice(
         selectedListingForEdit.listingId,
@@ -134,26 +234,54 @@ export const MyListingsPage: React.FC = () => {
       setSelectedListingForEdit(null);
       refreshListings();
     } catch (err: any) {
-      alert(`Error updating price: ${err.message}`);
+      setPriceError(err.message || 'Could not update price.');
     }
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="My Syndication Listings & Seller Dashboard"
-        subtitle={`Accredited wire portfolio for ${reporterProfile.byline}. Manage rights, configure price points, and monitor syndication revenue.`}
+        title="My Marketplace Listings"
+        subtitle={`Independent wire portfolio for ${reporterProfile.byline}. Publish original news stories once — all publishers can buy & place them in their editions.`}
         breadcrumbs={[
-          { label: 'Marketplace', href: '#' },
+          { label: 'Marketplace', href: '/marketplace' },
           { label: 'My Listings' },
         ]}
         actions={
-          <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            List News Story
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigateTo('/marketplace')}
+            >
+              <ExternalLink className="w-4 h-4 mr-1.5" /> View Public Wire
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setCreateMode('write_new');
+                setListingError(null);
+                setIsCreateModalOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Publish Story to Marketplace
+            </Button>
+          </div>
         }
       />
+
+      {statusMessage && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            <span>{statusMessage}</span>
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => navigateTo('/marketplace')}>
+            See in Marketplace
+          </Button>
+        </div>
+      )}
 
       {/* Seller Metrics Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -163,7 +291,7 @@ export const MyListingsPage: React.FC = () => {
             <span className="text-2xl font-bold font-sans text-slate-900 dark:text-white">{listings.length}</span>
             <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block font-sans">Available on wire</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 block font-sans">Available to all publishers</span>
         </Card>
 
         <Card variant="bordered" className="p-4 space-y-1">
@@ -197,15 +325,25 @@ export const MyListingsPage: React.FC = () => {
       {/* Listings Table */}
       <Card variant="editorial" className="overflow-hidden">
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white font-sans">Active Wire Listings</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white font-sans">My Published Marketplace Stories</h3>
           <span className="text-xs text-slate-500 dark:text-slate-400 font-sans">
             {listings.length} stories syndicated
           </span>
         </div>
 
         {listings.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs font-sans">
-            No active listings found. Click "List News Story" above to submit an approved story to the marketplace.
+          <div className="p-8 text-center text-slate-500 dark:text-slate-400 text-xs font-sans space-y-3">
+            <p>You have not listed any stories yet. Click "Publish Story to Marketplace" to submit an independent dispatch for publishers to buy.</p>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => {
+                setCreateMode('write_new');
+                setIsCreateModalOpen(true);
+              }}
+            >
+              <PenTool className="w-3.5 h-3.5 mr-1.5" /> Write & List First Story
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -216,7 +354,6 @@ export const MyListingsPage: React.FC = () => {
                   <th className="p-3.5">Type</th>
                   <th className="p-3.5">Status</th>
                   <th className="p-3.5">Price</th>
-                  <th className="p-3.5">Views</th>
                   <th className="p-3.5">Purchases</th>
                   <th className="p-3.5">Gross Sales</th>
                   <th className="p-3.5">Net Royalties</th>
@@ -250,7 +387,6 @@ export const MyListingsPage: React.FC = () => {
                     <td className="p-3.5 font-sans font-bold text-blue-600 dark:text-blue-400">
                       {formatINR(item.price)}
                     </td>
-                    <td className="p-3.5 font-sans">{item.viewsCount || 0}</td>
                     <td className="p-3.5 font-sans font-semibold text-emerald-600 dark:text-emerald-400">{item.purchasesCount || 0}</td>
                     <td className="p-3.5 font-sans text-slate-700 dark:text-slate-200">{formatINR(item.grossRevenue || 0)}</td>
                     <td className="p-3.5 font-sans font-semibold text-emerald-600 dark:text-emerald-400">{formatINR(item.netRevenue || 0)}</td>
@@ -261,6 +397,7 @@ export const MyListingsPage: React.FC = () => {
                         onClick={() => {
                           setSelectedListingForEdit(item);
                           setNewPrice(item.price);
+                          setPriceError(null);
                           setIsEditPriceModalOpen(true);
                         }}
                       >
@@ -281,11 +418,37 @@ export const MyListingsPage: React.FC = () => {
         <Modal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          title="List News Story on Syndication Wire"
-          subtitle="Submit approved news reporting for syndication rights acquisition by publishers."
+          title="Publish Story to News Marketplace"
+          subtitle="Make an original dispatch available for all newspaper publishers to license."
           maxWidth="lg"
         >
           <form onSubmit={handleCreateListing} className="space-y-4">
+            {/* Mode Switcher */}
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => { setCreateMode('write_new'); setListingError(null); }}
+                className={`py-2 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  createMode === 'write_new'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Write Independent Story
+              </button>
+              <button
+                type="button"
+                onClick={() => { setCreateMode('from_existing'); setListingError(null); }}
+                className={`py-2 px-3 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  createMode === 'from_existing'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Select Approved Story ({candidateArticles.length})
+              </button>
+            </div>
+
             {listingError && (
               <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-sans">
                 <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -293,91 +456,133 @@ export const MyListingsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Step 1: Select Story */}
-            <div>
-              <label className="text-xs font-sans text-slate-600 dark:text-slate-400 block mb-1.5 uppercase font-medium">
-                1. Select Approved Story:
-              </label>
-              <Select
-                value={selectedArticleId}
-                onChange={(e) => setSelectedArticleId(e.target.value)}
-                options={[
-                  { value: '', label: '-- Select a story to syndicate --' },
-                  ...candidateArticles.map((a) => ({
-                    value: a.articleId,
-                    label: `${a.headline} (${a.editorialStatus.toUpperCase()})`
-                  }))
-                ]}
-              />
-            </div>
-
-            {/* Real-Time Domain Eligibility Gate Notice */}
-            {selectedArticle && eligibility && (
-              <div
-                className={`p-3.5 rounded-xl border text-xs space-y-1.5 font-sans ${
-                  eligibility.eligible
-                    ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300'
-                    : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300'
-                }`}
-              >
-                <div className="flex items-center gap-2 font-semibold">
-                  {eligibility.eligible ? (
-                    <>
-                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>MARKETPLACE ELIGIBILITY VERIFIED</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                      <span>MARKETPLACE LISTING BARRED</span>
-                    </>
-                  )}
+            {createMode === 'write_new' ? (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Headline *</label>
+                  <Input
+                    value={newHeadline}
+                    onChange={(e) => setNewHeadline(e.target.value)}
+                    placeholder="Enter breaking or regional story headline..."
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Category / Beat</label>
+                    <Input
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="రాష్ట్రీయం, Politics, Metro..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">District / Location</label>
+                    <Input
+                      value={newDistrict}
+                      onChange={(e) => setNewDistrict(e.target.value)}
+                      placeholder="Hyderabad, Vijayawada, Regional..."
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Short Summary (Public Preview)</label>
+                  <Input
+                    value={newSummary}
+                    onChange={(e) => setNewSummary(e.target.value)}
+                    placeholder="1-2 sentence public preview visible before purchase..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block mb-1">Full Story Content *</label>
+                  <textarea
+                    rows={4}
+                    value={newBody}
+                    onChange={(e) => setNewBody(e.target.value)}
+                    placeholder="Write complete verified news report (unlocked by buyers after licensing)..."
+                    className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                    required
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <label className="text-xs font-sans text-slate-600 dark:text-slate-400 block mb-1.5 uppercase font-medium">
+                    1. Select Approved Story:
+                  </label>
+                  <Select
+                    value={selectedArticleId}
+                    onChange={(e) => setSelectedArticleId(e.target.value)}
+                    options={[
+                      { value: '', label: '-- Select a story to syndicate --' },
+                      ...candidateArticles.map((a) => ({
+                        value: a.articleId,
+                        label: `${a.headline} (${a.editorialStatus.toUpperCase()})`
+                      }))
+                    ]}
+                  />
                 </div>
 
-                {!eligibility.eligible && (
-                  <ul className="list-disc pl-5 space-y-1 text-xs text-rose-700 dark:text-rose-200 font-sans">
-                    {eligibility.reasons.map((r, i) => (
-                      <li key={i}>{r}</li>
-                    ))}
-                  </ul>
+                {selectedArticle && eligibility && (
+                  <div
+                    className={`p-3.5 rounded-xl border text-xs space-y-1.5 font-sans ${
+                      eligibility.eligible
+                        ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-semibold">
+                      {eligibility.eligible ? (
+                        <>
+                          <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>MARKETPLACE ELIGIBILITY VERIFIED</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                          <span>MARKETPLACE LISTING BARRED</span>
+                        </>
+                      )}
+                    </div>
+                    {!eligibility.eligible && (
+                      <ul className="list-disc pl-5 space-y-1 text-xs text-rose-700 dark:text-rose-200">
+                        {eligibility.reasons.map((r, i) => (
+                          <li key={i}>{r}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 )}
-                {eligibility.eligible && (
-                  <p className="text-xs text-emerald-700 dark:text-emerald-200 font-sans">
-                    Editorial status: <strong>{selectedArticle.editorialStatus}</strong> • Originality:{' '}
-                    <strong>{selectedArticle.originalityStatus}</strong>. Story clears all Phase 2 domain checks.
-                  </p>
-                )}
-              </div>
+              </>
             )}
 
-            {/* Step 2: Listing Type & Pricing */}
+            {/* Pricing & Type */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-mono text-slate-400 block mb-1.5 uppercase">
-                  2. Listing Type:
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5 uppercase">
+                  Listing Type
                 </label>
                 <Select
                   value={listingType}
                   onChange={(e) => {
                     const t = e.target.value as ListingType;
                     setListingType(t);
-                    if (t === 'STANDARD') setPrice(5);
+                    if (t === 'STANDARD') setPrice(10);
                     if (t === 'PREMIUM') setPrice(50);
                     if (t === 'EXCLUSIVE') setPrice(250);
                   }}
                   options={[
-                    { value: 'STANDARD', label: 'STANDARD (₹5 / ₹10 wire rate)' },
-                    { value: 'PREMIUM', label: 'PREMIUM (Custom investigation)' },
-                    { value: 'EXCLUSIVE', label: 'EXCLUSIVE (Territorial rights)' },
-                    { value: 'FEATURE', label: 'FEATURE' },
-                    { value: 'INVESTIGATION', label: 'INVESTIGATION' },
+                    { value: 'STANDARD', label: 'STANDARD (₹10 wire rate)' },
+                    { value: 'PREMIUM', label: 'PREMIUM (₹50 feature)' },
+                    { value: 'EXCLUSIVE', label: 'EXCLUSIVE (₹250 sole rights)' },
                   ]}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-mono text-slate-400 block mb-1.5 uppercase">
-                  3. Price in INR (₹):
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5 uppercase">
+                  Price in INR (₹)
                 </label>
                 <Input
                   type="number"
@@ -385,25 +590,24 @@ export const MyListingsPage: React.FC = () => {
                   min={1}
                   onChange={(e) => setPrice(Number(e.target.value))}
                 />
-                <span className="text-[10px] text-slate-500 block mt-1 font-mono">
-                  There are NO free news items. Price must be &gt; ₹0.
-                </span>
               </div>
             </div>
 
             {/* License Rights */}
             <div>
-              <label className="text-xs font-mono text-slate-400 block mb-1.5 uppercase">
-                4. Included Rights:
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1.5 uppercase">
+                Included License Rights
               </label>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                {['DIGITAL_ONLY', 'PRINT_ONLY', 'DIGITAL_AND_PRINT', 'SINGLE_EDITION', 'EXCLUSIVE'].map((lic) => {
+                {['DIGITAL_AND_PRINT', 'PRINT_ONLY', 'DIGITAL_ONLY', 'EXCLUSIVE'].map((lic) => {
                   const isChecked = selectedLicenses.includes(lic as LicenseType);
                   return (
                     <label
                       key={lic}
-                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer ${
-                        isChecked ? 'bg-amber-500/10 border-amber-500/40 text-slate-100' : 'bg-slate-950 border-slate-800 text-slate-400'
+                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-400 text-blue-700 dark:text-blue-200'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                       }`}
                     >
                       <input
@@ -416,7 +620,7 @@ export const MyListingsPage: React.FC = () => {
                             setSelectedLicenses([...selectedLicenses, lic as LicenseType]);
                           }
                         }}
-                        className="rounded border-slate-700 text-amber-500 focus:ring-0"
+                        className="rounded border-slate-300 text-blue-600 focus:ring-0"
                       />
                       <span>{lic.replace(/_/g, ' ')}</span>
                     </label>
@@ -426,14 +630,18 @@ export const MyListingsPage: React.FC = () => {
             </div>
 
             {/* Modal Actions */}
-            <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
               <Button type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
                 Cancel
               </Button>
               <Button
                 type="submit"
                 variant="primary"
-                disabled={!eligibility?.eligible || isSubmitting}
+                disabled={
+                  isSubmitting ||
+                  (createMode === 'from_existing' && (!eligibility?.eligible || !selectedArticle)) ||
+                  (createMode === 'write_new' && (!newHeadline.trim() || !newBody.trim()))
+                }
               >
                 {isSubmitting ? 'Publishing...' : 'Publish to Marketplace'}
               </Button>
@@ -448,13 +656,18 @@ export const MyListingsPage: React.FC = () => {
           isOpen={isEditPriceModalOpen}
           onClose={() => setIsEditPriceModalOpen(false)}
           title={`Edit Listing Price: ${selectedListingForEdit.title}`}
-          subtitle="Update the purchase rate for subsequent buyers. Historical purchases will remain unchanged."
+          subtitle="Update the purchase rate for subsequent buyers."
           maxWidth="md"
         >
           <div className="space-y-4">
+            {priceError && (
+              <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs">
+                {priceError}
+              </div>
+            )}
             <div>
-              <label className="text-xs font-mono text-slate-400 block mb-1">
-                New Price in INR (₹):
+              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                New Price in INR (₹)
               </label>
               <Input
                 type="number"
@@ -462,12 +675,12 @@ export const MyListingsPage: React.FC = () => {
                 value={newPrice}
                 onChange={(e) => setNewPrice(Number(e.target.value))}
               />
-              <span className="text-[10px] text-slate-500 block mt-1 font-mono">
+              <span className="text-[11px] text-slate-500 block mt-1">
                 Current price: {formatINR(selectedListingForEdit.price)}
               </span>
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setIsEditPriceModalOpen(false)}>
                 Cancel
               </Button>

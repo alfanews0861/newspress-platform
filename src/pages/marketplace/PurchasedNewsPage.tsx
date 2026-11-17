@@ -34,6 +34,7 @@ import { marketplaceService } from '../../services/marketplaceService';
 import { NewsLicense, MarketplaceListing } from '../../types/marketplace';
 import { NewsArticle } from '../../types/news';
 import { formatDate, formatDateTime } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 interface PurchasedItem {
   license: NewsLicense;
@@ -98,7 +99,7 @@ export const PurchasedNewsPage: React.FC = () => {
               Your organization has not yet licensed any dispatches from the syndication wire or redeemed monthly pack units.
             </p>
           </div>
-          <Button variant="primary" size="sm" onClick={() => (window.location.hash = '#/marketplace/wire')}>
+          <Button variant="primary" size="sm" onClick={() => navigateTo('/marketplace/wire')}>
             Browse Syndication Wire
           </Button>
         </Card>

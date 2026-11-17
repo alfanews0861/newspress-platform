@@ -104,7 +104,7 @@ export class NewsroomAnalyticsService {
       if (a.serverSubmittedAt && a.updatedAt && (a.editorialStatus === 'approved' || a.editorialStatus === 'rejected')) {
         const subTime = new Date(a.serverSubmittedAt).getTime();
         const revTime = new Date(a.updatedAt).getTime();
-        if (revTime >= subTime) {
+        if (revTime > subTime) {
           totalTurnaroundHours += (revTime - subTime) / (3600 * 1000);
           turnaroundCalculatedCount += 1;
         }
@@ -112,7 +112,7 @@ export class NewsroomAnalyticsService {
     }
 
     const averageEditorialTurnaroundHours = turnaroundCalculatedCount > 0
-      ? Math.round((totalTurnaroundHours / turnaroundCalculatedCount) * 10) / 10
+      ? Math.max(0.1, Math.round((totalTurnaroundHours / turnaroundCalculatedCount) * 10) / 10)
       : 2.5;
 
     const pendingEditorialQueueCount = articles.filter((a) =>

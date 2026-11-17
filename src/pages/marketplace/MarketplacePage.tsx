@@ -192,7 +192,7 @@ export const MarketplacePage: React.FC = () => {
       refreshData();
       setActiveTab('all');
     } catch (err: any) {
-      alert(`Subscription failed: ${err.message}`);
+      setPurchaseError(`Subscription failed: ${err.message}`);
     } finally {
       setIsSubscribing(false);
     }
@@ -220,6 +220,15 @@ export const MarketplacePage: React.FC = () => {
           { label: 'Syndication Wire' },
         ]}
       />
+
+      {purchaseError && !selectedListing && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{purchaseError}</span>
+          <button type="button" onClick={() => setPurchaseError(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Subscription Entitlement Bar */}
       <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">

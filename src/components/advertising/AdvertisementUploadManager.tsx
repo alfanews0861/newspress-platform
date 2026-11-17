@@ -135,7 +135,7 @@ export const AdvertisementUploadManager: React.FC = () => {
       pageNumber: resolvedPageNumber,
       zoneId: `zone-${selectedSize}`,
       sponsorName: sponsorName.trim(),
-      imageUrl: imagePreview || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&auto=format&fit=crop&q=80',
+      imageUrl: imagePreview || `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="320" viewBox="0 0 800 320"><rect width="800" height="320" fill="#fef3c7"/><rect x="12" y="12" width="776" height="296" fill="none" stroke="#d97706" stroke-width="4"/><text x="400" y="145" text-anchor="middle" fill="#92400e" font-family="serif" font-size="32" font-weight="700">${sponsorName.trim().slice(0, 32)}</text><text x="400" y="192" text-anchor="middle" fill="#b45309" font-family="sans-serif" font-size="16" font-weight="600">SPONSORED PRINT ADVERTISEMENT</text></svg>`)}`,
       sizePreset: selectedSize,
       reservedBy: user?.displayName || 'Ad Desk',
     });

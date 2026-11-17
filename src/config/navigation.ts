@@ -11,7 +11,6 @@ export interface NavigationItem {
   href: string;
   requiredPermission?: AppPermission;
   badge?: string;
-  isPhasePlanned?: boolean;
 }
 
 export interface NavigationSection {
@@ -24,54 +23,35 @@ export interface NavigationSection {
 export const NAVIGATION_SECTIONS: NavigationSection[] = [
   {
     id: 'primary',
-    title: 'Editorial Workspace',
+    title: 'Main Workspace',
     items: [
       {
         id: 'dashboard',
-        label: 'Dashboard',
+        label: 'Home',
         href: '/dashboard',
       },
       {
         id: 'news',
-        label: 'Stories & Dispatches',
+        label: 'Stories & Desk',
         href: '/newsroom/news',
         requiredPermission: 'news.read',
       },
       {
-        id: 'youtube_studio',
-        label: 'YouTube News Studio',
-        href: '/newsroom/youtube-studio',
-      },
-      {
-        id: 'editorial_queue',
-        label: 'Review Queue',
-        href: '/newsroom/editorial-queue',
-        badge: 'Needs Action',
-        requiredPermission: 'news.approve',
-      },
-      {
         id: 'editions',
-        label: 'Newspaper Editions',
+        label: 'Newspaper Builder',
         href: '/newspaper/editions',
         requiredPermission: 'edition.view',
       },
       {
         id: 'page_designer',
-        label: 'Page Designer Canvas',
+        label: 'Read & Print Paper',
         href: '/newspaper/page-designer',
         requiredPermission: 'editions.edit',
       },
       {
-        id: 'paper_settings',
-        label: 'Paper Settings',
-        href: '/newspaper/brands',
-        requiredPermission: 'edition.view',
-      },
-      {
-        id: 'downloads',
-        label: 'Print-Ready Downloads',
-        href: '/production/downloads',
-        requiredPermission: 'production.download',
+        id: 'youtube_studio',
+        label: 'YouTube Video Studio',
+        href: '/newsroom/youtube-studio',
       },
       {
         id: 'marketplace_home',
@@ -79,46 +59,33 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         href: '/marketplace',
         requiredPermission: 'marketplace.browse',
       },
+    ],
+  },
+  {
+    id: 'setup',
+    title: 'Setup & Reporters',
+    defaultCollapsed: false,
+    items: [
+      {
+        id: 'my_listings',
+        label: 'Sell Story (Reporters)',
+        href: '/marketplace/my-listings',
+      },
+      {
+        id: 'paper_settings',
+        label: 'Paper & Masthead',
+        href: '/newspaper/brands',
+        requiredPermission: 'edition.view',
+      },
       {
         id: 'reporters',
         label: 'Reporters & Staff',
         href: '/newsroom/reporters',
         requiredPermission: 'reporters.read',
       },
-    ],
-  },
-  {
-    id: 'system_tools',
-    title: 'More Tools & Settings',
-    defaultCollapsed: true,
-    items: [
-      {
-        id: 'wallet',
-        label: 'Finance & Wallet',
-        href: '/finance/wallet',
-        requiredPermission: 'billing.view',
-      },
-      {
-        id: 'analytics',
-        label: 'Analytics & Reports',
-        href: '/analytics',
-        requiredPermission: 'analytics.view',
-      },
-      {
-        id: 'developer_apps',
-        label: 'Developer & API',
-        href: '/developer',
-        requiredPermission: 'developer.view',
-      },
-      {
-        id: 'reliability_console',
-        label: 'Operations & Health',
-        href: '/operations/reliability',
-        requiredPermission: 'operations.reliability.view',
-      },
       {
         id: 'settings',
-        label: 'Settings',
+        label: 'Channel & Settings',
         href: '/settings',
         requiredPermission: 'tenant.manage_settings',
       },

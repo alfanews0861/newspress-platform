@@ -49,6 +49,9 @@ import { eventGroupService } from './eventGroupService';
 import { auditService } from './auditService';
 import { canArticleEnterMarketplace, validateStatusTransition } from './newsLifecycle';
 import { MOCK_NEWS_ARTICLES, MOCK_REPORTER_PROFILES } from './mockDataService';
+import { hasLocalStorage, readLocalJson, writeLocalJson } from '../utils/localStore';
+
+const NEWSROOM_STORAGE_KEY = 'newspress_newsroom_state_v1';
 
 // Local storage stores for offline / development / reactive UI sync
 const memoryArticles: Map<string, NewsArticle> = new Map();
@@ -57,6 +60,23 @@ const memoryEvidence: Map<string, ReporterEvidence> = new Map();
 const memoryAssessments: Map<string, OriginalityAssessment> = new Map();
 const memoryEventGroups: Map<string, EventGroup> = new Map();
 const memoryReporters: Map<string, ReporterProfile> = new Map();
+
+function persistNewsroomState() {
+  if (!hasLocalStorage()) return;
+  const seedIds = new Set(MOCK_NEWS_ARTICLES.map((a) => a.articleId));
+  // Persist all newly created or modified articles
+  const customOrUpdatedArticles = Array.from(memoryArticles.values()).filter((a) => {
+    if (!seedIds.has(a.articleId)) return true;
+    const orig = MOCK_NEWS_ARTICLES.find((m) => m.articleId === a.articleId);
+    return orig && (orig.updatedAt !== a.updatedAt || orig.editorialStatus !== a.editorialStatus || orig.isMarketplaceListed !== a.isMarketplaceListed);
+  });
+  const seedRepIds = new Set(MOCK_REPORTER_PROFILES.map((r) => r.reporterId));
+  const customReporters = Array.from(new Set(memoryReporters.values())).filter((r) => !seedRepIds.has(r.reporterId));
+  writeLocalJson(NEWSROOM_STORAGE_KEY, {
+    articles: customOrUpdatedArticles,
+    reporters: customReporters,
+  });
+}
 
 // Initialize memory store with Phase 1 mock seed data to ensure zero regressions
 function initMemoryStore() {
@@ -117,6 +137,25 @@ function initMemoryStore() {
       updatedAt: '2026-10-03T05:30:00.000Z'
     };
     memoryEventGroups.set(demoEvent.eventId, demoEvent);
+  }
+
+  // Rehydrate user-created or modified browser items
+  if (hasLocalStorage()) {
+    const saved = readLocalJson<{ articles?: NewsArticle[]; reporters?: ReporterProfile[] } | null>(
+      NEWSROOM_STORAGE_KEY,
+      null
+    );
+    if (saved?.reporters) {
+      for (const rep of saved.reporters) {
+        memoryReporters.set(rep.userId, rep);
+        memoryReporters.set(rep.reporterId, rep);
+      }
+    }
+    if (saved?.articles) {
+      for (const art of saved.articles) {
+        memoryArticles.set(art.articleId, art);
+      }
+    }
   }
 }
 initMemoryStore();
@@ -214,6 +253,7 @@ export class NewsSubmissionService {
     };
 
     memoryArticles.set(articleId, article);
+    persistNewsroomState();
 
     if (isFirebaseConfigured && db && auth?.currentUser) {
       try {
@@ -503,6 +543,7 @@ export class NewsSubmissionService {
       };
       memoryReporters.set(input.reporterId, updatedReporter);
     }
+    persistNewsroomState();
 
     // 8. Firestore Persistence with sanitization
     if (isFirebaseConfigured && db && auth?.currentUser) {
@@ -719,6 +760,7 @@ export class NewsSubmissionService {
       };
       memoryReporters.set(article.authorId, updatedReporter);
     }
+    persistNewsroomState();
 
     // Firestore Sync with sanitization
     if (isFirebaseConfigured && db && auth?.currentUser) {
@@ -912,6 +954,74 @@ export class NewsSubmissionService {
       notes: notes || 'Rejected by editor'
     });
     return res.article;
+  }
+
+  /**
+   * Resolves or registers a dynamic verified ReporterProfile for the logged-in user
+   * so any independent reporter or staff journalist can immediately submit and syndicate stories.
+   */
+  getOrCreateReporterProfile(
+    user: { uid: string; displayName: string; email?: string; tenantId?: string },
+    fallbackTenantId: string = 'freelance_open'
+  ): ReporterProfile {
+    const existing = memoryReporters.get(user.uid);
+    if (existing) return existing;
+
+    const now = new Date().toISOString();
+    const profile: ReporterProfile = {
+      reporterId: `rep-${user.uid}`,
+      personId: `person-${user.uid}`,
+      userId: user.uid,
+      tenantId: user.tenantId || fallbackTenantId,
+      byline: user.displayName || 'Independent Reporter',
+      bio: 'Independent field correspondent publishing verified dispatches.',
+      reporterType: 'freelance_reporter',
+      verificationStatus: 'verified',
+      originalityScore: 92,
+      totalEarningsCents: 0,
+      availableBalanceCents: 0,
+      currency: 'INR',
+      originalFieldReports: 1,
+      verifiedOriginalReports: 1,
+      firstRecordedSubmissions: 1,
+      independentReports: 1,
+      duplicateReports: 0,
+      confirmedDuplicates: 0,
+      disputedReports: 0,
+      corrections: 0,
+      articlesPublishedCount: 1,
+      marketplaceListingsCount: 0,
+      marketplaceSales: 0,
+      marketplaceRevenue: 0,
+      beats: ['General', 'Regional'],
+      status: 'ACTIVE',
+      createdAt: now,
+      updatedAt: now
+    };
+    memoryReporters.set(user.uid, profile);
+    memoryReporters.set(profile.reporterId, profile);
+    persistNewsroomState();
+    return profile;
+  }
+
+  /**
+   * Saves an approved & originality-verified article directly (e.g., independent wire publish)
+   */
+  upsertVerifiedArticle(article: NewsArticle): NewsArticle {
+    memoryArticles.set(article.articleId, article);
+    persistNewsroomState();
+    return article;
+  }
+
+  markArticleListedInMarketplace(articleId: string): void {
+    const art = memoryArticles.get(articleId);
+    if (art) {
+      art.isMarketplaceListed = true;
+      art.editorialStatus = 'marketplace_listed';
+      art.updatedAt = new Date().toISOString();
+      memoryArticles.set(articleId, art);
+      persistNewsroomState();
+    }
   }
 }
 

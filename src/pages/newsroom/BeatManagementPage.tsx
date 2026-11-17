@@ -37,6 +37,7 @@ export const BeatManagementPage: React.FC = () => {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedBeatId, setSelectedBeatId] = useState('');
   const [selectedReporterId, setSelectedReporterId] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadData = () => {
     if (!currentTenant?.tenantId) return;
@@ -52,6 +53,7 @@ export const BeatManagementPage: React.FC = () => {
 
   const handleCreateBeat = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     try {
       await NewsroomDeskService.createBeat({
         tenantId: currentTenant.tenantId,
@@ -66,7 +68,7 @@ export const BeatManagementPage: React.FC = () => {
       setIsAddBeatModalOpen(false);
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message);
     }
   };
 
@@ -74,6 +76,7 @@ export const BeatManagementPage: React.FC = () => {
     e.preventDefault();
     const beat = beats.find((b) => b.beatId === selectedBeatId);
     if (!beat || !selectedReporterId) return;
+    setErrorMsg(null);
 
     try {
       await NewsroomDeskService.assignReporterToBeat({
@@ -87,7 +90,7 @@ export const BeatManagementPage: React.FC = () => {
       setIsAssignModalOpen(false);
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMsg(err.message);
     }
   };
 
@@ -115,6 +118,15 @@ export const BeatManagementPage: React.FC = () => {
           ) : undefined
         }
       />
+
+      {errorMsg && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button type="button" onClick={() => setErrorMsg(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Beats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

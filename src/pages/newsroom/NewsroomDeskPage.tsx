@@ -25,6 +25,7 @@ export const NewsroomDeskPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('review');
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [assignments, setAssignments] = useState<NewsAssignment[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadData = () => {
     if (!currentTenant?.tenantId) return;
@@ -49,6 +50,7 @@ export const NewsroomDeskPage: React.FC = () => {
   const marketplaceCandidates = articles.filter((a) => a.isMarketplaceEligible);
 
   const handleApprove = async (articleId: string) => {
+    setErrorMessage(null);
     try {
       await newsSubmissionService.editorialAction({
         articleId,
@@ -59,11 +61,12 @@ export const NewsroomDeskPage: React.FC = () => {
       });
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMessage(err.message);
     }
   };
 
   const handleReject = async (articleId: string) => {
+    setErrorMessage(null);
     try {
       await newsSubmissionService.editorialAction({
         articleId,
@@ -74,7 +77,7 @@ export const NewsroomDeskPage: React.FC = () => {
       });
       loadData();
     } catch (err: any) {
-      alert(err.message);
+      setErrorMessage(err.message);
     }
   };
 
@@ -88,6 +91,15 @@ export const NewsroomDeskPage: React.FC = () => {
           { label: 'Desk Dashboard' },
         ]}
       />
+
+      {errorMessage && (
+        <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 font-medium flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button type="button" onClick={() => setErrorMessage(null)} className="underline cursor-pointer">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Metrics Banner */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
