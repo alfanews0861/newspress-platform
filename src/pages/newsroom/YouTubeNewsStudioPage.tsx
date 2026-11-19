@@ -59,6 +59,27 @@ import {
 } from '../../types/youtube';
 import { navigateTo } from '../../utils/navigation';
 
+/**
+ * Authentic Broadcast Navigation Map Pointer Icon:
+ * Circular top with hollow center hole and sharp bottom pointer
+ */
+export const MapLocationPointerIcon: React.FC<{ className?: string; size?: number }> = ({ className = 'w-4 h-4', size = 20 }) => (
+  <svg
+    viewBox="0 0 24 24"
+    width={size}
+    height={size}
+    fill="currentColor"
+    className={className}
+    style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+  >
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 2C7.58 2 4 5.58 4 10C4 15.25 12 22 12 22C12 22 20 15.25 20 10C20 5.58 16.42 2 12 2ZM12 13C10.34 13 9 11.66 9 10C9 8.34 10.34 7 12 7C13.66 7 15 8.34 15 10C15 11.66 13.66 13 12 13Z"
+    />
+  </svg>
+);
+
 export const YouTubeNewsStudioPage: React.FC = () => {
   const { currentTenant } = useTenant();
   const [settings, setSettings] = useState<YouTubeChannelBrandingSettings>(() => YouTubeService.getSettings());
@@ -960,19 +981,19 @@ export const YouTubeNewsStudioPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <label className="text-sm font-semibold text-[#202124] dark:text-[#f2f2f2] flex items-center gap-2">
                   <span className="w-6 h-6 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-800">
-                    <MapPin className="w-3.5 h-3.5" />
+                    <MapLocationPointerIcon className="w-3.5 h-3.5" size={16} />
                   </span>
                   <span>3. News Reporting Location (TV Watermark Badge)</span>
                 </label>
                 <span className="text-xs text-[#5f6368] dark:text-[#8e918f]">
-                  Appears directly under Channel Logo with 📍 Map Pin icon
+                  Appears directly under Channel Logo with circular map pointer badge
                 </span>
               </div>
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-rose-600 dark:text-rose-400">
-                    <MapPin className="w-4 h-4" />
+                    <MapLocationPointerIcon className="w-4 h-4" size={18} />
                   </div>
                   <input
                     type="text"
@@ -997,7 +1018,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                   <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white shadow-xs">
                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TV Badge:</span>
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-r from-red-600 to-red-800 text-white text-xs font-bold shadow-xs">
-                      <MapPin className="w-3.5 h-3.5 fill-white text-red-600" />
+                      <MapLocationPointerIcon className="w-3.5 h-3.5 text-white" size={14} />
                       <span>{newsLocation.trim()}</span>
                     </div>
                   </div>
@@ -1012,13 +1033,14 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                     key={loc}
                     type="button"
                     onClick={() => setNewsLocation(loc)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
                       newsLocation === loc
                         ? 'bg-rose-50 dark:bg-rose-950/70 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 font-bold shadow-xs'
                         : 'bg-[#f1f3f4] dark:bg-[#28292a] border-[#dadce0] dark:border-[#444746] text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#e8eaed] dark:hover:bg-[#333537]'
                     }`}
                   >
-                    📍 {loc}
+                    <MapLocationPointerIcon className={`w-3 h-3 ${newsLocation === loc ? 'text-rose-600 dark:text-rose-400' : 'text-[#70757a]'}`} size={12} />
+                    <span>{loc}</span>
                   </button>
                 ))}
               </div>

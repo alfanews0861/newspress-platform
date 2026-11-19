@@ -724,9 +724,9 @@ export class VideoCompositorService {
     // Badge layout dimensions
     const badgePaddingX = 16;
     const badgePaddingY = 9;
-    const pinIconWidth = 20;
+    const pinIconWidth = 24;
     const badgeHeight = fontSize + badgePaddingY * 2; // ~44px
-    const badgeWidth = badgePaddingX + pinIconWidth + 8 + textWidth + badgePaddingX;
+    const badgeWidth = badgePaddingX + pinIconWidth + 10 + textWidth + badgePaddingX;
 
     // Determine canvas dimensions
     const logoW = logoImg ? (logoImg.naturalWidth || logoImg.width) : 0;
@@ -796,24 +796,28 @@ export class VideoCompositorService {
     ctx.stroke();
     ctx.restore();
 
-    // 3. Draw Vector Map Pin Icon (📍)
-    const pinR = 6;
-    const pinX = badgeX + badgePaddingX + pinR;
-    const pinY = badgeY + Math.round(badgeHeight / 2) - 3;
+    // 3. Draw Round Navigation Map Pointer with Center Hole (Google Maps / Broadcast TV Style)
+    const iconSize = 24;
+    const pinX = badgeX + badgePaddingX;
+    const pinY = badgeY + Math.round((badgeHeight - iconSize) / 2);
 
     ctx.save();
+    ctx.translate(pinX, pinY);
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(pinX, pinY, pinR, Math.PI * 0.75, Math.PI * 2.25);
-    ctx.lineTo(pinX, pinY + pinR + 6);
-    ctx.closePath();
-    ctx.fill();
 
-    // Center hole of pin
-    ctx.fillStyle = '#c5221f';
-    ctx.beginPath();
-    ctx.arc(pinX, pinY, 2.4, 0, Math.PI * 2);
-    ctx.fill();
+    if (typeof Path2D !== 'undefined') {
+      const pinPath = new Path2D(
+        'M12 2C7.58 2 4 5.58 4 10C4 15.25 12 22 12 22C12 22 20 15.25 20 10C20 5.58 16.42 2 12 2ZM12 13C10.34 13 9 11.66 9 10C9 8.34 10.34 7 12 7C13.66 7 15 8.34 15 10C15 11.66 13.66 13 12 13Z'
+      );
+      ctx.fill(pinPath, 'evenodd');
+    } else {
+      ctx.beginPath();
+      ctx.arc(12, 10, 8, Math.PI * 0.75, Math.PI * 2.25);
+      ctx.lineTo(12, 22);
+      ctx.closePath();
+      ctx.arc(12, 10, 3, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
+    }
     ctx.restore();
 
     // 4. Draw Location Text in Bold White with crisp shadow
@@ -825,7 +829,7 @@ export class VideoCompositorService {
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 1;
 
-    const textX = pinX + pinR + 8;
+    const textX = pinX + iconSize + 10;
     const textY = badgeY + Math.round(badgeHeight / 2);
     ctx.fillText(cleanLocation, textX, textY);
     ctx.restore();
