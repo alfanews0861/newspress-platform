@@ -100,13 +100,13 @@ export const AdvertisementUploadManager: React.FC = () => {
     // Supported formats check: JPEG, PNG, WebP
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
-      setUploadError('దయచేసి JPEG, PNG లేదా WebP ఫార్మాట్ ఇమేజ్‌లను మాత్రమే అప్‌లోడ్ చేయండి. (TIFF, BMP వంటి భారీ ఫైల్స్ సపోర్ట్ చేయబడవు)');
+      setUploadError('Please upload JPEG, PNG, or WebP images only. (TIFF and BMP files are not supported).');
       return;
     }
 
     // Size limit: Max 10 MB
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('ఫైల్ సైజ్ గరిష్టంగా 10 MB మాత్రమే ఉండాలి.');
+      setUploadError('File size must not exceed 10 MB.');
       return;
     }
 
@@ -120,7 +120,7 @@ export const AdvertisementUploadManager: React.FC = () => {
 
   const handleCreateAdvertisement = () => {
     if (!sponsorName.trim()) {
-      setUploadError('దయచేసి ప్రకటనదారుడి పేరు (Sponsor / Client Name) నమోదు చేయండి.');
+      setUploadError('Please enter the sponsor or client name.');
       return;
     }
 
@@ -177,7 +177,7 @@ export const AdvertisementUploadManager: React.FC = () => {
       setImageFileName('');
       setNotes('');
     } else {
-      setUploadError(res.error || 'ప్రకటనను సేవ్ చేయడంలో లోపం ఏర్పడింది.');
+      setUploadError(res.error || 'Failed to save advertisement reservation.');
     }
   };
 
@@ -194,14 +194,14 @@ export const AdvertisementUploadManager: React.FC = () => {
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
-            <span>వాణిజ్య ప్రకటనల విభాగం • Commercial Advertisements</span>
+            <span>Commercial Advertisements</span>
           </div>
           <h2 className="text-2xl font-bold tracking-tight">
-            వార్తాపత్రిక ప్రకటనల అప్‌లోడ్ & నిర్వహణ
+            Newspaper Advertisement Upload & Management
           </h2>
           <p className="text-sm text-amber-100 max-w-2xl leading-relaxed">
-            మీ ప్రకటన ఇమేజ్‌ను అప్‌లోడ్ చేసి, సైజు మరియు ఏ పేజీలో రావాలో ఎంచుకోండి. 
-            మీ పత్రిక సెట్టింగ్స్ ప్రకారం ప్రకటన సరైన స్థానంలో అమరి, వార్తలు ఖాళీ స్థలాలు లేకుండా ఆటోమేటిక్‌గా రీ-ఫ్లో అవుతాయి.
+            Upload commercial advertisement creatives, select target print page and standard dimensions. 
+            The page planning engine automatically positions the ad and reflows news content around it.
           </p>
         </div>
         <div className="absolute right-0 top-0 bottom-0 w-80 bg-white/5 transform skew-x-12 pointer-events-none" />
@@ -212,7 +212,7 @@ export const AdvertisementUploadManager: React.FC = () => {
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-center gap-3 shadow-xs animate-in fade-in duration-200">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           <div className="text-sm font-semibold">
-            ప్రకటన విజయవంతంగా షెడ్యూల్ చేయబడింది! పేజ్ డిజైనర్ కాన్వాస్‌లో ఈ స్థానంలో ప్రకటన అమర్చబడింది మరియు వార్తలు ఆటోమేటిక్‌గా సరిచేయబడ్డాయి.
+            Advertisement successfully scheduled! Placed on target page canvas and news articles automatically reflowed.
           </div>
         </div>
       )}
@@ -224,27 +224,27 @@ export const AdvertisementUploadManager: React.FC = () => {
           <Card className="p-6 space-y-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b pb-3">
               <Tag className="w-4 h-4 text-red-600" />
-              <span>1. ప్రకటన వివరాలు & క్లయింట్ పేరు</span>
+              <span>1. Advertisement Details & Client Info</span>
             </h3>
 
             <div className="space-y-4">
               <Input
-                label="ప్రకటనదారుడు / క్లయింట్ పేరు (Sponsor Name)"
-                placeholder="ఉదా: లలితా జ్యువెలరీ / కృష్ణా రియల్ ఎస్టేట్ / ఎస్ఆర్ఎమ్ యూనివర్సిటీ"
+                label="Sponsor / Client Name"
+                placeholder="e.g., Lalitha Jewellery / Krishna Real Estate / Apex Tech University"
                 value={sponsorName}
                 onChange={(e) => setSponsorName(e.target.value)}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
-                  label="ప్రకటన ధర / టారిఫ్ (Ad Tariff)"
+                  label="Ad Tariff / Price"
                   placeholder="₹25,000"
                   value={rateText}
                   onChange={(e) => setRateText(e.target.value)}
                 />
                 <Input
-                  label="క్లయింట్ కాంటాక్ట్ / రిఫరెన్స్"
-                  placeholder="ఫోన్ నంబర్ లేదా బిల్లింగ్ ఆర్డర్ #"
+                  label="Client Contact / Reference"
+                  placeholder="Phone number or billing order #"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
@@ -254,7 +254,7 @@ export const AdvertisementUploadManager: React.FC = () => {
             {/* Step 2: Target Page Selection */}
             <div className="space-y-3 pt-2">
               <label className="block text-xs font-bold text-slate-900 dark:text-slate-100">
-                2. ప్రకటన ఏ పేజీలో రావాలి? (Target Newspaper Page)
+                2. Target Newspaper Page
               </label>
               <div className="grid grid-cols-3 gap-3">
                 <button
@@ -266,8 +266,8 @@ export const AdvertisementUploadManager: React.FC = () => {
                       : 'border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700'
                   }`}
                 >
-                  <div className="text-sm">మొదటి పేజీ</div>
-                  <div className="text-[11px] opacity-75">Front Page (Page 1)</div>
+                  <div className="text-sm font-semibold">Front Page</div>
+                  <div className="text-[11px] opacity-75">Page 1 (Cover)</div>
                 </button>
 
                 <button
@@ -279,8 +279,8 @@ export const AdvertisementUploadManager: React.FC = () => {
                       : 'border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700'
                   }`}
                 >
-                  <div className="text-sm">చివరి పేజీ</div>
-                  <div className="text-[11px] opacity-75">Back Page (Page {totalPages})</div>
+                  <div className="text-sm font-semibold">Back Page</div>
+                  <div className="text-[11px] opacity-75">Page {totalPages} (Last Page)</div>
                 </button>
 
                 <button
@@ -292,15 +292,15 @@ export const AdvertisementUploadManager: React.FC = () => {
                       : 'border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700'
                   }`}
                 >
-                  <div className="text-sm">నిర్దిష్ట పేజీ #</div>
-                  <div className="text-[11px] opacity-75">Specific Page Number</div>
+                  <div className="text-sm font-semibold">Specific Page #</div>
+                  <div className="text-[11px] opacity-75">Inside Editorial Page</div>
                 </button>
               </div>
 
               {targetPageType === 'specific' && (
                 <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    పేజీ సంఖ్యను ఎంచుకోండి:
+                    Select Page Number:
                   </span>
                   {Array.from({ length: Math.max(1, totalPages - 1) }, (_, i) => i + 2).map((pNum) => (
                     <button
@@ -313,7 +313,7 @@ export const AdvertisementUploadManager: React.FC = () => {
                           : 'bg-white dark:bg-slate-700 text-slate-800 border border-slate-300'
                       }`}
                     >
-                      పేజీ {pNum}
+                      Page {pNum}
                     </button>
                   ))}
                 </div>
@@ -323,7 +323,7 @@ export const AdvertisementUploadManager: React.FC = () => {
             {/* Step 3: Size Preset Selector */}
             <div className="space-y-3 pt-2">
               <label className="block text-xs font-bold text-slate-900 dark:text-slate-100">
-                3. ప్రకటన సైజును ఎంచుకోండి (Select Standard Ad Size)
+                3. Select Standard Ad Size
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
                 {dynamicAdSizes.map((opt) => {
@@ -346,7 +346,7 @@ export const AdvertisementUploadManager: React.FC = () => {
                           </span>
                         </div>
                         <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mt-1">
-                          {opt.teluguTitle}
+                          {opt.subtitle}
                         </div>
                       </div>
                       <div className="text-[10px] text-slate-500 mt-2 flex justify-between items-center border-t pt-1.5 border-slate-200 dark:border-slate-800">
@@ -366,7 +366,7 @@ export const AdvertisementUploadManager: React.FC = () => {
           <Card className="p-6 space-y-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b pb-3">
               <ImageIcon className="w-4 h-4 text-blue-600" />
-              <span>4. ప్రకటన ఇమేజ్ అప్‌లోడ్ (JPEG / PNG / WebP)</span>
+              <span>4. Upload Ad Artwork (JPEG / PNG / WebP)</span>
             </h3>
 
             {/* Drag & Drop / File Input Box */}
@@ -386,11 +386,11 @@ export const AdvertisementUploadManager: React.FC = () => {
                   <Upload className="w-6 h-6" />
                 </div>
                 <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                  ఇమేజ్ ఫైల్‌ను ఇక్కడ ఎంచుకోండి
+                  Choose an image file or drag here
                 </div>
                 <p className="text-[11px] text-slate-500 max-w-xs">
-                  సపోర్ట్ చేసే ఫార్మాట్లు: <strong>JPEG, PNG, WebP</strong> (గరిష్ట సైజ్: 10 MB). 
-                  <span className="text-red-500 block">TIFF, BMP వంటి భారీ ఫైల్స్ వద్దనుము.</span>
+                  Supported formats: <strong>JPEG, PNG, WebP</strong> (Max size: 10 MB). 
+                  <span className="text-red-500 block">TIFF and BMP files are not supported.</span>
                 </p>
               </label>
             </div>
@@ -407,7 +407,7 @@ export const AdvertisementUploadManager: React.FC = () => {
             {imagePreview ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                  <span>అప్‌లోడ్ అయిన ప్రకటన ప్రివ్యూ:</span>
+                  <span>Uploaded Creative Preview:</span>
                   <span className="text-slate-500 truncate max-w-[180px]">{imageFileName}</span>
                 </div>
                 <div className="rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 relative group aspect-video flex items-center justify-center">
@@ -431,7 +431,7 @@ export const AdvertisementUploadManager: React.FC = () => {
               </div>
             ) : (
               <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 leading-relaxed">
-                ℹ️ <strong>గమనిక:</strong> ఒకవేళ ఇమేజ్ అందుబాటులో లేకపోతే, క్లయింట్ పేరు మరియు ఆఫర్ టెక్స్ట్‌తో కూడిన కమర్షియల్ టైపోగ్రాఫిక్ బాక్స్ ఆటోమేటిక్‌గా తయారవుతుంది.
+                ℹ️ <strong>Note:</strong> If no image artwork is uploaded, a professional typographic ad block with sponsor name and tariff will be generated automatically.
               </div>
             )}
 
@@ -443,7 +443,7 @@ export const AdvertisementUploadManager: React.FC = () => {
               leftIcon={<CheckCircle2 className="w-5 h-5" />}
               onClick={handleCreateAdvertisement}
             >
-              పేపర్‌లో ప్రకటనను షెడ్యూల్ చేయి (Schedule Ad)
+              Schedule Ad on Page Canvas
             </Button>
           </Card>
         </div>
@@ -454,20 +454,20 @@ export const AdvertisementUploadManager: React.FC = () => {
         <div className="flex items-center justify-between border-b pb-3">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              ప్రస్తుత ఎడిషన్‌లో షెడ్యూల్ అయిన వాణిజ్య ప్రకటనలు
+              Scheduled Commercial Advertisements
             </h3>
             <p className="text-xs text-slate-500">
-              ఈ క్రింది ప్రకటనలు పేపర్ పేజీలలో ఖచ్చితమైన స్థానాల్లో లాక్ చేయబడి ఉన్నాయి.
+              The following advertisements are locked into specific print page coordinates.
             </p>
           </div>
           <Badge variant="primary" size="sm">
-            {adsList.length} యాడ్స్ యాక్టివ్
+            {adsList.length} Ads Active
           </Badge>
         </div>
 
         {adsList.length === 0 ? (
           <div className="text-center py-8 text-slate-400 text-sm">
-            ఇంకా ఎలాంటి వాణిజ్య ప్రకటనలు షెడ్యూల్ కాలేదు. పై ఫారమ్ ద్వారా నూతన ప్రకటనను చేర్చండి.
+            No commercial advertisements scheduled yet. Use the form above to add an advertisement.
           </div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -490,11 +490,11 @@ export const AdvertisementUploadManager: React.FC = () => {
                       {ad.sponsorName}
                     </div>
                     <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                      <span className="font-semibold text-red-600">పేజీ {ad.pageNumber}</span>
+                      <span className="font-semibold text-red-600">Page {ad.pageNumber}</span>
                       <span>•</span>
-                      <span>సైజ్: {ad.sizePreset || 'స్టాండర్డ్'}</span>
+                      <span>Size: {ad.sizePreset || 'Standard'}</span>
                       <span>•</span>
-                      <span className="text-emerald-700 font-medium">లాక్ చేయబడింది</span>
+                      <span className="text-emerald-700 font-medium">Locked on Page</span>
                     </div>
                   </div>
                 </div>
@@ -506,7 +506,7 @@ export const AdvertisementUploadManager: React.FC = () => {
                     className="text-red-600 hover:bg-red-50"
                     onClick={() => handleDeleteAd(ad.reservationId)}
                   >
-                    తొలగించు (Remove)
+                    Remove Ad
                   </Button>
                 </div>
               </div>

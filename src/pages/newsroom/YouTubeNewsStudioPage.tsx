@@ -501,7 +501,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                   Broadcast Headline
                 </span>
                 <h3 className="text-base font-bold text-[#202124] dark:text-[#f2f2f2] mt-1 leading-snug">
-                  {publishedResult.title || (newsText.trim() ? newsText.split('\n')[0] : 'తాజా బ్రేకింగ్ వార్తలు • SPECIAL REPORT')}
+                  {publishedResult.title || (newsText.trim() ? newsText.split('\n')[0] : 'BREAKING NEWS • SPECIAL REPORT')}
                 </h3>
               </div>
 
@@ -652,19 +652,19 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                 {[
                   {
                     idx: 0,
-                    title: 'Clip 1: Opening (ప్రారంభం)',
+                    title: 'Clip 1: Opening Intro',
                     sub: 'Event Opening / Incident Scene',
                     required: true,
                   },
                   {
                     idx: 1,
-                    title: 'Clip 2: Main Speech (ముఖ్య ప్రసంగం)',
+                    title: 'Clip 2: Main Speech',
                     sub: 'Key Statement / Public Address',
                     required: false,
                   },
                   {
                     idx: 2,
-                    title: 'Clip 3: Conclusion (ముగింపు దృశ్యాలు)',
+                    title: 'Clip 3: Conclusion',
                     sub: 'Audience Reaction / Closing',
                     required: false,
                   },

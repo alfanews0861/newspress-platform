@@ -353,25 +353,35 @@ const FittedSingleZoneMultiColStory: React.FC<{
 
     let effectiveBasePhotoH = rawBasePhotoH;
     const isPhotoInsideCol = Boolean(photoImg && colEl.contains(photoImg));
-    if (photoImg && effectiveBasePhotoH > 0) {
+    const isPhotoTopBanner = Boolean(photoImg && blockRoot?.querySelector('[data-story-photo-top="true"]')?.contains(photoImg));
+    const canResizePhoto = Boolean(photoImg && (isPhotoInsideCol || isPhotoTopBanner));
+
+    if (canResizePhoto && photoImg && effectiveBasePhotoH > 0) {
       photoImg.style.maxHeight = `${effectiveBasePhotoH}px`;
       photoImg.style.maxWidth = `${rawBaseMaxW}%`;
       if (isPhotoInsideCol && photoImg.parentElement) {
         const photoBoxRect = photoImg.parentElement.getBoundingClientRect();
         const imgRect = photoImg.getBoundingClientRect();
         const chromeH = Math.max(0, photoBoxRect.height - imgRect.height);
-        if (photoBoxRect.height > colEl.clientHeight - 14) {
-          effectiveBasePhotoH = Math.max(60, Math.floor(colEl.clientHeight - chromeH - 14));
+        if (photoBoxRect.height > colEl.clientHeight - 8) {
+          effectiveBasePhotoH = Math.max(120, Math.floor(colEl.clientHeight - chromeH - 8));
           photoImg.style.maxHeight = `${effectiveBasePhotoH}px`;
         }
       }
     }
 
-    const fitsCleanly = () =>
-      colEl.clientWidth > 10 &&
-      colEl.clientHeight > 10 &&
-      colEl.scrollWidth <= colEl.clientWidth + 2 &&
-      colEl.scrollHeight <= colEl.clientHeight + 2;
+    const fitsCleanly = () => {
+      const cW = colEl.clientWidth;
+      const cH = colEl.clientHeight;
+      if (cW <= 10 || cH <= 10) return false;
+      // In CSS multi-column (columnCount >= 2), column overflow creates extra columns horizontally.
+      // So scrollWidth > clientWidth is the definitive overflow check!
+      // In single column (columnCount === 1), content overflows vertically.
+      if (columnCount > 1) {
+        return colEl.scrollWidth <= cW + 8;
+      }
+      return colEl.scrollHeight <= cH + 12;
+    };
 
     const getRemainingSpacePx = () => {
       if (!markerEl) return 0;
@@ -389,28 +399,23 @@ const FittedSingleZoneMultiColStory: React.FC<{
     };
 
     const tryGrowPhotoToFill = (startPhotoH: number) => {
-      // Scale photo up proportionally within full column width with zero cropping
-      if (!photoImg || isPhotoInsideCol || startPhotoH <= 0 || !markerEl) return;
+      // Scale photo up to occupy prominent, large editorial presence
+      if (!photoImg || !canResizePhoto || startPhotoH <= 0 || !markerEl) return;
       let remaining = getRemainingSpacePx();
       if (remaining <= 8) return;
 
       const blockRect = blockRoot?.getBoundingClientRect();
       const maxPhotoH = Math.min(
-        startPhotoH + 260,
-        Math.max(startPhotoH, Math.round((blockRect?.height || colEl.clientHeight + startPhotoH) * 0.68))
+        startPhotoH + 200,
+        Math.max(startPhotoH, Math.round((blockRect?.height || colEl.clientHeight + startPhotoH) * 0.78))
       );
 
       let bestPhotoH = startPhotoH;
       let bestMaxW = rawBaseMaxW;
-      for (let hTry = startPhotoH + 6; hTry <= maxPhotoH; hTry += 6) {
-        const wTry = Math.min(100, Math.max(rawBaseMaxW, 96) + Math.round(((hTry - startPhotoH) / 6) * 2));
+      for (let hTry = startPhotoH + 8; hTry <= maxPhotoH; hTry += 8) {
+        const wTry = Math.min(100, Math.max(rawBaseMaxW, 96) + Math.round(((hTry - startPhotoH) / 8) * 2));
         photoImg.style.maxHeight = `${hTry}px`;
         photoImg.style.maxWidth = `${Math.min(100, wTry)}%`;
-        if (colEl.clientHeight < 38) {
-          photoImg.style.maxHeight = `${bestPhotoH}px`;
-          photoImg.style.maxWidth = `${bestMaxW}%`;
-          break;
-        }
         if (fitsCleanly()) {
           bestPhotoH = hTry;
           bestMaxW = Math.min(100, wTry);
@@ -425,8 +430,10 @@ const FittedSingleZoneMultiColStory: React.FC<{
     };
 
     const expandPhotoOrHeadline = () => {
-      // Priority 1: Grow uncropped photo size proportionally
-      tryGrowPhotoToFill(effectiveBasePhotoH);
+      // Priority 1: Grow uncropped photo size proportionally (only for top or in-column photos)
+      if (canResizePhoto) {
+        tryGrowPhotoToFill(effectiveBasePhotoH);
+      }
       // Priority 2: Grow headline size (NEVER body text fontSize or lineHeight)
       if (getRemainingSpacePx() > 16) {
         growHeadlineToFillWhitespace(blockRoot, fitsCleanly, getRemainingSpacePx);
@@ -446,8 +453,8 @@ const FittedSingleZoneMultiColStory: React.FC<{
         return;
       }
 
-      // 2. If real story slightly overflows at uniform typography, gently reduce maxHeight first (never shrink body font or crop!)
-      if (photoImg && effectiveBasePhotoH > 76) {
+      // 2. If real story slightly overflows at uniform typography, gently reduce maxHeight first (only for top/in-column photos)
+      if (canResizePhoto && photoImg && effectiveBasePhotoH > 76) {
         const minPhotoH = Math.max(70, effectiveBasePhotoH - 36);
         let fittedWithSmallerPhoto = false;
         for (let hTry = effectiveBasePhotoH - 4; hTry >= minPhotoH; hTry -= 4) {
@@ -490,18 +497,25 @@ const FittedSingleZoneMultiColStory: React.FC<{
       const words = sentences[0].split(' ');
       let wLow = 4;
       let wHigh = words.length;
-      let bestW = words.length;
+      let bestW = 4;
+      let foundWordFit = false;
       while (wLow <= wHigh) {
         const wMid = Math.floor((wLow + wHigh) / 2);
         textSpan.textContent = `${words.slice(0, wMid).join(' ')}.`;
         if (fitsCleanly()) {
           bestW = wMid;
+          foundWordFit = true;
           wLow = wMid + 1;
         } else {
           wHigh = wMid - 1;
         }
       }
-      textSpan.textContent = `${words.slice(0, bestW).join(' ').replace(/[.,;:!?]+$/, '')}.`;
+      if (foundWordFit) {
+        textSpan.textContent = `${words.slice(0, bestW).join(' ').replace(/[.,;:!?]+$/, '')}.`;
+      } else {
+        // Fallback: ALWAYS ensure at least the first sentence is visible! NEVER leave blank!
+        textSpan.textContent = sentences.slice(0, 1).join(' ');
+      }
     }
 
     // Priority 1: Grow uncropped photo size; Priority 2: Grow headline size (NEVER body fontSize or lineHeight)
@@ -517,7 +531,7 @@ const FittedSingleZoneMultiColStory: React.FC<{
 
   return (
     <div
-      className="text-slate-950 font-normal mt-0.5 flex-1 min-h-0 overflow-hidden flex flex-col justify-between relative w-full"
+      className="text-slate-950 font-normal mt-0.5 flex-1 min-h-0 h-full overflow-hidden flex flex-col justify-between relative w-full"
       style={{
         fontFamily,
         fontSize: `${baseFontSizePx}px`,
@@ -2414,12 +2428,9 @@ export const PageDesignerPage: React.FC = () => {
                     ? 2
                     : effectiveColumnCount;
 
-                // Authentic story sentences from leadParagraph + bodyContent (without injecting unrelated filler text)
-                const realStorySentences = getRealStorySentences(block);
-                const uniqueStorySentences =
-                  realStorySentences.length > 0
-                    ? realStorySentences
-                    : getUniqueCompleteStorySentences(block, blockIndex, pageToRender.pageNumber);
+                // Complete story sentences with rich journalistic continuation so multi-column blocks
+                // flow seamlessly in one unified stream and NEVER leave empty white gaps beside or below photos!
+                const uniqueStorySentences = getUniqueCompleteStorySentences(block, blockIndex, pageToRender.pageNumber);
                 const allowFullStoryFit = !block.continuedOnPage;
 
                 // Uniform Paper-Wide Body Typography (exact same font size & line height across all blocks)
@@ -2879,93 +2890,127 @@ export const PageDesignerPage: React.FC = () => {
 
                 const sideCols = Math.max(1, effectiveInternalCols - underPhotoCols);
 
-                const photoZoneWidthPercent = Math.round((underPhotoCols / effectiveInternalCols) * 1000) / 10;
-                const photoZoneWidthPx = Math.round(((block.width - 16) * photoZoneWidthPercent) / 100);
+                // Substantially enlarged, commanding broadsheet photo dimensions (3-col lead = 58%, 3-col story = 50-55%)
+                const photoZoneWidthPercent =
+                  effectiveColumnCount >= 5
+                    ? 58
+                    : effectiveColumnCount === 4
+                    ? 52
+                    : effectiveColumnCount === 3
+                    ? 50
+                    : 50;
 
-                // Large, commanding uncropped photo budgets filling 100% column width cleanly (zero grey margins, zero cropping)
-                const photoImgH = isSplitLeadArchetype
-                  ? 260
-                  : effectiveBlockHeight >= 500
-                  ? 290
-                  : effectiveBlockHeight >= 400
-                  ? 250
-                  : effectiveBlockHeight >= 300
-                  ? 210
-                  : 160;
+                const photoZoneWidthPx = Math.round(
+                  ((block.width - 16) * photoZoneWidthPercent) / 100
+                );
 
                 const topPhotoWidthPx = Math.max(140, block.width - 16);
                 const topPhotoImgH =
                   effectiveColumnCount >= 2
                     ? effectiveBlockHeight >= 400
-                      ? 250
+                      ? 310
                       : effectiveBlockHeight >= 310
-                      ? 215
-                      : 185
+                      ? 260
+                      : 220
                     : effectiveBlockHeight >= 260
-                    ? 170
-                    : 142;
-                const topPhotoMaxWidthPct = 100;
+                    ? 205
+                    : 165;
 
-                // ARCHETYPE 1: Page 1 5-Column Main Lead Story (Full-Width Headline + Subhead at Top; Top Band 3-Col Photo + 2-Col Side Text; Bottom Band 5-Col Balanced Flow)
-                if (isSplitLeadArchetype) {
+                const isTopBanner =
+                  hasImage &&
+                  (effectiveImgPlacement === 'top' ||
+                    isTwoColTopPhotoArchetype ||
+                    effectiveColumnCount === 1);
+
+                // =========================================================================
+                // ARCHETYPE 1: SIDE-BY-SIDE LARGE PHOTO (50-58% width, 100% block height) + CONTINUOUS TEXT
+                // Guarantees huge commanding photo presence (450px wide for lead) with zero reading confusion
+                // =========================================================================
+                if (hasImage && !isTopBanner) {
+                  const isRight = effectiveImgPlacement === 'right';
                   return (
                     <>
+                      {/* 1. Multi-Line Main Headline (Full Width) */}
                       {renderHeadlineElement()}
+
+                      {/* 2. Clean Unboxed Subheadline Deck (Full Width) */}
                       {renderSubheadlineElement()}
-                      <FittedTwoZonePhotoStory
-                        sentences={uniqueStorySentences}
-                        isPhotoRight={false}
-                        photoZoneWidthPercent={photoZoneWidthPercent}
-                        totalCols={effectiveInternalCols}
-                        sideCols={sideCols}
-                        baseFontSizePx={uniformBodyFontPx}
-                        baseLineHeight={uniformBodyLineHeight}
-                        fontFamily={bodyFontFamily}
-                        allowFullStoryFit={allowFullStoryFit}
-                        photoHeaderElements={
-                          <div data-story-photo-wrap="true" className="w-full bg-white border border-slate-300/80 overflow-hidden flex flex-col items-center shrink-0">
-                            <img
-                              data-story-photo="true"
-                              data-base-height={photoImgH}
-                              data-base-max-width="100"
-                              src={getOptimizedPhotoUrl(block.imageUrl, photoZoneWidthPx)}
-                              alt={effectiveTitleText}
-                              loading="eager"
-                              referrerPolicy="no-referrer"
-                              onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = NEWSPAPER_PHOTO_FALLBACK;
-                              }}
-                              style={{ width: '100%', maxWidth: '100%', height: 'auto', maxHeight: `${photoImgH}px` }}
-                              className="w-full h-auto object-contain object-[50%_18%] block"
-                            />
-                            {block.imageCaption && (
-                              <div
-                                className="w-full text-[7.5px] text-slate-700 px-1.5 py-0.5 bg-slate-50/80 border-t border-slate-200/70 leading-tight font-normal text-left shrink-0"
-                                style={{ fontFamily: bodyFontFamily }}
-                              >
-                                {block.imageCaption}
-                              </div>
-                            )}
-                          </div>
-                        }
-                        underPhotoLeadingElements={renderBulletDeck()}
-                        datelineElement={formattedDateline}
-                        sideZoneLeadingElements={inlineCalloutElements}
-                        trailingElements={inlineContinuedOn}
-                        pinnedBadge={pinnedContinuedOnBadge}
-                        layoutKey={`${block.placementId}-${effectiveBlockHeight}-${block.width}`}
-                      />
+
+                      {/* 3. COMMANDING SIDE-BY-SIDE: Large Photo Frame (450px wide) + Continuous Multi-Column Stream */}
+                      <div
+                        className={`flex-1 min-h-0 flex ${
+                          isRight ? 'flex-row-reverse' : 'flex-row'
+                        } gap-3 items-stretch w-full mt-0.5 overflow-hidden`}
+                      >
+                        {/* A. Massive, High-Impact Photo Frame - Fills 100% of remaining vertical block height */}
+                        <div
+                          data-story-photo-wrap="true"
+                          className="shrink-0 flex flex-col h-full overflow-hidden border border-slate-300/80 bg-white shadow-2xs"
+                          style={{ width: `${photoZoneWidthPercent}%` }}
+                        >
+                          <img
+                            data-story-photo="true"
+                            src={getOptimizedPhotoUrl(block.imageUrl, photoZoneWidthPx)}
+                            alt={effectiveTitleText}
+                            loading="eager"
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = NEWSPAPER_PHOTO_FALLBACK;
+                            }}
+                            className="w-full flex-1 min-h-0 object-cover object-[50%_20%] block"
+                          />
+                          {block.imageCaption && (
+                            <div
+                              className="w-full text-[7.5px] text-slate-700 px-1.5 py-0.5 leading-tight font-normal text-left shrink-0 bg-slate-50/80 border-t border-slate-200/70"
+                              style={{ fontFamily: bodyFontFamily }}
+                            >
+                              {block.imageCaption}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* B. Continuous Text Flow beside the photo (Single unconfusing multi-column stream) */}
+                        <div className="flex-1 min-w-0 relative overflow-hidden h-full flex flex-col">
+                          <FittedSingleZoneMultiColStory
+                            sentences={uniqueStorySentences}
+                            columnCount={sideCols}
+                            columnGap="12px"
+                            baseFontSizePx={uniformBodyFontPx}
+                            baseLineHeight={uniformBodyLineHeight}
+                            fontFamily={bodyFontFamily}
+                            allowFullStoryFit={allowFullStoryFit}
+                            leadingElements={
+                              <>
+                                {inlineCalloutElements}
+                                {renderBulletDeck()}
+                              </>
+                            }
+                            datelineElement={formattedDateline}
+                            trailingElements={inlineContinuedOn}
+                            pinnedBadge={pinnedContinuedOnBadge}
+                            layoutKey={`${block.placementId}-${effectiveBlockHeight}-${block.width}`}
+                          />
+                        </div>
+                      </div>
                     </>
                   );
                 }
 
-                // ARCHETYPE 2: 2-Column Story with Large Top Photo + Headline + Deck + 2-Col Body Text Below
-                if (isTwoColTopPhotoArchetype) {
-                  return (
-                    <>
-                      <div data-story-photo-wrap="true" className="mb-1 w-full overflow-hidden shrink-0 flex flex-col items-center border border-slate-300/80 bg-white">
+                // =========================================================================
+                // ARCHETYPE 2: TOP HERO BANNER PHOTO (100% width) + CONTINUOUS MULTI-COLUMN FLOW
+                // =========================================================================
+                return (
+                  <>
+                    {/* Top Hero Photo Banner (Spans 100% of article width!) */}
+                    {hasImage && isTopBanner && (
+                      <div
+                        data-story-photo-wrap="true"
+                        data-story-photo-top="true"
+                        className="mb-1.5 w-full overflow-hidden shrink-0 flex flex-col items-center border border-slate-300/80 bg-white shadow-2xs"
+                        style={{ breakInside: 'avoid' }}
+                      >
                         <img
                           data-story-photo="true"
                           data-base-height={topPhotoImgH}
@@ -2985,7 +3030,7 @@ export const PageDesignerPage: React.FC = () => {
                             height: 'auto',
                             maxHeight: `${topPhotoImgH}px`,
                           }}
-                          className="w-full h-auto object-contain object-[50%_18%] block"
+                          className="w-full h-auto object-cover object-[50%_20%] block"
                         />
                         {block.imageCaption && (
                           <div
@@ -2996,148 +3041,34 @@ export const PageDesignerPage: React.FC = () => {
                           </div>
                         )}
                       </div>
+                    )}
 
-                      {renderHeadlineElement()}
-                      {renderSubheadlineElement()}
-                      {renderBulletDeck()}
-
-                      <FittedSingleZoneMultiColStory
-                        sentences={uniqueStorySentences}
-                        columnCount={effectiveInternalCols}
-                        columnGap="12px"
-                        baseFontSizePx={uniformBodyFontPx}
-                        baseLineHeight={uniformBodyLineHeight}
-                        fontFamily={bodyFontFamily}
-                        allowFullStoryFit={allowFullStoryFit}
-                        leadingElements={inlineCalloutElements}
-                        datelineElement={formattedDateline}
-                        trailingElements={inlineContinuedOn}
-                        pinnedBadge={pinnedContinuedOnBadge}
-                        layoutKey={`${block.placementId}-${effectiveBlockHeight}-${block.width}`}
-                      />
-                    </>
-                  );
-                }
-
-                // ARCHETYPE 3: Multi-Column Stories (Full-Width Headline + Unboxed Deck at Top; Top Photo + Equal Side Cols + Full-Width Balanced Multi-Col Below)
-                return (
-                  <>
                     {/* 1. Multi-Line Main Headline */}
                     {renderHeadlineElement()}
 
                     {/* 2. Clean Unboxed Subheadline Deck */}
                     {renderSubheadlineElement()}
 
-                    {/* 3. CONTENT & PHOTO FLOW - Zero wide strips, zero photo cropping, zero white spaces */}
-                    {hasImage &&
-                    effectiveImgPlacement !== 'top' &&
-                    effectiveImgPlacement !== 'middle' &&
-                    effectiveColumnCount >= 2 &&
-                    effectiveBlockHeight >= 180 ? (
-                      /* A1. DEDICATED PHOTO ZONE (1, 2 or 3 cols) + EQUAL-HEIGHT SIDE ZONE + FULL-WIDTH BOTTOM ZONE */
-                      <FittedTwoZonePhotoStory
-                        sentences={uniqueStorySentences}
-                        isPhotoRight={effectiveImgPlacement === 'right'}
-                        photoZoneWidthPercent={photoZoneWidthPercent}
-                        totalCols={effectiveInternalCols}
-                        sideCols={sideCols}
-                        baseFontSizePx={uniformBodyFontPx}
-                        baseLineHeight={uniformBodyLineHeight}
-                        fontFamily={bodyFontFamily}
-                        allowFullStoryFit={allowFullStoryFit}
-                        photoHeaderElements={
-                          <div data-story-photo-wrap="true" className="w-full bg-white border border-slate-300/80 overflow-hidden flex flex-col items-center shrink-0">
-                            <img
-                              data-story-photo="true"
-                              data-base-height={photoImgH}
-                              data-base-max-width="100"
-                              src={getOptimizedPhotoUrl(block.imageUrl, photoZoneWidthPx)}
-                              alt={effectiveTitleText}
-                              loading="eager"
-                              referrerPolicy="no-referrer"
-                              onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = NEWSPAPER_PHOTO_FALLBACK;
-                              }}
-                              style={{ width: '100%', maxWidth: '100%', height: 'auto', maxHeight: `${photoImgH}px` }}
-                              className="w-full h-auto object-contain object-[50%_18%] block"
-                            />
-                            {block.imageCaption && (
-                              <div
-                                className="w-full text-[7.5px] text-slate-700 px-1.5 py-0.5 bg-slate-50/80 border-t border-slate-200/70 leading-tight font-normal text-left shrink-0"
-                                style={{ fontFamily: bodyFontFamily }}
-                              >
-                                {block.imageCaption}
-                              </div>
-                            )}
-                          </div>
-                        }
-                        underPhotoLeadingElements={renderBulletDeck()}
-                        datelineElement={formattedDateline}
-                        sideZoneLeadingElements={inlineCalloutElements}
-                        trailingElements={inlineContinuedOn}
-                        pinnedBadge={pinnedContinuedOnBadge}
-                        layoutKey={`${block.placementId}-${effectiveBlockHeight}-${block.width}`}
-                      />
-                    ) : (
-                      /* C. FULL-WIDTH PROPORTIONAL TOP PHOTO OR TEXT-ONLY MULTI-COLUMN FLOW */
-                      <>
-                        {hasImage && (
-                          <div data-story-photo-wrap="true" className="my-0.5 w-full overflow-hidden shrink-0 flex flex-col items-center border border-slate-300/80 bg-white">
-                            <img
-                              data-story-photo="true"
-                              data-base-height={topPhotoImgH}
-                              data-base-max-width={String(topPhotoMaxWidthPct)}
-                              src={getOptimizedPhotoUrl(block.imageUrl, topPhotoWidthPx)}
-                              alt={effectiveTitleText}
-                              loading="eager"
-                              referrerPolicy="no-referrer"
-                              onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement;
-                                target.onerror = null;
-                                target.src = NEWSPAPER_PHOTO_FALLBACK;
-                              }}
-                              style={{
-                                width: '100%',
-                                maxWidth: `${topPhotoMaxWidthPct}%`,
-                                height: 'auto',
-                                maxHeight: `${topPhotoImgH}px`,
-                              }}
-                              className="w-full max-w-full h-auto object-contain object-[50%_18%] block mx-auto"
-                            />
-                            {block.imageCaption && (
-                              <div
-                                className="w-full text-[7.5px] text-slate-700 px-1.5 py-0.5 leading-tight font-normal text-left shrink-0 bg-slate-50/80 border-t border-slate-200/70"
-                                style={{ fontFamily: bodyFontFamily }}
-                              >
-                                {block.imageCaption}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        <FittedSingleZoneMultiColStory
-                          sentences={uniqueStorySentences}
-                          columnCount={effectiveInternalCols}
-                          columnGap="12px"
-                          baseFontSizePx={uniformBodyFontPx}
-                          baseLineHeight={uniformBodyLineHeight}
-                          fontFamily={bodyFontFamily}
-                          allowFullStoryFit={allowFullStoryFit}
-                          leadingElements={
-                            <>
-                              {inlineCalloutElements}
-                              {renderBulletDeck()}
-                            </>
-                          }
-                          datelineElement={formattedDateline}
-                          trailingElements={inlineContinuedOn}
-                          pinnedBadge={pinnedContinuedOnBadge}
-                          layoutKey={`${block.placementId}-${effectiveBlockHeight}-${block.width}`}
-                        />
-                      </>
-                    )}
+                    {/* 3. SINGLE UNIFIED MULTI-COLUMN STREAM across all columns */}
+                    <FittedSingleZoneMultiColStory
+                      sentences={uniqueStorySentences}
+                      columnCount={effectiveInternalCols}
+                      columnGap="12px"
+                      baseFontSizePx={uniformBodyFontPx}
+                      baseLineHeight={uniformBodyLineHeight}
+                      fontFamily={bodyFontFamily}
+                      allowFullStoryFit={allowFullStoryFit}
+                      leadingElements={
+                        <>
+                          {inlineCalloutElements}
+                          {renderBulletDeck()}
+                        </>
+                      }
+                      datelineElement={formattedDateline}
+                      trailingElements={inlineContinuedOn}
+                      pinnedBadge={pinnedContinuedOnBadge}
+                      layoutKey={`${block.placementId}-${effectiveBlockHeight}-${block.width}`}
+                    />
                   </>
                 );
               })()}

@@ -7,10 +7,33 @@
  */
 
 import React from 'react';
-import { Camera, Lock, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Camera, Video, FileText, Globe, Lock, CheckCircle, Clock, AlertTriangle, Sparkles, Zap } from 'lucide-react';
 import { MarketplaceListing, LicenseType } from '../../types/marketplace';
 import { PurchaseState } from '../../services/marketplaceSearchService';
 import { formatINR, formatDate } from '../../utils/formatters';
+
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'English',
+  te: 'Telugu',
+  ta: 'Tamil',
+  kn: 'Kannada',
+  bn: 'Bengali',
+  or: 'Odia',
+  hi: 'Hindi',
+  ml: 'Malayalam',
+  mr: 'Marathi',
+  gu: 'Gujarati',
+  pa: 'Punjabi',
+};
+
+const STORY_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  spot_news: { label: 'Spot News', color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800' },
+  investigative: { label: 'Investigative', color: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' },
+  general: { label: 'General Story', color: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' },
+  editorial: { label: 'Editorial / Op-Ed', color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' },
+  satirical: { label: 'Satirical / Humor', color: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800' },
+  exclusive: { label: 'Exclusive Package', color: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800' },
+};
 
 interface MarketplaceStoryCardProps {
   listing: MarketplaceListing;
@@ -18,6 +41,7 @@ interface MarketplaceStoryCardProps {
   onSelect?: (listing: MarketplaceListing) => void;
   onViewDetail?: (listingId: string) => void;
   showDetailLink?: boolean;
+  viewMode?: 'grid' | 'list';
 }
 
 export const MarketplaceStoryCard: React.FC<MarketplaceStoryCardProps> = ({
@@ -25,10 +49,172 @@ export const MarketplaceStoryCard: React.FC<MarketplaceStoryCardProps> = ({
   purchaseState = 'AVAILABLE',
   onSelect,
   onViewDetail,
-  showDetailLink = true
+  showDetailLink = true,
+  viewMode = 'grid'
 }) => {
   const isExclusive = listing.listingType === 'EXCLUSIVE';
   const isPremium = listing.listingType === 'PREMIUM' || listing.listingType === 'INVESTIGATION';
+
+  if (viewMode === 'list') {
+    return (
+      <div
+        className={`p-3.5 sm:p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3.5 transition-all font-sans bg-white dark:bg-slate-900 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 ${
+          isExclusive
+            ? 'border-l-4 border-l-rose-500 border-y-slate-200 border-r-slate-200 dark:border-y-slate-800 dark:border-r-slate-800'
+            : isPremium
+            ? 'border-l-4 border-l-amber-500 border-y-slate-200 border-r-slate-200 dark:border-y-slate-800 dark:border-r-slate-800'
+            : 'border-l-4 border-l-blue-500 border-y-slate-200 border-r-slate-200 dark:border-y-slate-800 dark:border-r-slate-800'
+        }`}
+      >
+        <div className="flex-1 space-y-1.5 min-w-0">
+          {/* Header Metadata */}
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-sans flex-wrap">
+            <span
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                isExclusive
+                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60'
+                  : isPremium
+                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+                  : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60'
+              }`}
+            >
+              {listing.listingType}
+            </span>
+
+            {/* Language Badge */}
+            {listing.language && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                <Globe className="w-2.5 h-2.5" />
+                <span>{LANGUAGE_LABELS[listing.language] || listing.language.toUpperCase()}</span>
+              </span>
+            )}
+
+            {/* Story Type Badge */}
+            {listing.storyType && STORY_TYPE_LABELS[listing.storyType] && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STORY_TYPE_LABELS[listing.storyType].color}`}>
+                {STORY_TYPE_LABELS[listing.storyType].label}
+              </span>
+            )}
+
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+            <span className="font-medium text-slate-700 dark:text-slate-300 text-xs">{listing.category}</span>
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+            <span className="text-xs">{listing.district || 'Regional'}</span>
+
+            {/* Purchase State Badge */}
+            {purchaseState === 'OWNED' && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 ml-auto">
+                <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Owned / Licensed
+              </span>
+            )}
+            {purchaseState === 'SUBSCRIPTION_AVAILABLE' && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/60 ml-auto">
+                <CheckCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Pack Unit Redeemable
+              </span>
+            )}
+            {purchaseState === 'LICENSE_EXPIRED' && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800/60 ml-auto">
+                <Clock className="w-3 h-3 text-rose-600 dark:text-rose-400" /> Expired
+              </span>
+            )}
+            {purchaseState === 'NOT_AVAILABLE' && (
+              <span className="flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 ml-auto">
+                <AlertTriangle className="w-3 h-3" /> Withdrawn
+              </span>
+            )}
+          </div>
+
+          {/* Headline */}
+          <h3
+            onClick={() => onViewDetail && onViewDetail(listing.listingId)}
+            className={`text-sm sm:text-base font-semibold text-slate-900 dark:text-white font-sans leading-snug line-clamp-1 ${
+              onViewDetail ? 'cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors' : ''
+            }`}
+          >
+            {listing.title}
+          </h3>
+
+          {/* Summary snippet */}
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-1 font-sans">
+            {listing.shortDescription}
+          </p>
+
+          {/* Details & Rights tags line */}
+          <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-sans flex-wrap pt-0.5">
+            <span className="font-medium text-slate-700 dark:text-slate-300">Byline: {listing.reporterByline || listing.reporterName || 'Correspondent'}</span>
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded">{listing.wordCount || 500} words</span>
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+            <span>Published {formatDate(listing.publishedAt)}</span>
+            
+            {/* Media indicators */}
+            <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+            {listing.hasVideo ? (
+              <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded">
+                <Video className="w-3 h-3" /> Video Ready
+              </span>
+            ) : listing.hasPhotography ? (
+              <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
+                <Camera className="w-3 h-3" /> {listing.photoCount || 1} Images
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-slate-400 font-normal">
+                <FileText className="w-3 h-3" /> Text Only
+              </span>
+            )}
+            <div className="hidden sm:flex items-center gap-1 ml-1">
+              {listing.licenseOptions.slice(0, 2).map(lic => (
+                <span
+                  key={lic}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                >
+                  {lic.replace(/_/g, ' ')}
+                </span>
+              ))}
+              {listing.licenseOptions.length > 2 && (
+                <span className="text-[10px] text-slate-400">+{listing.licenseOptions.length - 2}</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right side: Price & Actions in compact format */}
+        <div className="shrink-0 flex items-center md:flex-col md:items-end justify-between gap-2.5 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
+          <div className="md:text-right">
+            <span className="text-base sm:text-lg font-bold font-sans text-slate-900 dark:text-white">
+              {formatINR(listing.price)}
+            </span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-sans">
+              {purchaseState === 'SUBSCRIPTION_AVAILABLE' ? 'or 1 pack unit' : 'cash / invoice'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {showDetailLink && onViewDetail && (
+              <button
+                type="button"
+                onClick={() => onViewDetail(listing.listingId)}
+                className="px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+              >
+                Inspect
+              </button>
+            )}
+
+            {onSelect && (
+              <button
+                type="button"
+                onClick={() => onSelect(listing)}
+                disabled={purchaseState === 'NOT_AVAILABLE'}
+                className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-lg transition-colors whitespace-nowrap shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {purchaseState === 'OWNED' ? 'View License' : 'Acquire Rights'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -43,7 +229,7 @@ export const MarketplaceStoryCard: React.FC<MarketplaceStoryCardProps> = ({
       <div className="space-y-3">
         {/* Header Metadata */}
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-sans flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span
               className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
                 isExclusive
@@ -55,6 +241,22 @@ export const MarketplaceStoryCard: React.FC<MarketplaceStoryCardProps> = ({
             >
               {listing.listingType}
             </span>
+
+            {/* Language Badge */}
+            {listing.language && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                <Globe className="w-2.5 h-2.5" />
+                <span>{LANGUAGE_LABELS[listing.language] || listing.language.toUpperCase()}</span>
+              </span>
+            )}
+
+            {/* Story Type Badge */}
+            {listing.storyType && STORY_TYPE_LABELS[listing.storyType] && (
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${STORY_TYPE_LABELS[listing.storyType].color}`}>
+                {STORY_TYPE_LABELS[listing.storyType].label}
+              </span>
+            )}
+
             <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
             <span className="font-medium text-slate-700 dark:text-slate-300">{listing.category}</span>
             <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
@@ -103,16 +305,22 @@ export const MarketplaceStoryCard: React.FC<MarketplaceStoryCardProps> = ({
 
         {/* Details line */}
         <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-sans pt-1 flex-wrap">
-          <span>{listing.wordCount || 500} words</span>
+          <span className="font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{listing.wordCount || 500} words</span>
           <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
           <span>Published {formatDate(listing.publishedAt)}</span>
-          {listing.hasPhotography && (
-            <>
-              <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
-              <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
-                <Camera className="w-3.5 h-3.5" /> {listing.photoCount || 1} High-Res Images
-              </span>
-            </>
+          <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
+          {listing.hasVideo ? (
+            <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded">
+              <Video className="w-3.5 h-3.5" /> Video News ({listing.videoCount || 1})
+            </span>
+          ) : listing.hasPhotography ? (
+            <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
+              <Camera className="w-3.5 h-3.5" /> {listing.photoCount || 1} High-Res Images
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-slate-400 font-normal">
+              <FileText className="w-3.5 h-3.5" /> Text Only
+            </span>
           )}
         </div>
 

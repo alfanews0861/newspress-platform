@@ -32,7 +32,16 @@ class BrandManagementService {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          this.inMemoryBrands = parsed;
+          // Ensure all brands have unique IDs so they can be selected and deleted individually
+          const seen = new Set<string>();
+          this.inMemoryBrands = parsed.map((item, idx) => {
+            let id = item.brandId || `brand-${idx}`;
+            if (seen.has(id)) {
+              id = `${id}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
+            }
+            seen.add(id);
+            return { ...item, brandId: id };
+          });
           return;
         }
       }
@@ -40,7 +49,16 @@ class BrandManagementService {
       console.warn('Failed to read brands from localStorage, using defaults', e);
     }
 
-    this.inMemoryBrands = [...MOCK_BRANDS];
+    // Initialize with unique IDs from MOCK_BRANDS
+    const seen = new Set<string>();
+    this.inMemoryBrands = MOCK_BRANDS.map((item, idx) => {
+      let id = item.brandId || `brand-${idx}`;
+      if (seen.has(id)) {
+        id = `${id}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
+      }
+      seen.add(id);
+      return { ...item, brandId: id };
+    });
     this.persist();
   }
 
@@ -235,9 +253,15 @@ class BrandManagementService {
     if (this.inMemoryBrands.length <= 1) {
       return false; // Prevent deleting the last brand
     }
-    const initialLength = this.inMemoryBrands.length;
-    this.inMemoryBrands = this.inMemoryBrands.filter((b) => b.brandId !== brandId);
-    if (this.inMemoryBrands.length !== initialLength) {
+    const index = this.inMemoryBrands.findIndex((b) => b.brandId === brandId);
+    if (index >= 0) {
+      this.inMemoryBrands.splice(index, 1);
+      if (typeof window !== 'undefined') {
+        const activeId = localStorage.getItem(ACTIVE_BRAND_KEY);
+        if (activeId === brandId && this.inMemoryBrands.length > 0) {
+          localStorage.setItem(ACTIVE_BRAND_KEY, this.inMemoryBrands[0].brandId);
+        }
+      }
       this.persist();
       return true;
     }
@@ -245,7 +269,18 @@ class BrandManagementService {
   }
 
   public resetToDefaults(): NewspaperBrand[] {
-    this.inMemoryBrands = [...MOCK_BRANDS];
+    const seen = new Set<string>();
+    this.inMemoryBrands = MOCK_BRANDS.map((item, idx) => {
+      let id = item.brandId || `brand-${idx}`;
+      if (seen.has(id)) {
+        id = `${id}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
+      }
+      seen.add(id);
+      return { ...item, brandId: id };
+    });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ACTIVE_BRAND_KEY, this.inMemoryBrands[0].brandId);
+    }
     this.persist();
     return this.getBrands();
   }

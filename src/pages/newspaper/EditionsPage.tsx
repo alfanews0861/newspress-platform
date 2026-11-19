@@ -195,7 +195,7 @@ export const EditionsPage: React.FC = () => {
         tenantId: currentTenant.tenantId,
         brandId: activeBrand.brandId,
         brandName: activeBrand.name,
-        editionName: activeBrand.editionsList?.[0] || (isTelugu ? 'హైదరాబాద్ ప్రధాన సంచిక' : 'Main Morning Edition'),
+        editionName: activeBrand.editionsList?.[0] || 'Main Morning Edition',
         editionCode: `${(activeBrand.code || activeBrand.name.slice(0, 3)).toUpperCase()}-${todayIso}`,
         issueNumber: Number(activeBrand.issueNumber) || Math.floor(200 + (Date.now() % 100)),
         volumeNumber: Number(activeBrand.volumeNumber) || 65,

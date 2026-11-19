@@ -66,11 +66,11 @@ const PAPER_SIZES: { id: PaperSizeFormat; name: string; dims: string; cols: numb
 ];
 
 const FREQUENCIES: { id: PublicationFrequency; name: string; desc: string; defaultSize: PaperSizeFormat; defaultCols: number; defaultPages: number }[] = [
-  { id: 'daily', name: 'దినపత్రిక (Daily Morning)', desc: 'వారంలో 7 రోజులు ఉదయం ప్రచురణ (Broadsheet 8-Cols, 8 Pages)', defaultSize: 'broadsheet', defaultCols: 8, defaultPages: 8 },
-  { id: 'evening', name: 'సాయంత్రం దినపత్రిక (Evening Daily)', desc: 'వారంలో 6 రోజులు మధ్యాహ్నం/సాయంత్రం (Broadsheet 8-Cols, 8 Pages)', defaultSize: 'broadsheet', defaultCols: 8, defaultPages: 8 },
-  { id: 'weekly', name: 'వారపత్రిక (Weekly Magazine / Tabloid)', desc: 'వారానికి ఒకసారి ఆదివారం/వారాంతం (Tabloid 5-Cols, 12 Pages)', defaultSize: 'tabloid', defaultCols: 5, defaultPages: 12 },
-  { id: 'biweekly', name: 'పక్షపత్రిక (Fortnightly)', desc: 'నెలకు రెండుసార్లు (Tabloid 5-Cols, 16 Pages)', defaultSize: 'tabloid', defaultCols: 5, defaultPages: 16 },
-  { id: 'monthly', name: 'మాసపత్రిక (Monthly Journal / Digest)', desc: 'నెలకు ఒకసారి (A4 Format 4-Cols, 24 Pages)', defaultSize: 'a4', defaultCols: 4, defaultPages: 24 },
+  { id: 'daily', name: 'Daily Morning', desc: '7 days a week morning edition (Broadsheet 8-Cols, 8 Pages)', defaultSize: 'broadsheet', defaultCols: 8, defaultPages: 8 },
+  { id: 'evening', name: 'Evening Daily', desc: '6 days a week afternoon/evening edition (Broadsheet 8-Cols, 8 Pages)', defaultSize: 'broadsheet', defaultCols: 8, defaultPages: 8 },
+  { id: 'weekly', name: 'Weekly Magazine / Tabloid', desc: 'Once a week weekend edition (Tabloid 5-Cols, 12 Pages)', defaultSize: 'tabloid', defaultCols: 5, defaultPages: 12 },
+  { id: 'biweekly', name: 'Fortnightly', desc: 'Twice a month publication (Tabloid 5-Cols, 16 Pages)', defaultSize: 'tabloid', defaultCols: 5, defaultPages: 16 },
+  { id: 'monthly', name: 'Monthly Journal / Digest', desc: 'Once a month publication (A4 Format 4-Cols, 24 Pages)', defaultSize: 'a4', defaultCols: 4, defaultPages: 24 },
 ];
 
 const SUPPORTED_LANGUAGES = [
@@ -391,19 +391,27 @@ export const BrandsPage: React.FC = () => {
   const handleDeleteBrand = (brandId: string) => {
     if (brands.length <= 1) {
       setErrorMsg('At least one publication brand must remain active. You cannot delete the last brand.');
+      setTimeout(() => setErrorMsg(null), 3000);
       return;
     }
+    const targetBrand = brands.find((b) => b.brandId === brandId) || selectedBrand;
     setConfirmState({
       isOpen: true,
       title: 'Delete Publication Brand',
-      message: `Are you sure you want to delete '${selectedBrand.name}'?`,
+      message: `Are you sure you want to delete '${targetBrand.name}'? This action cannot be undone.`,
       variant: 'danger',
       onConfirm: () => {
         brandManagementService.deleteBrand(brandId);
         const remaining = brandManagementService.getBrands();
         setBrands(remaining);
-        setSelectedBrand(remaining[0]);
+        if (selectedBrand.brandId === brandId || !remaining.find((b) => b.brandId === selectedBrand.brandId)) {
+          setSelectedBrand(remaining[0]);
+        }
+        const active = brandManagementService.getActiveBrand();
+        setActiveBrandId(active.brandId);
         setConfirmState((prev) => ({ ...prev, isOpen: false }));
+        setSaveSuccessMsg(`Publication brand '${targetBrand.name}' was deleted successfully.`);
+        setTimeout(() => setSaveSuccessMsg(null), 3000);
       },
     });
   };
@@ -526,14 +534,14 @@ export const BrandsPage: React.FC = () => {
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-sans font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-sans font-bold text-slate-900 dark:text-slate-100 text-sm truncate">
                           {brand.name}
                         </h4>
                         {isActive && (
-                          <Badge variant="primary" className="text-[9px] py-0 px-1.5 font-bold uppercase">
+                          <Badge variant="primary" className="text-[9px] py-0 px-1.5 font-bold uppercase shrink-0">
                             Active
                           </Badge>
                         )}
@@ -542,9 +550,24 @@ export const BrandsPage: React.FC = () => {
                         {brand.tagline || brand.masthead?.subtitle}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-[10px] font-mono font-bold uppercase shrink-0">
-                      {brand.code}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge variant="outline" className="text-[10px] font-mono font-bold uppercase shrink-0">
+                        {brand.code}
+                      </Badge>
+                      {brands.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteBrand(brand.brandId);
+                          }}
+                          className="p-1 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          title={`Delete ${brand.name}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-sans text-slate-600 dark:text-slate-400 pt-2.5 border-t border-slate-100 dark:border-slate-800">
@@ -787,9 +810,23 @@ export const BrandsPage: React.FC = () => {
         maxWidth="5xl"
         footer={
           <div className="flex items-center justify-between w-full">
-            <span className="text-xs text-slate-500 font-sans">
-              * All changes are saved automatically to your workspace cache.
-            </span>
+            <div>
+              {modalMode === 'edit' && brands.length > 1 && (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4" />}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    if (formData.brandId) {
+                      handleDeleteBrand(formData.brandId);
+                    }
+                  }}
+                >
+                  Delete Publication
+                </Button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsModalOpen(false)}>
                 Cancel
@@ -1425,7 +1462,7 @@ export const BrandsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    ప్రచురణ ఫ్రీక్వెన్సీ (Publication Frequency)
+                    Publication Frequency
                   </label>
                   <select
                     value={formData.frequency || 'daily'}
@@ -1451,7 +1488,7 @@ export const BrandsPage: React.FC = () => {
                   <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md border border-emerald-200 dark:border-emerald-800/60">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
                     <span>
-                      RNI నిబంధనలు: {formData.frequency === 'weekly' || formData.frequency === 'biweekly' ? 'ట్యాబ్లాయిడ్ (5 కాలమ్స్)' : formData.frequency === 'monthly' ? 'A4 మ్యాగజైన్ (4 కాలమ్స్)' : 'బ్రాడ్‌షీట్ (8 కాలమ్స్)'} • {formData.pageCount || 8} పేజీలు ఆటోమేటిక్‌గా సెట్ చేయబడ్డాయి.
+                      RNI Guideline: {formData.frequency === 'weekly' || formData.frequency === 'biweekly' ? 'Tabloid (5 Columns)' : formData.frequency === 'monthly' ? 'A4 Magazine (4 Columns)' : 'Broadsheet (8 Columns)'} • {formData.pageCount || 8} pages configured automatically.
                     </span>
                   </div>
                 </div>
@@ -1526,7 +1563,7 @@ export const BrandsPage: React.FC = () => {
                     ))}
                   </select>
                   <span className="text-[11px] text-slate-500 mt-1 block">
-                    ప్రచురణ ఫ్రీక్వెన్సీ ఆధారంగా ప్రామాణిక ప్రెస్ సైజు ఆటోమేటిక్‌గా సెట్ అవుతుంది. (అవసరమైతే ఇక్కడ మార్చుకోవచ్చు)
+                    Standard press dimensions are automatically configured based on publication frequency (customizable here).
                   </span>
                 </div>
 
@@ -1703,7 +1740,7 @@ export const BrandsPage: React.FC = () => {
                         imprint: { ...(prev.imprint || ({} as any)), editorName: e.target.value },
                       }))
                     }
-                    placeholder="e.g. Arthur J. Pendelton / కె. వెంకటేశ్వరరావు"
+                    placeholder="e.g. Arthur J. Pendelton / K. Venkateshwara Rao"
                     className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none font-bold"
                   />
                   <span className="text-[10px] text-slate-500 mt-0.5 block">

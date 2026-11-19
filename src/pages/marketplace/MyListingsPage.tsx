@@ -74,8 +74,8 @@ export const MyListingsPage: React.FC = () => {
   const [newHeadline, setNewHeadline] = useState('');
   const [newSummary, setNewSummary] = useState('');
   const [newBody, setNewBody] = useState('');
-  const [newCategory, setNewCategory] = useState('రాష్ట్రీయం');
-  const [newDistrict, setNewDistrict] = useState('హైదరాబాద్ / Regional');
+  const [newCategory, setNewCategory] = useState('State');
+  const [newDistrict, setNewDistrict] = useState('Central District / Regional');
 
   // Shared pricing & license state
   const [listingType, setListingType] = useState<ListingType>('STANDARD');
@@ -473,7 +473,7 @@ export const MyListingsPage: React.FC = () => {
                     <Input
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value)}
-                      placeholder="రాష్ట్రీయం, Politics, Metro..."
+                      placeholder="State, Politics, Metro..."
                     />
                   </div>
                   <div>

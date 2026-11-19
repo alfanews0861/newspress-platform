@@ -410,7 +410,7 @@ export const MOCK_BRANDS: NewspaperBrand[] = [
     updatedAt: '2026-10-01T00:00:00.000Z',
   },
   {
-    brandId: 'brand-andhra-prabha',
+    brandId: 'brand-andhra-prabha-bilingual',
     tenantId: 'tenant-metro-chronicle',
     name: 'ఆంధ్ర ప్రభ దినపత్రిక (Andhra Prabha Daily)',
     code: 'AP',

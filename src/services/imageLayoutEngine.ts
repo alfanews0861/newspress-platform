@@ -185,40 +185,40 @@ export class ImageLayoutEngine {
       case 'PHOTO_STORY':
         placementMode = 'hero';
         width = storyWidthPx;
-        // 16:9 or 3:2 ratio capped at 50% available block height
-        height = Math.min(Math.round(storyWidthPx * 0.5625), Math.round(availableHeightPx * 0.52));
+        // Large, commanding editorial lead photo budget (up to 72% of block height)
+        height = Math.min(Math.round(storyWidthPx * 0.62), Math.round(availableHeightPx * 0.72));
         break;
 
       case 'SECONDARY_LEAD':
       case 'FEATURE':
         placementMode = 'top';
         width = storyWidthPx;
-        height = Math.min(Math.round(storyWidthPx * 0.45), Math.round(availableHeightPx * 0.4));
+        height = Math.min(Math.round(storyWidthPx * 0.52), Math.round(availableHeightPx * 0.60));
         break;
 
       case 'STANDARD':
         placementMode = 'top';
         width = storyWidthPx;
-        height = Math.min(Math.round(storyWidthPx * 0.4), Math.round(availableHeightPx * 0.35));
+        height = Math.min(Math.round(storyWidthPx * 0.48), Math.round(availableHeightPx * 0.55));
         break;
 
       case 'SIDEBAR':
       case 'BRIEF':
         placementMode = 'top';
         width = storyWidthPx;
-        height = Math.min(Math.round(storyWidthPx * 0.6), 110);
+        height = Math.min(Math.round(storyWidthPx * 0.65), 180);
         break;
 
       case 'BOTTOM_STRIP':
         placementMode = 'left';
-        width = Math.round(storyWidthPx * 0.35);
-        height = Math.min(availableHeightPx - 20, 140);
+        width = Math.round(storyWidthPx * 0.45);
+        height = Math.min(availableHeightPx - 10, 200);
         break;
 
       default:
         placementMode = 'top';
         width = storyWidthPx;
-        height = Math.min(Math.round(storyWidthPx * 0.45), 140);
+        height = Math.min(Math.round(storyWidthPx * 0.5), 200);
         break;
     }
 

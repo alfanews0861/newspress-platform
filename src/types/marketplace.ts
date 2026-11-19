@@ -74,6 +74,8 @@ export interface MarketplaceListing {
   title: string;
   shortDescription: string;
   category: string;
+  language?: string; // 'en' | 'te' | 'hi' | 'ta' | 'kn' | 'ml' | 'bn' | 'or' | 'mr' | 'gu'
+  storyType?: 'spot_news' | 'investigative' | 'general' | 'editorial' | 'satirical' | 'exclusive' | string;
   district?: string;
   state?: string;
   publishedAt: string;
@@ -89,6 +91,8 @@ export interface MarketplaceListing {
   wordCount?: number;
   hasPhotography?: boolean;
   photoCount?: number;
+  hasVideo?: boolean;
+  videoCount?: number;
   originalityStatus?: string;
   originalityScorePercent?: number;
 
