@@ -160,12 +160,16 @@ function getAudioDuration(filePath) {
 function getVideoDuration(filePath) {
   return new Promise((resolve) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err || !metadata?.format?.duration) {
+      if (err) {
         resolve(15);
-      } else {
-        const dur = parseFloat(metadata.format.duration);
-        resolve(isNaN(dur) ? 15 : dur);
+        return;
       }
+      let dur = parseFloat(metadata?.format?.duration);
+      if (isNaN(dur) || dur <= 0) {
+        const vStream = metadata?.streams?.find((s) => s.codec_type === 'video');
+        dur = parseFloat(vStream?.duration);
+      }
+      resolve(isNaN(dur) || dur <= 0 ? 15 : dur);
     });
   });
 }
@@ -638,6 +642,9 @@ exports.composeVideo = onRequest(
         const watermarkPlacement = fields.watermarkPlacement || 'top-right';
         const watermarkScale = parseInt(fields.watermarkScalePercent || '18', 10);
         const watermarkOpacity = parseInt(fields.watermarkOpacityPercent || '90', 10);
+        if (fields.newsLocation) {
+          console.log(`[composeVideo] Broadcast reporting location: "${fields.newsLocation}"`);
+        }
 
         const outputPath = path.join(tmpDir, `broadcast_${Date.now()}.mp4`);
         filesToClean.push(outputPath);
@@ -706,6 +713,19 @@ exports.composeVideo = onRequest(
             console.log(`[composeVideo] Input [${vi.role}] duration: ${vi.duration.toFixed(1)}s, hasAudio: ${vi.hasAudio}`);
           }
 
+          // Extract bumpers duration to ensure precise voiceover sync & broadcast timing
+          const introInput = videoInputs.find((vi) => vi.role === 'intro');
+          const introDuration = (introInput && introInput.duration > 0) ? introInput.duration : 0;
+          const outroInput = videoInputs.find((vi) => vi.role === 'outro');
+          const outroDuration = (outroInput && outroInput.duration > 0) ? outroInput.duration : 0;
+
+          // Dynamically adjust maximum broadcast duration so intro bumper + voiceover anchor + outro bumper are never truncated
+          if (clipDurationMode === 'bulletin') {
+            maxDurationSec = Math.min(600, Math.max(15, Math.ceil(introDuration + voDuration + outroDuration + 3)));
+          } else {
+            maxDurationSec = Math.min(600, Math.max(maxDurationSec, Math.ceil(introDuration + voDuration + 2)));
+          }
+
           const filterComplex = [];
 
           // Standardize all video inputs to 1920x1080 @ 30fps with letterbox padding & yuv420p
@@ -751,16 +771,42 @@ exports.composeVideo = onRequest(
           }
 
           // Audio Mixing: AI Anchor Narration & Dynamic Ambient Ducking
+          // Synchronize voiceover to begin precisely when main news footage starts (AFTER channel intro bumper)
           if (voiceAudioPath && fs.existsSync(voiceAudioPath)) {
             const voInputIdx = watermarkLogoPath ? videoInputs.length + 1 : videoInputs.length;
             command.input(voiceAudioPath);
 
-            filterComplex.push(
-              `[${voInputIdx}:a]atempo=1.12,equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5[a_vo]`
-            );
+            const effectiveVoDuration = voDuration / 1.12;
+            const voStartSec = introDuration;
+            const voEndSec = voStartSec + effectiveVoDuration;
+            const delayMs = Math.round(voStartSec * 1000);
+
+            console.log(`[composeVideo] Voiceover timing sync: Intro duration=${introDuration.toFixed(2)}s, VO start=${voStartSec.toFixed(2)}s, VO end=${voEndSec.toFixed(2)}s, Audio delay=${delayMs}ms`);
+
+            if (delayMs > 0) {
+              filterComplex.push(
+                `[${voInputIdx}:a]atempo=1.12,equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5,aformat=channel_layouts=stereo:sample_rates=44100,adelay=delays=${delayMs}|${delayMs}[a_vo]`
+              );
+            } else {
+              filterComplex.push(
+                `[${voInputIdx}:a]atempo=1.12,equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5,aformat=channel_layouts=stereo:sample_rates=44100[a_vo]`
+              );
+            }
+
+            // Calculate total user news clips footage duration
+            const userClipsDuration = videoInputs
+              .filter((vi) => vi.role !== 'intro' && vi.role !== 'outro')
+              .reduce((acc, vi) => acc + (vi.duration || 0), 0);
+
+            // Mute news footage sound completely to 0% (zero camera/field background noise) so only the AI anchor narration is heard with studio clarity.
+            // Channel Intro and Channel Outro bumpers retain 100% crisp full volume.
+            const muteStartSec = introDuration;
+            const muteEndSec = outroInput ? Math.max(voEndSec, introDuration + userClipsDuration) : Math.max(voEndSec, maxDurationSec);
+
+            console.log(`[composeVideo] Ambient footage audio mute (0%): start=${muteStartSec.toFixed(2)}s, end=${muteEndSec.toFixed(2)}s`);
 
             filterComplex.push(
-              `[${currentAudioStream}]volume='if(lt(t\\,${voDuration.toFixed(2)})\\,0.15\\,1.0)':eval=frame[a_bg]`
+              `[${currentAudioStream}]volume='if(gte(t\\,${muteStartSec.toFixed(2)})*lt(t\\,${muteEndSec.toFixed(2)})\\,0.0\\,1.0)':eval=frame[a_bg]`
             );
             filterComplex.push(`[a_bg][a_vo]amix=inputs=2:duration=first:dropout_transition=2[a_mixed]`);
             currentAudioStream = 'a_mixed';

@@ -141,8 +141,8 @@ app.post(
         const audioInputIdx = watermarkLogoFile ? 2 : 1;
         command.input(voiceAudioFile.path);
 
-        // Mix ambient background at 15% volume, voice-over at 100% volume
-        filterComplex.push(`[${currentAudioStream}]volume=0.15[a_bg]`);
+        // Mix ambient background at 0% volume (muted footage audio), voice-over at 100% volume
+        filterComplex.push(`[${currentAudioStream}]volume=0.0[a_bg]`);
         filterComplex.push(`[${audioInputIdx}:a]volume=1.0[a_vo]`);
         filterComplex.push(`[a_bg][a_vo]amix=inputs=2:duration=first[a_mixed]`);
         currentAudioStream = 'a_mixed';

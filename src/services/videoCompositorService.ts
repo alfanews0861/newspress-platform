@@ -23,6 +23,7 @@ export interface VideoCompositeParams {
   outroVideoUrl?: string;
   outroVideoBlob?: Blob;
   watermarkSettings?: WatermarkSettings;
+  newsLocation?: string;
   clipDurationMode?: 'bulletin' | '60s' | '120s' | '300s' | 'full';
   sourceDuration?: number;
   onProgress?: (percent: number, message: string) => void;
@@ -213,7 +214,25 @@ export class VideoCompositorService {
         if (watermarkSettings?.opacityPercent) {
           formData.append('watermarkOpacityPercent', watermarkSettings.opacityPercent.toString());
         }
-        if (watermarkSettings?.logoDataUrl) {
+        // If newsLocation is provided, compose watermark logo + location badge
+        let watermarkBlob: Blob | null = null;
+        if (params.newsLocation?.trim()) {
+          formData.append('newsLocation', params.newsLocation.trim());
+          try {
+            watermarkBlob = await this.composeWatermarkWithLocation({
+              logoDataUrl: watermarkSettings?.logoDataUrl,
+              logoUrl: watermarkSettings?.logoUrl,
+              locationText: params.newsLocation.trim(),
+              placement: watermarkSettings?.placement,
+            });
+          } catch (e) {
+            console.warn('Could not compose watermark with location:', e);
+          }
+        }
+
+        if (watermarkBlob) {
+          formData.append('watermarkLogo', watermarkBlob, 'watermark_with_location.png');
+        } else if (watermarkSettings?.logoDataUrl) {
           try {
             const logoBlob = await fetch(watermarkSettings.logoDataUrl).then((r) => r.blob());
             formData.append('watermarkLogo', logoBlob, 'logo.png');
@@ -346,7 +365,7 @@ export class VideoCompositorService {
     try {
       const vidSource = audioCtx.createMediaElementSource(mainVideoEl);
       const vidGain = audioCtx.createGain();
-      vidGain.gain.value = voBuffer ? 0.2 : 0.9; // Duck background sound when VO speaks
+      vidGain.gain.value = voBuffer ? 0.0 : 0.9; // 0% background footage sound when VO speaks
       vidSource.connect(vidGain);
       vidGain.connect(destNode);
     } catch (e) {
@@ -500,7 +519,25 @@ export class VideoCompositorService {
     if (watermarkSettings?.placement) formData.append('watermarkPlacement', watermarkSettings.placement);
     if (watermarkSettings?.scalePercent) formData.append('watermarkScalePercent', watermarkSettings.scalePercent.toString());
     if (watermarkSettings?.opacityPercent) formData.append('watermarkOpacityPercent', watermarkSettings.opacityPercent.toString());
-    if (watermarkSettings?.logoDataUrl) {
+    // If newsLocation is provided, compose watermark logo + location badge
+    let watermarkBlob: Blob | null = null;
+    if (params.newsLocation?.trim()) {
+      formData.append('newsLocation', params.newsLocation.trim());
+      try {
+        watermarkBlob = await this.composeWatermarkWithLocation({
+          logoDataUrl: watermarkSettings?.logoDataUrl,
+          logoUrl: watermarkSettings?.logoUrl,
+          locationText: params.newsLocation.trim(),
+          placement: watermarkSettings?.placement,
+        });
+      } catch (e) {
+        console.warn('Could not compose watermark with location:', e);
+      }
+    }
+
+    if (watermarkBlob) {
+      formData.append('watermarkLogo', watermarkBlob, 'watermark_with_location.png');
+    } else if (watermarkSettings?.logoDataUrl) {
       try {
         const logoBlob = await fetch(watermarkSettings.logoDataUrl).then((r) => r.blob());
         formData.append('watermarkLogo', logoBlob, 'logo.png');
@@ -630,6 +667,172 @@ export class VideoCompositorService {
     ctx.font = 'bold 22px sans-serif';
     ctx.fillText('LIVE REPORT', 82, 68);
     ctx.restore();
+  }
+
+  /**
+   * Generates a unified high-resolution broadcast watermark graphic combining:
+   * 1. Channel Logo (on top)
+   * 2. TV News Field Location Badge with MapPin icon (📍) directly underneath the logo
+   */
+  static async composeWatermarkWithLocation(params: {
+    logoDataUrl?: string;
+    logoUrl?: string;
+    locationText?: string;
+    placement?: string;
+  }): Promise<Blob | null> {
+    const { logoDataUrl, logoUrl, locationText, placement = 'top-right' } = params;
+    const cleanLocation = locationText?.trim() || '';
+
+    // If neither logo nor location exists, return null
+    if (!logoDataUrl && !logoUrl && !cleanLocation) {
+      return null;
+    }
+
+    // If only logo exists and no location, fetch logo blob directly
+    if (!cleanLocation && (logoDataUrl || logoUrl)) {
+      try {
+        const resp = await fetch(logoDataUrl || logoUrl!);
+        return await resp.blob();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Load logo image if present
+    let logoImg: HTMLImageElement | null = null;
+    if (logoDataUrl || logoUrl) {
+      try {
+        logoImg = await this.loadImage(logoDataUrl || logoUrl!);
+      } catch (e) {
+        console.warn('Could not load logo for watermark composition:', e);
+      }
+    }
+
+    // Create Canvas for broadcast watermark graphic
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+
+    // Badge typography
+    const fontSize = 26;
+    const font = `bold ${fontSize}px system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Telugu", "Gautami", "Nirmala UI", sans-serif`;
+    ctx.font = font;
+
+    // Measure text width
+    const textMetrics = ctx.measureText(cleanLocation);
+    const textWidth = Math.ceil(textMetrics.width);
+
+    // Badge layout dimensions
+    const badgePaddingX = 16;
+    const badgePaddingY = 9;
+    const pinIconWidth = 20;
+    const badgeHeight = fontSize + badgePaddingY * 2; // ~44px
+    const badgeWidth = badgePaddingX + pinIconWidth + 8 + textWidth + badgePaddingX;
+
+    // Determine canvas dimensions
+    const logoW = logoImg ? (logoImg.naturalWidth || logoImg.width) : 0;
+    const logoH = logoImg ? (logoImg.naturalHeight || logoImg.height) : 0;
+
+    const gap = logoImg ? 12 : 0;
+    const canvasW = Math.max(logoW, badgeWidth) + 16;
+    const canvasH = logoH + gap + badgeHeight + 16;
+
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+
+    // Re-set font after canvas resize (resizing clears state)
+    ctx.font = font;
+    ctx.textBaseline = 'middle';
+
+    const isRightAligned = placement.includes('right');
+    const isLeftAligned = placement.includes('left');
+
+    let logoX = 8;
+    let badgeX = 8;
+
+    if (isRightAligned) {
+      logoX = canvasW - 8 - logoW;
+      badgeX = canvasW - 8 - badgeWidth;
+    } else if (isLeftAligned) {
+      logoX = 8;
+      badgeX = 8;
+    } else {
+      logoX = Math.round((canvasW - logoW) / 2);
+      badgeX = Math.round((canvasW - badgeWidth) / 2);
+    }
+
+    // 1. Draw Channel Logo
+    if (logoImg && logoW > 0 && logoH > 0) {
+      ctx.drawImage(logoImg, logoX, 8, logoW, logoH);
+    }
+
+    // 2. Draw TV News Location Badge (Directly below the logo)
+    const badgeY = 8 + logoH + gap;
+    const badgeR = 8; // rounded corners
+
+    // Badge shadow for TV broadcast pop
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 3;
+
+    // Badge background: Sleek broadcast red/crimson gradient
+    const bgGrad = ctx.createLinearGradient(badgeX, badgeY, badgeX + badgeWidth, badgeY + badgeHeight);
+    bgGrad.addColorStop(0, '#c5221f'); // News Red
+    bgGrad.addColorStop(1, '#8e0c0a'); // Deep Crimson
+
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, badgeR);
+    } else {
+      ctx.rect(badgeX, badgeY, badgeWidth, badgeHeight);
+    }
+    ctx.fill();
+
+    // Subtle white border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // 3. Draw Vector Map Pin Icon (📍)
+    const pinR = 6;
+    const pinX = badgeX + badgePaddingX + pinR;
+    const pinY = badgeY + Math.round(badgeHeight / 2) - 3;
+
+    ctx.save();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(pinX, pinY, pinR, Math.PI * 0.75, Math.PI * 2.25);
+    ctx.lineTo(pinX, pinY + pinR + 6);
+    ctx.closePath();
+    ctx.fill();
+
+    // Center hole of pin
+    ctx.fillStyle = '#c5221f';
+    ctx.beginPath();
+    ctx.arc(pinX, pinY, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 4. Draw Location Text in Bold White with crisp shadow
+    ctx.save();
+    ctx.font = font;
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 1;
+
+    const textX = pinX + pinR + 8;
+    const textY = badgeY + Math.round(badgeHeight / 2);
+    ctx.fillText(cleanLocation, textX, textY);
+    ctx.restore();
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png');
+    });
   }
 
   private static loadVideoElement(src: string): Promise<HTMLVideoElement> {
