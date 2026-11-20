@@ -51,6 +51,8 @@ import { canArticleEnterMarketplace, validateStatusTransition } from './newsLife
 import { MOCK_NEWS_ARTICLES, MOCK_REPORTER_PROFILES } from './mockDataService';
 import { hasLocalStorage, readLocalJson, writeLocalJson } from '../utils/localStore';
 
+import { TELUGU_NEWS_ARTICLES_100 } from '../data/teluguSampleNews';
+
 const NEWSROOM_STORAGE_KEY = 'newspress_newsroom_state_v1';
 
 // Local storage stores for offline / development / reactive UI sync
@@ -1022,6 +1024,86 @@ export class NewsSubmissionService {
       memoryArticles.set(articleId, art);
       persistNewsroomState();
     }
+  }
+
+  /**
+   * Retrieves active, high-priority state-level news headlines for broadcast tickers.
+   * Pulls from real-time newsroom submissions and the regional Telugu news feed.
+   */
+  getStateLevelHeadlines(tenantId?: string, count: number = 6): string[] {
+    initMemoryStore();
+    const articles = this.getArticles(tenantId);
+    const seen = new Set<string>();
+    const headlines: string[] = [];
+
+    const isStateArticle = (art: NewsArticle): boolean => {
+      const stateStr = (art.state || '').toLowerCase();
+      const catStr = (art.category || '').toLowerCase();
+      const locStr = (art.location || '').toLowerCase();
+      return (
+        art.isBreaking === true ||
+        stateStr.includes('ఆంధ్ర') ||
+        stateStr.includes('తెలంగాణ') ||
+        stateStr.includes('ap') ||
+        stateStr.includes('telangana') ||
+        catStr.includes('రాష్ట్ర') ||
+        catStr.includes('రాష్ట్రీయ') ||
+        catStr.includes('రాజకీయ') ||
+        catStr.includes('ప్రాంతీయ') ||
+        locStr.includes('హైదరాబాద్') ||
+        locStr.includes('అమరావతి') ||
+        locStr.includes('విజయవాడ') ||
+        locStr.includes('విశాఖ')
+      );
+    };
+
+    // 1. First priority: Fresh articles from current newsroom
+    for (const art of articles) {
+      if (isStateArticle(art)) {
+        const cleanHeadline = (art.headline || art.title || '').trim();
+        if (cleanHeadline && !seen.has(cleanHeadline)) {
+          seen.add(cleanHeadline);
+          headlines.push(cleanHeadline);
+          if (headlines.length >= count) return headlines;
+        }
+      }
+    }
+
+    // 2. Second priority: Regional authentic Telugu state news articles
+    for (const art of TELUGU_NEWS_ARTICLES_100) {
+      if (isStateArticle(art)) {
+        const cleanHeadline = (art.headline || art.title || '').trim();
+        if (cleanHeadline && !seen.has(cleanHeadline)) {
+          seen.add(cleanHeadline);
+          headlines.push(cleanHeadline);
+          if (headlines.length >= count) return headlines;
+        }
+      }
+    }
+
+    // 3. Fallback: Any other fresh top headlines from newsroom or sample feed
+    for (const art of [...articles, ...TELUGU_NEWS_ARTICLES_100]) {
+      const cleanHeadline = (art.headline || art.title || '').trim();
+      if (cleanHeadline && !seen.has(cleanHeadline)) {
+        seen.add(cleanHeadline);
+        headlines.push(cleanHeadline);
+        if (headlines.length >= count) return headlines;
+      }
+    }
+
+    return headlines;
+  }
+
+  /**
+   * Generates a unified, formatted broadcast ticker crawl string of state headlines.
+   * Separated by TV broadcast symbol "✦".
+   */
+  getStateTickerString(tenantId?: string): string {
+    const list = this.getStateLevelHeadlines(tenantId, 6);
+    if (list.length > 0) {
+      return list.join(' ✦ ');
+    }
+    return 'Amaravati Capital City Development Works Fast-Tracked ✦ New Industrial Policy Announced to Boost Tech Job Creation ✦ Water Resources Ministry Reviews Key Irrigation Projects ✦ Metro Rail Phase-2 Airport Corridor Expansion Accelerated';
   }
 }
 

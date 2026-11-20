@@ -132,12 +132,12 @@ export const SettingsPage: React.FC = () => {
               footer={
                 <div className="flex items-center justify-between">
                   {saveSuccess ? (
-                    <span className="text-emerald-400 flex items-center gap-1.5 font-mono text-xs">
+                    <span className="text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5 font-mono text-xs font-medium">
                       <CheckCircle2 className="w-4 h-4" /> Settings successfully saved.
                     </span>
                   ) : (
-                    <span className="text-xs text-slate-400 font-mono">
-                      Tenant ID: {currentTenant.tenantId}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      Tenant ID: <code className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-blue-600 dark:text-blue-400 font-semibold">{currentTenant.tenantId}</code>
                     </span>
                   )}
                   {can('tenant.update') && (
@@ -154,7 +154,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
               }
             >
-              <div className="space-y-4">
+              <div className="p-6 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Organization Display Name"
@@ -206,10 +206,10 @@ export const SettingsPage: React.FC = () => {
                     disabled={!can('tenant.update')}
                   />
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wider uppercase">
+                    <label className="block text-xs font-bold text-black dark:text-slate-200">
                       Publication Frequency
                     </label>
-                    <div className="p-2.5 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-700 dark:text-slate-300 capitalize">
+                    <div className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3.5 py-2 text-sm text-slate-700 dark:text-slate-300 font-mono capitalize">
                       {currentTenant.publicationFrequency} Edition
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export const SettingsPage: React.FC = () => {
 
           <div className="space-y-6">
             <Card title="Tenant Isolation Guarantees" variant="bordered">
-              <div className="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              <div className="p-6 space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 <p>
                   Every document created under <strong className="text-blue-600 dark:text-blue-400">{currentTenant.organizationName}</strong> is tagged with{' '}
                   <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-blue-700 dark:text-blue-300 border border-slate-200 dark:border-slate-700 font-mono">
@@ -230,8 +230,9 @@ export const SettingsPage: React.FC = () => {
                 <p>
                   Firestore Security Rules mathematically block cross-tenant read/write queries unless authenticated as a platform super administrator.
                 </p>
-                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 font-mono text-[11px]">
-                  ✓ RBAC Multi-Tenancy Active
+                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 font-mono text-[11px] flex items-center gap-2">
+                  <span className="font-bold">✓</span>
+                  <span>RBAC Multi-Tenancy Active</span>
                 </div>
               </div>
             </Card>
@@ -320,7 +321,7 @@ export const SettingsPage: React.FC = () => {
           title="Extensible RBAC Permission Matrix"
           subtitle="Hierarchical system permissions mapped across platform, organization, and reporter roles."
         >
-          <div className="space-y-4">
+          <div className="p-6 space-y-4">
             {ROLE_CATALOG.map((role) => (
               <div
                 key={role.roleKey}
@@ -368,13 +369,13 @@ export const SettingsPage: React.FC = () => {
         <div className="space-y-6">
           <PublishingPlanSection />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
             <Card
               variant="editorial"
               title="Current Subscription Tier"
               subtitle="Plan entitlements and rotary press limits."
             >
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold font-sans text-slate-900 dark:text-slate-100">
@@ -409,13 +410,15 @@ export const SettingsPage: React.FC = () => {
             </Card>
 
             <Card title="Payment & Invoicing Gateway" variant="bordered">
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4 font-sans">
-                Newsroom billing gateway integration and automated rotary press metering will be provisioned in the Finance & Billing Phase.
-              </p>
-              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-600 dark:text-slate-400 space-y-1">
-                <div>Invoice Cycle Anchor: Oct 1, 2026</div>
-                <div>Current Period End: Oct 31, 2026</div>
-                <div>Auto-Renewal: Active</div>
+              <div className="p-6 space-y-4">
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-sans">
+                  Newsroom billing gateway integration and automated rotary press metering will be provisioned in the Finance & Billing Phase.
+                </p>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-600 dark:text-slate-400 space-y-1.5">
+                  <div>Invoice Cycle Anchor: Oct 1, 2026</div>
+                  <div>Current Period End: Oct 31, 2026</div>
+                  <div>Auto-Renewal: Active</div>
+                </div>
               </div>
             </Card>
           </div>

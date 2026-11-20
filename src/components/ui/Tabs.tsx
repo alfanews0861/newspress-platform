@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,17 +21,17 @@ export interface TabsProps {
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className = '' }) => {
   return (
-    <div className={`border-b border-slate-200 dark:border-slate-800 flex space-x-1 font-sans ${className}`}>
+    <div className={`border-b border-slate-200 dark:border-slate-800 flex space-x-1 font-sans overflow-x-auto scrollbar-none min-w-0 max-w-full ${className}`}>
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`inline-flex items-center gap-2 py-3 px-4 text-xs font-bold tracking-normal border-b-2 transition-all cursor-pointer select-none ${
+            className={`inline-flex items-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold tracking-normal border-b-2 transition-all cursor-pointer select-none rounded-t-lg shrink-0 whitespace-nowrap ${
               isActive
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 bg-blue-50/40 dark:bg-blue-950/20'
-                : 'border-transparent text-black dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/20 font-bold'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-slate-300 dark:hover:border-slate-700'
             }`}
           >
             {tab.icon}

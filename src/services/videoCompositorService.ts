@@ -24,6 +24,7 @@ export interface VideoCompositeParams {
   outroVideoBlob?: Blob;
   watermarkSettings?: WatermarkSettings;
   newsLocation?: string;
+  tickerText?: string;
   clipDurationMode?: 'bulletin' | '60s' | '120s' | '300s' | 'full';
   sourceDuration?: number;
   onProgress?: (percent: number, message: string) => void;
@@ -457,6 +458,11 @@ export class VideoCompositorService {
         // 3. Optional TV News Lower-Third / Live Ticker Bar
         this.drawBroadcastBug(ctx, width, height);
 
+        // 4. TV News Bottom Scrolling News Ticker
+        if (params.tickerText?.trim()) {
+          this.drawNewsTicker(ctx, width, height, params.tickerText.trim(), elapsedSec, params.language);
+        }
+
         if (elapsedSec < targetDurationSec && !mainVideoEl.ended) {
           animFrameId = requestAnimationFrame(renderLoop);
         } else {
@@ -542,6 +548,22 @@ export class VideoCompositorService {
         const logoBlob = await fetch(watermarkSettings.logoDataUrl).then((r) => r.blob());
         formData.append('watermarkLogo', logoBlob, 'logo.png');
       } catch (e) {}
+    }
+
+    // Compose TV News Bottom Ticker Graphic if tickerText is present
+    if (params.tickerText?.trim()) {
+      formData.append('tickerText', params.tickerText.trim());
+      try {
+        const tickerBlob = await this.composeTickerOverlay({
+          tickerText: params.tickerText.trim(),
+          language: params.language,
+        });
+        if (tickerBlob) {
+          formData.append('tickerOverlay', tickerBlob, 'ticker_overlay.png');
+        }
+      } catch (tErr) {
+        console.warn('Could not compose ticker overlay image:', tErr);
+      }
     }
 
     // Direct YouTube Broadcast Parameters
@@ -667,6 +689,257 @@ export class VideoCompositorService {
     ctx.font = 'bold 22px sans-serif';
     ctx.fillText('LIVE REPORT', 82, 68);
     ctx.restore();
+  }
+
+  /**
+   * Resolves broadcast typography for news ticker crawls:
+   * - Telugu: Ramabhadra (strictly normal weight 400 without synthetic bolding, with enlarged font size for crystal-clear readability)
+   * - Other Indian & International languages: Ramabhadra-like bold, impactful broadcast display fonts:
+   *   - Hindi/Marathi/Devanagari: Khand / Mukta (exact broadcast equivalent to Ramabhadra)
+   *   - Tamil: Catamaran / Pavanam
+   *   - Kannada: Noto Sans Kannada
+   *   - Malayalam: Manjari
+   *   - Bengali: Hind Siliguri
+   *   - Gujarati: Mukta Vaani
+   *   - Punjabi: Mukta Mahee
+   *   - Odia: Noto Sans Oriya
+   *   - English/Universal: Khand / Cinzel / Roboto
+   */
+  static getTickerCrawlFont(text: string, language?: string, fontSize: number = 32): string {
+    const isTelugu = /[\u0C00-\u0C7F]/.test(text) || language === 'te';
+    if (isTelugu) {
+      // Ramabhadra: strictly normal 400 weight (no bolding) with larger font size for sharp, un-smudged Telugu glyphs
+      const teluguSize = Math.round(fontSize * 1.25);
+      return `normal ${teluguSize}px "Ramabhadra", "Noto Sans Telugu", "Gautami", sans-serif`;
+    }
+    const isDevanagari = /[\u0900-\u097F]/.test(text) || language === 'hi' || language === 'mr';
+    if (isDevanagari) {
+      return `600 ${fontSize + 2}px "Khand", "Mukta", "Noto Sans Devanagari", sans-serif`;
+    }
+    const isTamil = /[\u0B80-\u0BFF]/.test(text) || language === 'ta';
+    if (isTamil) {
+      return `600 ${fontSize}px "Catamaran", "Pavanam", "Noto Sans Tamil", sans-serif`;
+    }
+    const isKannada = /[\u0C80-\u0CFF]/.test(text) || language === 'kn';
+    if (isKannada) {
+      return `600 ${fontSize}px "Noto Sans Kannada", sans-serif`;
+    }
+    const isMalayalam = /[\u0D00-\u0D7F]/.test(text) || language === 'ml';
+    if (isMalayalam) {
+      return `600 ${fontSize}px "Manjari", "Noto Sans Malayalam", sans-serif`;
+    }
+    const isBengali = /[\u0980-\u09FF]/.test(text) || language === 'bn';
+    if (isBengali) {
+      return `600 ${fontSize + 1}px "Hind Siliguri", "Noto Sans Bengali", sans-serif`;
+    }
+    const isGujarati = /[\u0A80-\u0AFF]/.test(text) || language === 'gu';
+    if (isGujarati) {
+      return `600 ${fontSize}px "Mukta Vaani", "Noto Sans Gujarati", sans-serif`;
+    }
+    const isPunjabi = /[\u0A00-\u0A7F]/.test(text) || language === 'pa';
+    if (isPunjabi) {
+      return `600 ${fontSize}px "Mukta Mahee", "Noto Serif Gurmukhi", sans-serif`;
+    }
+    const isOdia = /[\u0B00-\u0B7F]/.test(text) || language === 'or';
+    if (isOdia) {
+      return `600 ${fontSize}px "Noto Sans Oriya", "Noto Serif Oriya", sans-serif`;
+    }
+
+    // English / Universal: Khand is a bold, condensed broadcast display font matching Ramabhadra
+    return `600 ${fontSize + 2}px "Khand", "Cinzel", "Roboto", "Arial Black", sans-serif`;
+  }
+
+  /**
+   * Draws a professional animated TV News Bottom Ticker bar with breaking news badge
+   * and smooth scrolling text across the bottom of the video.
+   */
+  private static drawNewsTicker(
+    ctx: CanvasRenderingContext2D,
+    canvasW: number,
+    canvasH: number,
+    tickerText?: string,
+    elapsedSec: number = 0,
+    language?: string
+  ) {
+    const rawText = tickerText?.trim();
+    if (!rawText) return;
+
+    ctx.save();
+    const barHeight = 84;
+    const barY = canvasH - barHeight;
+
+    // 1. Ticker Background Bar (Deep TV News Red Gradient)
+    const bgGrad = ctx.createLinearGradient(0, barY, canvasW, canvasH);
+    bgGrad.addColorStop(0, '#7f1d1d'); // deep crimson red
+    bgGrad.addColorStop(0.25, '#991b1b'); // rich broadcast red
+    bgGrad.addColorStop(0.7, '#b91c1c'); // vibrant red
+    bgGrad.addColorStop(1, '#6b1212'); // deep dark red
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, barY, canvasW, barHeight);
+
+    // Top golden accent border (TV news golden ribbon on red background)
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(0, barY, canvasW, 3.5);
+
+    // 2. Left "BREAKING NEWS" / "తాజా వార్తలు" Badge (Dark Maroon contrast)
+    const badgeWidth = 260;
+    const badgeGrad = ctx.createLinearGradient(0, barY, badgeWidth, canvasH);
+    badgeGrad.addColorStop(0, '#450a0a');
+    badgeGrad.addColorStop(1, '#7f1d1d');
+    ctx.fillStyle = badgeGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, barY);
+    ctx.lineTo(badgeWidth, barY);
+    ctx.lineTo(badgeWidth - 20, canvasH);
+    ctx.lineTo(0, canvasH);
+    ctx.closePath();
+    ctx.fill();
+
+    // Golden separator line on angled edge of badge
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(badgeWidth, barY);
+    ctx.lineTo(badgeWidth - 20, canvasH);
+    ctx.stroke();
+
+    // Flashing Live Indicator Dot on Badge (Golden/Yellow pulse)
+    const pulse = (Math.sin(elapsedSec * 4) + 1) / 2; // 0 to 1
+    ctx.fillStyle = pulse > 0.4 ? '#fef08a' : '#f87171';
+    ctx.beginPath();
+    ctx.arc(32, barY + barHeight / 2, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Badge Text in Ramabhadra for Telugu (strictly normal weight, no bold), Khand broadcast font for other languages
+    ctx.fillStyle = '#ffffff';
+    const isTelugu = !language || language === 'te' || /[\u0C00-\u0C7F]/.test(rawText);
+    const badgeTitle = isTelugu ? 'తాజా వార్తలు' : 'BREAKING NEWS';
+    ctx.font = isTelugu
+      ? 'normal 26px "Ramabhadra", "Noto Sans Telugu", sans-serif'
+      : '700 22px "Khand", "Cinzel", "Roboto", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(badgeTitle, 50, barY + barHeight / 2 + 1);
+
+    // 3. Scrolling Headlines Ticker Crawl: Ramabhadra for Telugu (strictly normal weight, enlarged), Khand for others
+    ctx.save();
+    // Clip to crawl region so text does not bleed into badge
+    ctx.beginPath();
+    ctx.rect(badgeWidth + 10, barY, canvasW - badgeWidth - 20, barHeight);
+    ctx.clip();
+
+    ctx.font = this.getTickerCrawlFont(rawText, language, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 6;
+
+    const textMetrics = ctx.measureText(rawText);
+    const textWidth = textMetrics.width;
+    const crawlAreaWidth = canvasW - badgeWidth - 20;
+
+    // Gentle, comfortable news reading speed (~70px/sec instead of fast 140px/sec)
+    const speed = 70;
+    const loopWidth = textWidth + crawlAreaWidth + 200;
+    const totalDistance = elapsedSec * speed;
+    const currentOffset = totalDistance % loopWidth;
+    const posX = canvasW - currentOffset;
+
+    ctx.fillText(rawText, posX, barY + barHeight / 2 + 2);
+    if (posX + textWidth < canvasW) {
+      ctx.fillText(rawText, posX + textWidth + 150, barY + barHeight / 2 + 2);
+    }
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  /**
+   * Generates a unified high-resolution broadcast TV news bottom strap graphic:
+   * 1. Red Breaking News badge on left
+   * 2. TV News Red Gradient bar across the bottom
+   * 3. Crisp, styled Telugu Ramabhadra headlines text
+   */
+  static async composeTickerOverlay(params: {
+    tickerText: string;
+    language?: string;
+    badgeText?: string;
+  }): Promise<Blob | null> {
+    const cleanText = params.tickerText?.trim();
+    if (!cleanText) return null;
+
+    const canvas = document.createElement('canvas');
+    const canvasW = 1920;
+    const canvasH = 92;
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d')!;
+
+    // Ticker Background Bar (Deep TV News Red Gradient)
+    const bgGrad = ctx.createLinearGradient(0, 0, canvasW, canvasH);
+    bgGrad.addColorStop(0, '#7f1d1d');
+    bgGrad.addColorStop(0.25, '#991b1b');
+    bgGrad.addColorStop(0.7, '#b91c1c');
+    bgGrad.addColorStop(1, '#6b1212');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    // Top golden accent border
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(0, 0, canvasW, 4);
+
+    // Left "BREAKING NEWS" / "తాజా వార్తలు" Badge
+    const badgeWidth = 280;
+    const badgeGrad = ctx.createLinearGradient(0, 0, badgeWidth, canvasH);
+    badgeGrad.addColorStop(0, '#450a0a');
+    badgeGrad.addColorStop(1, '#7f1d1d');
+    ctx.fillStyle = badgeGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(badgeWidth, 0);
+    ctx.lineTo(badgeWidth - 24, canvasH);
+    ctx.lineTo(0, canvasH);
+    ctx.closePath();
+    ctx.fill();
+
+    // Golden separator line on angled edge of badge
+    ctx.strokeStyle = '#facc15';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(badgeWidth, 0);
+    ctx.lineTo(badgeWidth - 24, canvasH);
+    ctx.stroke();
+
+    // Golden Live Indicator Dot on Badge
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(36, canvasH / 2, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Badge Text in Ramabhadra for Telugu (strictly normal weight, no bold), Khand broadcast font for others
+    const isTelugu = !params.language || params.language === 'te' || /[\u0C00-\u0C7F]/.test(cleanText);
+    const badgeTitle = params.badgeText || (isTelugu ? 'తాజా వార్తలు' : 'BREAKING NEWS');
+    ctx.font = isTelugu
+      ? 'normal 28px "Ramabhadra", "Noto Sans Telugu", sans-serif'
+      : '700 24px "Khand", "Cinzel", "Roboto", sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(badgeTitle, 58, canvasH / 2 + 1);
+
+    // Headlines Crawl Text: Ramabhadra for Telugu (strictly normal weight, enlarged), Khand broadcast font for others
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(badgeWidth + 12, 0, canvasW - badgeWidth - 24, canvasH);
+    ctx.clip();
+
+    ctx.font = this.getTickerCrawlFont(cleanText, params.language, 32);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(cleanText, badgeWidth + 24, canvasH / 2 + 2);
+    ctx.restore();
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/png');
+    });
   }
 
   /**

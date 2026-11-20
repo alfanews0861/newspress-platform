@@ -170,32 +170,32 @@ export const LegalCenterPage: React.FC<LegalCenterPageProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Column: Policy Navigation */}
           <aside className="lg:col-span-1 space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-3 mb-3">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-3 sm:p-4 shadow-sm">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-3 mb-2 sm:mb-3">
                 {lang === 'hi' ? 'नीतियां और नियम' : 'Policies & Regulations'}
               </h3>
-              <nav className="space-y-1.5" aria-label="Policies">
+              <nav className="flex flex-row overflow-x-auto lg:flex-col gap-1.5 lg:space-y-1.5 pb-1 lg:pb-0 scrollbar-none" aria-label="Policies">
                 {tabs.map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all cursor-pointer ${
+                      className={`shrink-0 lg:w-full flex items-center lg:items-start gap-2.5 sm:gap-3 p-2.5 sm:p-3 rounded-xl text-left transition-all cursor-pointer whitespace-nowrap lg:whitespace-normal ${
                         isActive
-                          ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 font-bold border-l-4 border-blue-600'
+                          ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 font-bold border-b-2 lg:border-b-0 lg:border-l-4 border-blue-600'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      <div className={`mt-0.5 shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
+                      <div className={`shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
                         {tab.icon}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs sm:text-sm font-semibold truncate">{tab.label}</div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal truncate">{tab.sublabel}</div>
+                        <div className="hidden lg:block text-[11px] text-slate-500 dark:text-slate-400 font-normal truncate">{tab.sublabel}</div>
                       </div>
                       <ChevronRight
-                        className={`w-4 h-4 shrink-0 mt-0.5 transition-transform ${
+                        className={`hidden lg:block w-4 h-4 shrink-0 mt-0.5 transition-transform ${
                           isActive ? 'text-blue-600 dark:text-blue-400 translate-x-0.5' : 'text-transparent'
                         }`}
                       />

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,22 +26,22 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`mb-6 pb-5 border-b border-[#dadce0] font-sans ${className}`}>
+    <div className={`mb-6 pb-5 border-b border-[#dadce0] dark:border-[#3c4043] font-sans w-full min-w-0 ${className}`}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <div className="mb-2.5">
           <Breadcrumb items={breadcrumbs} />
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-black dark:text-white">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-black dark:text-white break-words">
               {title}
             </h1>
             {badge}
           </div>
           {subtitle && (
-            <p className="text-sm text-black dark:text-slate-300 mt-1 max-w-3xl leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-black dark:text-slate-300 mt-1 max-w-3xl leading-relaxed font-normal">
               {subtitle}
             </p>
           )}
@@ -51,7 +51,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             </p>
           )}
         </div>
-        {actions && <div className="flex flex-row items-center gap-2.5 flex-wrap shrink-0">{actions}</div>}
+        {actions && <div className="flex flex-row items-center gap-2 sm:gap-2.5 flex-wrap w-full md:w-auto min-w-0">{actions}</div>}
       </div>
     </div>
   );

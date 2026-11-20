@@ -109,22 +109,24 @@ export const QuickStoryModal: React.FC<QuickStoryModalProps> = ({
       subtitle="Type your headline, choose a category, and file your report in seconds."
       maxWidth="lg"
       footer={
-        <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between w-full gap-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
             disabled={isSubmitting}
+            className="w-full sm:w-auto justify-center"
           >
             Cancel
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
               leftIcon={<FileEdit className="w-4 h-4" />}
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting || !headline.trim() || !leadParagraph.trim()}
+              className="w-full sm:w-auto justify-center"
             >
               Save as Draft
             </Button>
@@ -134,6 +136,7 @@ export const QuickStoryModal: React.FC<QuickStoryModalProps> = ({
               leftIcon={<Send className="w-4 h-4" />}
               onClick={() => handleSubmit(true)}
               disabled={isSubmitting || !headline.trim() || !leadParagraph.trim()}
+              className="w-full sm:w-auto justify-center"
             >
               {isSubmitting ? 'Publishing...' : 'Publish Story'}
             </Button>

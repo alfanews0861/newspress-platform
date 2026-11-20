@@ -76,6 +76,7 @@ app.post(
     { name: 'introVideo', maxCount: 1 },
     { name: 'outroVideo', maxCount: 1 },
     { name: 'watermarkLogo', maxCount: 1 },
+    { name: 'tickerOverlay', maxCount: 1 },
   ]),
   async (req, res) => {
     const files = req.files || {};
@@ -84,6 +85,7 @@ app.post(
     const introVideoFile = files.introVideo?.[0];
     const outroVideoFile = files.outroVideo?.[0];
     const watermarkLogoFile = files.watermarkLogo?.[0];
+    const tickerOverlayFile = files.tickerOverlay?.[0];
 
     if (!mainVideoFile) {
       return res.status(400).json({ error: 'Missing required field: mainVideo' });
@@ -104,6 +106,7 @@ app.post(
     if (introVideoFile) tempFilesToClean.push(introVideoFile.path);
     if (outroVideoFile) tempFilesToClean.push(outroVideoFile.path);
     if (watermarkLogoFile) tempFilesToClean.push(watermarkLogoFile.path);
+    if (tickerOverlayFile) tempFilesToClean.push(tickerOverlayFile.path);
 
     try {
       console.log(`[VideoProcessor] Starting FFmpeg composition for ${mainVideoFile.originalname}...`);
@@ -114,6 +117,7 @@ app.post(
       let filterComplex = [];
       let currentVideoStream = '0:v';
       let currentAudioStream = '0:a';
+      let nextInputIdx = 1;
 
       // 1. Scale main footage to 1080p 16:9
       filterComplex.push(`[${currentVideoStream}]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black,setsar=1[v_scaled]`);
@@ -122,7 +126,7 @@ app.post(
       // 2. Overlay Watermark if provided
       if (watermarkLogoFile) {
         command.input(watermarkLogoFile.path);
-        const logoInputIdx = 1;
+        const logoInputIdx = nextInputIdx++;
         const logoWidth = Math.round(1920 * (watermarkScale / 100));
 
         let overlayCoord = 'main_w-overlay_w-40:40'; // top-right
@@ -136,9 +140,18 @@ app.post(
         currentVideoStream = 'v_watermarked';
       }
 
-      // 3. Audio Mixing: Voice-Over Audio + Ambient Video Audio
+      // 3. TV News Bottom Ticker Strap Overlay if provided
+      if (tickerOverlayFile) {
+        command.input(tickerOverlayFile.path);
+        const tickerInputIdx = nextInputIdx++;
+        filterComplex.push(`[${tickerInputIdx}:v]scale=1920:-1,format=rgba[v_ticker_scaled]`);
+        filterComplex.push(`[${currentVideoStream}][v_ticker_scaled]overlay=0:main_h-overlay_h[v_ticker]`);
+        currentVideoStream = 'v_ticker';
+      }
+
+      // 4. Audio Mixing: Voice-Over Audio + Ambient Video Audio
       if (voiceAudioFile) {
-        const audioInputIdx = watermarkLogoFile ? 2 : 1;
+        const audioInputIdx = nextInputIdx++;
         command.input(voiceAudioFile.path);
 
         // Mix ambient background at 0% volume (muted footage audio), voice-over at 100% volume

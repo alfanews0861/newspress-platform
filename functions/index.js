@@ -541,6 +541,7 @@ exports.composeVideo = onRequest(
       const executePipeline = async (fields, uploads, filesToClean = []) => {
         let voiceAudioPath = uploads.voiceAudio;
         let watermarkLogoPath = uploads.watermarkLogo;
+        let tickerOverlayPath = uploads.tickerOverlay;
         const tempStoragePathsToPurge = [];
 
         const purgeTempStorageFiles = async () => {
@@ -751,9 +752,11 @@ exports.composeVideo = onRequest(
           let currentVideoStream = 'v_concat';
           let currentAudioStream = 'a_concat';
 
+          let nextInputIdx = videoInputs.length;
+
           // Watermark Logo Overlay
           if (watermarkLogoPath && fs.existsSync(watermarkLogoPath)) {
-            const logoInputIdx = videoInputs.length;
+            const logoInputIdx = nextInputIdx++;
             command.input(watermarkLogoPath);
             const logoWidth = Math.round(1920 * (watermarkScale / 100));
 
@@ -770,10 +773,22 @@ exports.composeVideo = onRequest(
             currentVideoStream = 'v_watermarked';
           }
 
+          // TV News Bottom Ticker Overlay (Breaking News Strip)
+          if (tickerOverlayPath && fs.existsSync(tickerOverlayPath)) {
+            const tickerInputIdx = nextInputIdx++;
+            command.input(tickerOverlayPath);
+            filterComplex.push(
+              `[${tickerInputIdx}:v]scale=1920:-1,format=rgba[v_ticker_scaled]`
+            );
+            filterComplex.push(`[${currentVideoStream}][v_ticker_scaled]overlay=0:main_h-overlay_h[v_ticker]`);
+            currentVideoStream = 'v_ticker';
+            console.log('[composeVideo] Applied TV News bottom ticker strap overlay successfully');
+          }
+
           // Audio Mixing: AI Anchor Narration & Dynamic Ambient Ducking
           // Synchronize voiceover to begin precisely when main news footage starts (AFTER channel intro bumper)
           if (voiceAudioPath && fs.existsSync(voiceAudioPath)) {
-            const voInputIdx = watermarkLogoPath ? videoInputs.length + 1 : videoInputs.length;
+            const voInputIdx = nextInputIdx++;
             command.input(voiceAudioPath);
 
             const effectiveVoDuration = voDuration / 1.12;

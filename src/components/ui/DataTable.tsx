@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={`overflow-x-auto rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs ${className}`}>
+    <div className={`overflow-x-auto scrollbar-none min-w-0 max-w-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs ${className}`}>
       <table className="w-full text-left text-sm text-black dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800">
         <thead className="bg-[#f8fafd] dark:bg-[#202124] text-[12px] font-bold text-black dark:text-slate-300 font-sans border-b border-slate-300 dark:border-slate-800">
           <tr>

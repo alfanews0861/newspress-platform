@@ -27,7 +27,7 @@ export const PersonaSwitcherModal: React.FC<PersonaSwitcherModalProps> = ({ isOp
       subtitle="Experience the platform under different newsroom roles and permission boundaries"
       maxWidth="lg"
       footer={
-        <Button variant="secondary" size="sm" onClick={onClose}>
+        <Button variant="secondary" size="sm" onClick={onClose} className="w-full sm:w-auto justify-center">
           Done
         </Button>
       }
@@ -44,7 +44,7 @@ export const PersonaSwitcherModal: React.FC<PersonaSwitcherModalProps> = ({ isOp
                 switchSimulatedPersona(u.uid);
                 onClose();
               }}
-              className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+              className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 ${
                 isSelected
                   ? 'bg-[#e8f0fe] dark:bg-[#004a77]/30 border-[#1a73e8] shadow-xs'
                   : 'bg-white dark:bg-[#28292a] border-[#dadce0] dark:border-[#444746] hover:border-[#bdc1c6] hover:bg-[#f8fafd] dark:hover:bg-[#333537]'

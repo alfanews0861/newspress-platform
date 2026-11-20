@@ -63,7 +63,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafd] dark:bg-[#202124] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-[#f8fafd] dark:bg-[#202124] flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 text-white font-sans font-bold text-2xl shadow-md mb-3">
           NP
@@ -77,7 +77,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-8 shadow-xl space-y-6">
           {/* Persona Fast Switcher for Developer Review */}
           <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-xs text-blue-800 dark:text-blue-300 space-y-2 font-sans">
             <div className="flex items-center gap-1.5 font-medium text-blue-600 dark:text-blue-400">

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
@@ -115,7 +115,7 @@ export const DeveloperAppsPage: React.FC = () => {
         title="API Applications & Integrations"
         subtitle="Manage authorized machine-to-machine clients, publisher syndication gateways, and external CMS connectors."
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button
               variant="outline"
               onClick={() => {

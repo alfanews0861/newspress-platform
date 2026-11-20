@@ -91,26 +91,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {isOpenMobile && (
         <div
-          className="fixed inset-0 bg-slate-900/50 z-30 lg:hidden backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 bg-[#202124]/60 z-50 lg:hidden backdrop-blur-xs transition-opacity"
           onClick={onCloseMobile}
         />
       )}
 
       <aside
-        className={`fixed top-0 lg:top-16 bottom-0 left-0 z-30 bg-white dark:bg-[#1f1f1f] border-r border-[#dadce0] dark:border-[#3c4043] flex flex-col transition-all duration-200 ${
-          isCollapsed ? 'w-20' : 'w-64'
-        } ${isOpenMobile ? 'translate-x-0 top-0 z-50' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed top-0 lg:top-16 bottom-0 left-0 z-50 bg-white dark:bg-[#1f1f1f] border-r border-[#dadce0] dark:border-[#3c4043] flex flex-col transition-all duration-300 shadow-2xl lg:shadow-none ${
+          isCollapsed ? 'w-20' : 'w-72 sm:w-64'
+        } ${isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="h-12 px-4 border-b border-[#dadce0] dark:border-[#3c4043] flex items-center justify-between shrink-0">
-          {!isCollapsed ? (
-            <span className="text-[11px] font-semibold text-[#5f6368] dark:text-[#8e918f] uppercase tracking-wider">
-              Workspace Menu
-            </span>
-          ) : (
-            <span className="text-xs font-bold text-[#1a73e8] dark:text-[#8ab4f8] mx-auto">
+        <div className="h-14 px-4 border-b border-[#dadce0] dark:border-[#3c4043] flex items-center justify-between shrink-0 bg-white dark:bg-[#1f1f1f]">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center font-bold text-xs border border-[#d2e3fc] dark:border-[#1a73e8]">
               NP
-            </span>
-          )}
+            </div>
+            {!isCollapsed && (
+              <span className="text-xs font-bold text-[#202124] dark:text-[#f2f2f2] tracking-tight">
+                NewsPress Menu
+              </span>
+            )}
+          </div>
 
           {onToggleCollapse && (
             <button
@@ -124,7 +125,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             onClick={onCloseMobile}
-            className="lg:hidden p-1.5 rounded-full text-[#5f6368] hover:text-[#202124] dark:hover:text-white hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer ml-auto"
+            className="lg:hidden p-2 rounded-full text-[#5f6368] hover:text-[#202124] dark:hover:text-white hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer ml-auto"
             title="Close Menu"
           >
             <X className="w-4 h-4" />
@@ -210,6 +211,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             );
           })}
+        </div>
+
+        {/* Mobile Sidebar Footer: Safe Area & Quick Settings */}
+        <div className="p-3 border-t border-[#dadce0] dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#28292a] text-xs text-[#5f6368] dark:text-[#8e918f] shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+          <button
+            onClick={() => {
+              onNavigate('/settings');
+              onCloseMobile();
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left hover:bg-white dark:hover:bg-[#1f1f1f] transition-colors font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer"
+          >
+            <Settings className="w-4 h-4 text-[#5f6368]" />
+            <span>Workspace Settings</span>
+          </button>
         </div>
       </aside>
     </>

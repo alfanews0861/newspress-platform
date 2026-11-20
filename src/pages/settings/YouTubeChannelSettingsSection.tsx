@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
@@ -228,7 +228,7 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2">
             {account.isConnected ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -795,13 +795,13 @@ export const YouTubeChannelSettingsSection: React.FC = () => {
       </Card>
 
       {/* Save Button Bar */}
-      <div className="flex justify-end items-center gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+      <div className="flex flex-col sm:flex-row sm:justify-end items-stretch sm:items-center gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
         {saveSuccess && (
           <span className="text-sm font-semibold text-emerald-600 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> YouTube Branding Settings Successfully Saved!
+            <CheckCircle2 className="w-4 h-4 shrink-0" /> YouTube Branding Settings Successfully Saved!
           </span>
         )}
-        <Button onClick={handleSave} disabled={isSaving} className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 cursor-pointer">
+        <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold px-8 cursor-pointer">
           {isSaving ? 'Saving...' : 'Save YouTube Channel Settings'}
         </Button>
       </div>

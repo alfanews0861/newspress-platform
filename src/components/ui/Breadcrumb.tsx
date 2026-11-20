@@ -19,7 +19,7 @@ export interface BreadcrumbProps {
 
 export const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className = '' }) => {
   return (
-    <nav className={`flex items-center space-x-1.5 text-xs text-black dark:text-slate-400 font-sans font-medium ${className}`}>
+    <nav className={`flex items-center space-x-1.5 text-xs text-black dark:text-slate-400 font-sans font-medium overflow-x-auto whitespace-nowrap scrollbar-none py-0.5 ${className}`}>
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
         return (

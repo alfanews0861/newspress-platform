@@ -187,17 +187,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
           </div>
 
           {/* Action Buttons (Google Pill Design) */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-md mx-auto sm:max-w-none">
             <button
               onClick={() => navigateTo('/dashboard')}
-              className="px-8 py-3.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-sm shadow-none hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-sm shadow-none hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>{lang === 'hi' ? 'न्यूज़रूम कंसोल खोलें' : 'Open Newsroom Console'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => navigateTo('/marketplace')}
-              className="px-8 py-3.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f1f3f4] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-sm transition-all cursor-pointer shadow-none"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f1f3f4] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-sm transition-all cursor-pointer shadow-none flex items-center justify-center"
             >
               <span>{lang === 'hi' ? 'लाइव वायर मार्केटप्लेस' : 'View Wire Marketplace'}</span>
             </button>

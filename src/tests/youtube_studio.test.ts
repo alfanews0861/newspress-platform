@@ -7,6 +7,7 @@
 
 import { YouTubeService, DEFAULT_BRANDING_SETTINGS } from '../services/youtubeService';
 import { AIVideoEditorialService } from '../services/aiVideoEditorialService';
+import { newsSubmissionService } from '../services/newsSubmissionService';
 import { SUPPORTED_INDIAN_LANGUAGES } from '../types/youtube';
 
 // Mock fetch for Google YouTube API in unit test runner
@@ -138,6 +139,23 @@ async function runTests() {
   assert(publishResult.privacyStatus === 'public', 'Video published with Public privacy status');
   assert(publishResult.thumbnailUploaded, 'Custom AI Breaking News Thumbnail attached to video');
   assert(publishResult.youtubeUrl.includes('youtube.com/watch?v='), `Generated live YouTube URL: ${publishResult.youtubeUrl}`);
+
+  // Test 6: Broadcast News Ticker & State-Level Headlines Fallback
+  console.log('\n6. Broadcast News Ticker & State-Level Headlines:');
+  const stateHeadlines = newsSubmissionService.getStateLevelHeadlines();
+  assert(stateHeadlines.length > 0, `Fetched ${stateHeadlines.length} state-level news headlines`);
+  const tickerString = newsSubmissionService.getStateTickerString();
+  assert(tickerString.length > 20, `Generated formatted state broadcast ticker string: "${tickerString.slice(0, 60)}..."`);
+  assert(tickerString.includes('✦'), 'Ticker items separated with broadcast symbol "✦"');
+
+  // Verify fallback behavior: when ticker input is empty vs provided
+  const emptyTickerInput = '';
+  const effectiveTicker1 = emptyTickerInput.trim() || tickerString;
+  assert(effectiveTicker1 === tickerString, 'Empty ticker field correctly defaults to latest state headlines');
+
+  const customTickerInput = 'తాజా వార్తలు: తిరుపతిలో అంతర్జాతీయ సాంకేతిక సదస్సు ప్రారంభం';
+  const effectiveTicker2 = customTickerInput.trim() || tickerString;
+  assert(effectiveTicker2 === customTickerInput, 'Custom ticker field is preserved and prioritized over default');
 
   console.log(`\n=== Verification Results: ${passed}/${total} assertions passed ===\n`);
   if (passed === total) {

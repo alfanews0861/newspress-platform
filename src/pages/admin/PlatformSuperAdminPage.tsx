@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
@@ -438,66 +438,68 @@ export const PlatformSuperAdminPage: React.FC = () => {
           </div>
 
           <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">Organization & Imprint</th>
-                  <th className="py-3 px-4">Owner & Contact</th>
-                  <th className="py-3 px-4">Target Plan</th>
-                  <th className="py-3 px-4">Timezone / Region</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                {onboardings.map((pub) => (
-                  <tr key={pub.tenantId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-900 dark:text-slate-100">{pub.organizationName}</div>
-                      <div className="text-[11px] text-slate-500 font-mono">{pub.tenantId}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="text-slate-700 dark:text-slate-200">{pub.ownerEmail}</div>
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{pub.contactPhone || 'No phone'}</div>
-                    </td>
-                    <td className="py-3 px-4 font-mono">
-                      <Badge variant={pub.targetPlan === 'PREMIUM' ? 'purple' : pub.targetPlan === 'STANDARD' ? 'blue' : 'amber'} size="sm">
-                        {pub.targetPlan}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
-                      <div>{pub.country}</div>
-                      <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{pub.primaryTimezone}</div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge
-                        variant={
-                          pub.status === 'ONBOARDING_COMPLETE'
-                            ? 'emerald'
-                            : pub.status === 'VERIFICATION_PENDING'
-                            ? 'amber'
-                            : pub.status === 'SUSPENDED'
-                            ? 'rose'
-                            : 'blue'
-                        }
-                        size="sm"
-                      >
-                        {pub.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setSelectedOnboarding(pub)}
-                      >
-                        Review / Advance
-                      </Button>
-                    </td>
+            <div className="overflow-x-auto scrollbar-none">
+              <table className="w-full text-left text-xs min-w-[640px]">
+                <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th className="py-3 px-4">Organization & Imprint</th>
+                    <th className="py-3 px-4">Owner & Contact</th>
+                    <th className="py-3 px-4">Target Plan</th>
+                    <th className="py-3 px-4">Timezone / Region</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+                  {onboardings.map((pub) => (
+                    <tr key={pub.tenantId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{pub.organizationName}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">{pub.tenantId}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-slate-700 dark:text-slate-200">{pub.ownerEmail}</div>
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{pub.contactPhone || 'No phone'}</div>
+                      </td>
+                      <td className="py-3 px-4 font-mono">
+                        <Badge variant={pub.targetPlan === 'PREMIUM' ? 'purple' : pub.targetPlan === 'STANDARD' ? 'blue' : 'amber'} size="sm">
+                          {pub.targetPlan}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300">
+                        <div>{pub.country}</div>
+                        <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">{pub.primaryTimezone}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant={
+                            pub.status === 'ONBOARDING_COMPLETE'
+                              ? 'emerald'
+                              : pub.status === 'VERIFICATION_PENDING'
+                              ? 'amber'
+                              : pub.status === 'SUSPENDED'
+                              ? 'rose'
+                              : 'blue'
+                          }
+                          size="sm"
+                        >
+                          {pub.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setSelectedOnboarding(pub)}
+                        >
+                          Review / Advance
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -582,40 +584,42 @@ export const PlatformSuperAdminPage: React.FC = () => {
           <div className="mt-8">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-200 mb-3">Audit Log: Configuration History</h3>
             <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-slate-800">
-                  <tr>
-                    <th className="py-2.5 px-3">Timestamp</th>
-                    <th className="py-2.5 px-3">Version</th>
-                    <th className="py-2.5 px-3">Administrator</th>
-                    <th className="py-2.5 px-3">Setting Key</th>
-                    <th className="py-2.5 px-3">Delta</th>
-                    <th className="py-2.5 px-3">Reason</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
-                  {history.length === 0 ? (
+              <div className="overflow-x-auto scrollbar-none">
+                <table className="w-full text-left text-xs min-w-[600px]">
+                  <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-slate-800">
                     <tr>
-                      <td colSpan={6} className="py-4 text-center text-slate-400 dark:text-slate-500 font-sans">
-                        No custom configuration updates logged yet. Baseline v1 active.
-                      </td>
+                      <th className="py-2.5 px-3">Timestamp</th>
+                      <th className="py-2.5 px-3">Version</th>
+                      <th className="py-2.5 px-3">Administrator</th>
+                      <th className="py-2.5 px-3">Setting Key</th>
+                      <th className="py-2.5 px-3">Delta</th>
+                      <th className="py-2.5 px-3">Reason</th>
                     </tr>
-                  ) : (
-                    history.map((h) => (
-                      <tr key={h.entryId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                        <td className="py-2 px-3 text-slate-500 dark:text-slate-400">{new Date(h.timestamp).toLocaleTimeString()}</td>
-                        <td className="py-2 px-3 text-blue-600 dark:text-blue-400 font-semibold">v{h.version}</td>
-                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300 font-sans">{h.adminEmail}</td>
-                        <td className="py-2 px-3 text-slate-800 dark:text-slate-200">{h.settingKey}</td>
-                        <td className="py-2 px-3 text-slate-500 dark:text-slate-400">
-                          {String(h.previousValue)} → <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{String(h.newValue)}</span>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-mono">
+                    {history.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-4 text-center text-slate-400 dark:text-slate-500 font-sans">
+                          No custom configuration updates logged yet. Baseline v1 active.
                         </td>
-                        <td className="py-2 px-3 text-slate-600 dark:text-slate-400 font-sans">{h.reason}</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      history.map((h) => (
+                        <tr key={h.entryId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                          <td className="py-2 px-3 text-slate-500 dark:text-slate-400">{new Date(h.timestamp).toLocaleTimeString()}</td>
+                          <td className="py-2 px-3 text-blue-600 dark:text-blue-400 font-semibold">v{h.version}</td>
+                          <td className="py-2 px-3 text-slate-700 dark:text-slate-300 font-sans">{h.adminEmail}</td>
+                          <td className="py-2 px-3 text-slate-800 dark:text-slate-200">{h.settingKey}</td>
+                          <td className="py-2 px-3 text-slate-500 dark:text-slate-400">
+                            {String(h.previousValue)} → <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{String(h.newValue)}</span>
+                          </td>
+                          <td className="py-2 px-3 text-slate-600 dark:text-slate-400 font-sans">{h.reason}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

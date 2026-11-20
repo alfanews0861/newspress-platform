@@ -128,7 +128,7 @@ export class EnterpriseApiService {
         statusCode: 429,
         headers: {
           ...rateLimitHeaders,
-          'Retry-After': rateLimitCheck.resetSeconds.toString(),
+          'Retry-After': String(rateLimitCheck.resetSeconds),
           'Content-Type': 'application/json',
           'X-Request-Id': requestId,
         },

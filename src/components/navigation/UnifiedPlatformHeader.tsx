@@ -135,28 +135,36 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043] transition-colors shadow-none">
-        <div className="h-full px-4 sm:px-6 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043] transition-colors shadow-none select-none">
+        <div className="h-full px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3">
           {/* Left: Mobile Toggle, Brand & Workspace */}
-          <div className="flex items-center gap-3">
-            {isInsideNewsroom && onToggleSidebarMobile && (
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {isInsideNewsroom && onToggleSidebarMobile ? (
               <button
                 onClick={onToggleSidebarMobile}
-                className="lg:hidden p-2 -ml-1 rounded-full text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors"
+                className="lg:hidden p-2 -ml-1 rounded-full text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
                 aria-label="Toggle sidebar"
               >
                 <MenuIcon className="w-5 h-5" />
               </button>
-            )}
+            ) : !isInsideNewsroom ? (
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden p-2 -ml-1 rounded-full text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
+                aria-label="Toggle navigation menu"
+              >
+                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+              </button>
+            ) : null}
 
             {/* Google-Style 4-Color Brand Logo */}
             <div
-              className="flex items-center gap-2.5 cursor-pointer group select-none"
+              className="flex items-center gap-2 cursor-pointer group select-none shrink-0"
               onClick={() => navigateTo(isInsideNewsroom ? '/dashboard' : '/')}
               title="NewsPress Home"
             >
-              <div className="w-9 h-9 rounded-xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] flex items-center justify-center shadow-xs group-hover:border-[#1a73e8] transition-all">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] flex items-center justify-center shadow-xs group-hover:border-[#1a73e8] transition-all shrink-0">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="4" width="18" height="16" rx="3" stroke="#1a73e8" strokeWidth="2" />
                   <line x1="7" y1="8" x2="12" y2="8" stroke="#ea4335" strokeWidth="2" strokeLinecap="round" />
                   <line x1="7" y1="12" x2="17" y2="12" stroke="#fbbc04" strokeWidth="2" strokeLinecap="round" />
@@ -164,8 +172,8 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                   <circle cx="15.5" cy="8.5" r="1.5" fill="#1a73e8" />
                 </svg>
               </div>
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="font-bold text-lg tracking-tight">
+              <div className="hidden xs:flex items-center gap-1.5 sm:gap-2">
+                <span className="font-bold text-base sm:text-lg tracking-tight">
                   <span className="text-[#1a73e8]">N</span>
                   <span className="text-[#ea4335]">e</span>
                   <span className="text-[#fbbc04]">w</span>
@@ -173,7 +181,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                   <span className="text-[#34a853]">P</span>
                   <span className="text-[#202124] dark:text-[#f2f2f2]">ress</span>
                 </span>
-                <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
+                <span className="hidden sm:inline-block text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
                   Workspace
                 </span>
               </div>
@@ -183,13 +191,13 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             {isInsideNewsroom && (
               <button
                 onClick={() => setIsTenantModalOpen(true)}
-                className="hidden md:flex flex-row items-center gap-2 ml-2 px-3 py-1.5 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] hover:bg-[#e8eaed] dark:hover:bg-[#333537] border border-[#dadce0] dark:border-[#444746] transition-all text-xs font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer whitespace-nowrap shrink-0"
+                className="hidden md:flex flex-row items-center gap-2 ml-1 px-3 py-1.5 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] hover:bg-[#e8eaed] dark:hover:bg-[#333537] border border-[#dadce0] dark:border-[#444746] transition-all text-xs font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer whitespace-nowrap shrink-0"
                 title="Switch Workspace"
               >
                 <span className="w-5 h-5 rounded-md bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-[#d2e3fc] dark:border-[#1a73e8]">
                   <Building2 className="w-3 h-3" />
                 </span>
-                <span className="truncate max-w-[160px] font-medium">{currentTenant.organizationName}</span>
+                <span className="truncate max-w-[150px] font-medium">{currentTenant.organizationName}</span>
                 <ChevronDown className="w-3 h-3 text-[#5f6368] shrink-0" />
               </button>
             )}
@@ -231,18 +239,16 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             </nav>
           )}
 
-          {/* Right: Quick Write Action + Settings + User */}
-          <div className="flex flex-row items-center gap-2">
+          {/* Right: Quick Write Action + Language + Theme + User */}
+          <div className="flex flex-row items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Quick Write Story Button (Google Primary Pill) */}
             {isInsideNewsroom && (
               <button
                 onClick={() => (onQuickNewStory ? onQuickNewStory() : setIsQuickStoryOpen(true))}
-                className="flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
+                className="flex flex-row items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
                 title="Create a new story"
               >
-                <span className="w-5 h-5 rounded-md bg-white/20 text-white flex items-center justify-center shrink-0">
-                  <Plus className="w-3.5 h-3.5" />
-                </span>
+                <Plus className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline whitespace-nowrap">
                   {lang === 'te' ? 'కొత్త వార్త' : lang === 'hi' ? 'नया समाचार' : 'Write Story'}
                 </span>
@@ -250,10 +256,10 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             )}
 
             {/* Language Switcher */}
-            <div className="flex items-center rounded-full bg-[#f1f3f4] dark:bg-[#28292a] p-0.5 border border-[#dadce0] dark:border-[#444746] text-[11px] font-semibold">
+            <div className="flex items-center rounded-full bg-[#f1f3f4] dark:bg-[#28292a] p-0.5 border border-[#dadce0] dark:border-[#444746] text-[10px] sm:text-[11px] font-semibold shrink-0">
               <button
                 onClick={() => handleLanguageChange('en')}
-                className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                   lang === 'en'
                     ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
                     : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
@@ -263,7 +269,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
               </button>
               <button
                 onClick={() => handleLanguageChange('te')}
-                className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                   lang === 'te'
                     ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
                     : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
@@ -273,7 +279,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
               </button>
               <button
                 onClick={() => handleLanguageChange('hi')}
-                className={`px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                className={`px-1.5 sm:px-2 py-0.5 rounded-full transition-all cursor-pointer ${
                   lang === 'hi'
                     ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
                     : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
@@ -286,29 +292,29 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer shrink-0"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-500" />}
+              {theme === 'light' ? <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />}
             </button>
 
             {/* User Profile / Menu */}
             {isInsideNewsroom ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center gap-1.5 p-1 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
+                  className="flex items-center gap-1 p-0.5 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
                 >
                   <img
                     src={user?.avatarUrl || getInitialsAvatarDataUrl(user?.displayName)}
                     alt={user?.displayName || 'User'}
                     className="w-7 h-7 rounded-full object-cover border border-[#dadce0] dark:border-[#444746]"
                   />
-                  <ChevronDown className="w-3.5 h-3.5 text-[#5f6368]" />
+                  <ChevronDown className="w-3 h-3 text-[#5f6368] hidden xs:block" />
                 </button>
 
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-lg py-1.5 z-50 text-xs">
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xl py-1.5 z-50 text-xs">
                     <div className="px-3 py-2 border-b border-[#dadce0] dark:border-[#444746]">
                       <div className="font-semibold text-[#202124] dark:text-[#f2f2f2] truncate">
                         {user?.displayName || 'Sofia Chen'}
@@ -318,6 +324,17 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                         <span>{roleLabel.replace(/_/g, ' ')}</span>
                       </div>
                     </div>
+
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        setIsTenantModalOpen(true);
+                      }}
+                      className="w-full px-3 py-2 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium md:hidden"
+                    >
+                      <Building2 className="w-4 h-4 text-[#5f6368]" />
+                      <span>Switch Organization</span>
+                    </button>
 
                     <button
                       onClick={() => {
@@ -356,13 +373,62 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
             ) : (
               <button
                 onClick={() => navigateTo('/login')}
-                className="px-4 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all shadow-none hover:shadow-xs cursor-pointer"
+                className="px-3 sm:px-4 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all shadow-none hover:shadow-xs cursor-pointer shrink-0"
               >
                 Sign In
               </button>
             )}
           </div>
         </div>
+
+        {/* Public Mobile Drawer Menu (When not in newsroom) */}
+        {!isInsideNewsroom && isMobileMenuOpen && (
+          <div className="lg:hidden bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-4 space-y-2 shadow-xl animate-in slide-in-from-top-2 duration-200">
+            <button
+              onClick={() => navigateTo('/dashboard')}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] bg-[#e8f0fe] dark:bg-[#004a77] cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Open Newsroom Console</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+            </button>
+
+            <button
+              onClick={() => navigateTo('/newspaper/page-designer')}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <BookOpen className="w-4 h-4 text-emerald-600" />
+                <span>Read Newspaper Edition</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+            </button>
+
+            <button
+              onClick={() => navigateTo('/marketplace')}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <ShoppingBag className="w-4 h-4 text-amber-600" />
+                <span>News Marketplace</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+            </button>
+
+            <button
+              onClick={() => navigateTo('/legal')}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-purple-600" />
+                <span>Legal & Compliance Center</span>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Tenant Switcher Modal */}

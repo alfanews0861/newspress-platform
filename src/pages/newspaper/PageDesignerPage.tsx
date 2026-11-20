@@ -40,6 +40,8 @@ import {
   Download,
   Newspaper,
   Calendar,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -1028,6 +1030,28 @@ export const PageDesignerPage: React.FC = () => {
   // Editor Viewport & 100% Width Canvas Sizing
   // The canvas fills 100% of available container width, with proportional height enabling natural vertical scrolling.
   const [zoomLevel, setZoomLevel] = useState<number>(0.75);
+  const [isManualZoom, setIsManualZoom] = useState<boolean>(false);
+
+  const handleZoomIn = () => {
+    setIsManualZoom(true);
+    setZoomLevel((z) => Math.min(2.5, Number((z + 0.2).toFixed(2))));
+  };
+
+  const handleZoomOut = () => {
+    setIsManualZoom(true);
+    setZoomLevel((z) => Math.max(0.2, Number((z - 0.2).toFixed(2))));
+  };
+
+  const handleZoomFit = () => {
+    setIsManualZoom(false);
+    const container = canvasScrollRef.current;
+    if (container && grid.pageWidth > 0) {
+      const padding = 24;
+      const availW = Math.max(240, container.clientWidth - padding);
+      const scaleW = availW / grid.pageWidth;
+      setZoomLevel(Math.max(0.25, Math.min(Number(scaleW.toFixed(3)), 3.0)));
+    }
+  };
 
   // Automated 100% Width Responsive Canvas Fitting:
   // Automatically scales the newspaper canvas to fill 100% of the available width.
@@ -1037,6 +1061,7 @@ export const PageDesignerPage: React.FC = () => {
     if (!container) return;
 
     const updateFit = () => {
+      if (isManualZoom) return;
       const padding = 24;
       const availW = Math.max(240, container.clientWidth - padding);
 
@@ -1060,7 +1085,7 @@ export const PageDesignerPage: React.FC = () => {
       observer.disconnect();
       window.removeEventListener('resize', updateFit);
     };
-  }, [grid.pageWidth]);
+  }, [grid.pageWidth, isManualZoom]);
 
   // Live DOM Box-Height Compaction:
   // Whenever a story's content does not fill its planned box height (leaving >= 24px unused whitespace at bottom),
@@ -3428,10 +3453,10 @@ export const PageDesignerPage: React.FC = () => {
   return (
     <div className="flex flex-col h-full w-full bg-[#f8fafd] dark:bg-[#202124] text-[#202124] dark:text-slate-100 overflow-hidden select-none font-sans">
       {/* 1. NEWSPAPER PREVIEW & PDF DOWNLOAD TOPBAR */}
-      <div className="min-h-14 py-1.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between z-20 shrink-0 shadow-xs print:hidden">
+      <div className="py-2 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-4 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 z-20 shrink-0 shadow-xs print:hidden">
         {/* Left: Newspaper Brand & Publication Date */}
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             <span className="p-1.5 rounded-lg bg-red-600 text-white shadow-xs shrink-0">
               <Newspaper className="w-4 h-4" />
             </span>
@@ -3482,7 +3507,7 @@ export const PageDesignerPage: React.FC = () => {
                   EditionPersistenceService.scheduleAutosave(targetEd, dynamicPlan.pages, user?.uid || 'user-editor');
                 }
               }}
-              className="font-sans font-medium text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2.5 py-1.5 min-h-[38px] leading-normal text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+              className="font-sans font-medium text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1.5 min-h-[36px] max-w-[140px] xs:max-w-[180px] sm:max-w-none leading-normal text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
             >
               {brandsList.map((b) => (
                 <option key={b.brandId} value={b.brandId}>
@@ -3492,10 +3517,10 @@ export const PageDesignerPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+          <div className="hidden sm:block h-4 w-px bg-slate-200 dark:bg-slate-700" />
 
           {/* Date */}
-          <div className="flex items-center space-x-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-md whitespace-nowrap">
+          <div className="hidden md:flex items-center space-x-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-md whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-red-600 shrink-0" />
             <span>{edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}</span>
           </div>
@@ -3503,7 +3528,7 @@ export const PageDesignerPage: React.FC = () => {
 
         {/* Center: Page Switcher (Pure 1 / 4) */}
         <div className="flex items-center">
-          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 shadow-2xs">
+          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 sm:p-1 shadow-2xs">
             <button
               onClick={() => setCurrentPageIndex((prev) => Math.max(0, prev - 1))}
               disabled={currentPageIndex === 0}
@@ -3512,7 +3537,7 @@ export const PageDesignerPage: React.FC = () => {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="px-3 font-medium text-xs text-slate-800 dark:text-slate-100 font-mono tracking-wide">
+            <span className="px-2 sm:px-3 font-medium text-xs text-slate-800 dark:text-slate-100 font-mono tracking-wide">
               {currentPageIndex + 1} / {pages.length}
             </span>
             <button
@@ -3526,15 +3551,15 @@ export const PageDesignerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Single Download PDF Button (Dynamic Print Size: Broadsheet, Tabloid, etc.) */}
+        {/* Right: Single Download PDF Button */}
         <div className="flex items-center">
           <button
             onClick={handlePrintPdf}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium cursor-pointer shadow-xs transition-colors"
+            className="flex items-center space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium cursor-pointer shadow-xs transition-colors shrink-0"
             title={`Download PDF in ${selectedBrand.paperSize?.toUpperCase() || 'BROADSHEET'} format`}
           >
             <Download className="w-4 h-4" />
-            <span>Download PDF</span>
+            <span><span className="hidden xs:inline">Download </span>PDF</span>
           </button>
         </div>
       </div>
@@ -3581,6 +3606,34 @@ export const PageDesignerPage: React.FC = () => {
             {/* Page Elements (Masthead/Folio, Placed Stories, Ads, Footer) - Interactive Canvas */}
             {currentPage && renderPageCanvasElements(currentPage, true)}
           </div>
+        </div>
+
+        {/* Floating Mobile Reading Zoom Dock */}
+        <div className="fixed bottom-20 right-3 z-30 lg:hidden flex items-center gap-1 bg-white/95 dark:bg-[#28292a]/95 backdrop-blur-md rounded-full shadow-xl border border-[#dadce0] dark:border-[#444746] p-1 text-xs select-none">
+          <button
+            onClick={handleZoomOut}
+            className="p-1.5 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#333537] text-[#5f6368] dark:text-[#c4c7c5] cursor-pointer"
+            title="Zoom Out"
+            aria-label="Zoom out"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleZoomFit}
+            className="px-2 py-0.5 rounded-full text-[11px] font-bold text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#e8f0fe] dark:hover:bg-[#004a77] cursor-pointer"
+            title="Reset to 100% Width Fit"
+            aria-label="Reset zoom"
+          >
+            {Math.round(zoomLevel * 100)}%
+          </button>
+          <button
+            onClick={handleZoomIn}
+            className="p-1.5 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#333537] text-[#5f6368] dark:text-[#c4c7c5] cursor-pointer"
+            title="Zoom In"
+            aria-label="Zoom in"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

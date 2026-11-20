@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
@@ -331,55 +331,57 @@ export const LaunchReadinessDashboardPage: React.FC = () => {
 
       {/* Checks Grid Table */}
       <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
-        <table className="w-full text-left text-xs">
-          <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-slate-800">
-            <tr>
-              <th className="py-3 px-4">Gate ID & Category</th>
-              <th className="py-3 px-4">Verification Check</th>
-              <th className="py-3 px-4">Level</th>
-              <th className="py-3 px-4">Owner</th>
-              <th className="py-3 px-4">Status</th>
-              <th className="py-3 px-4 text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-            {filteredChecks.map((c) => (
-              <tr key={c.checkId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                <td className="py-3 px-4 font-mono">
-                  <div className="text-slate-900 dark:text-slate-200 font-semibold">{c.checkId}</div>
-                  <div className="text-[11px] text-slate-500">{c.category}</div>
-                </td>
-                <td className="py-3 px-4 max-w-md">
-                  <div className="font-semibold text-slate-900 dark:text-slate-100">{c.title}</div>
-                  <div className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5 line-clamp-1">{c.description}</div>
-                </td>
-                <td className="py-3 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                  {c.verificationLevel}
-                </td>
-                <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{c.ownerRole}</td>
-                <td className="py-3 px-4">
-                  <Badge
-                    variant={
-                      c.status === 'PASS'
-                        ? 'emerald'
-                        : c.status === 'WARNING'
-                        ? 'amber'
-                        : 'rose'
-                    }
-                    size="sm"
-                  >
-                    {c.status}
-                  </Badge>
-                </td>
-                <td className="py-3 px-4 text-right">
-                  <Button variant="secondary" size="sm" onClick={() => setSelectedCheck(c)}>
-                    View Evidence
-                  </Button>
-                </td>
+        <div className="overflow-x-auto scrollbar-none">
+          <table className="w-full text-left text-xs min-w-[640px]">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 uppercase font-mono tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr>
+                <th className="py-3 px-4">Gate ID & Category</th>
+                <th className="py-3 px-4">Verification Check</th>
+                <th className="py-3 px-4">Level</th>
+                <th className="py-3 px-4">Owner</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
+              {filteredChecks.map((c) => (
+                <tr key={c.checkId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <td className="py-3 px-4 font-mono">
+                    <div className="text-slate-900 dark:text-slate-200 font-semibold">{c.checkId}</div>
+                    <div className="text-[11px] text-slate-500">{c.category}</div>
+                  </td>
+                  <td className="py-3 px-4 max-w-md">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">{c.title}</div>
+                    <div className="text-slate-500 dark:text-slate-400 text-[11px] mt-0.5 line-clamp-1">{c.description}</div>
+                  </td>
+                  <td className="py-3 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                    {c.verificationLevel}
+                  </td>
+                  <td className="py-3 px-4 text-slate-700 dark:text-slate-300">{c.ownerRole}</td>
+                  <td className="py-3 px-4">
+                    <Badge
+                      variant={
+                        c.status === 'PASS'
+                          ? 'emerald'
+                          : c.status === 'WARNING'
+                          ? 'amber'
+                          : 'rose'
+                      }
+                      size="sm"
+                    >
+                      {c.status}
+                    </Badge>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <Button variant="secondary" size="sm" onClick={() => setSelectedCheck(c)}>
+                      View Evidence
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL: Check Evidence & Detail */}

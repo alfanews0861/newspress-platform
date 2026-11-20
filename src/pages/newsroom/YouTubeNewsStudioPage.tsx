@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  * 
@@ -38,6 +38,8 @@ import {
   Layers,
   Film,
   MapPin,
+  Tv,
+  Sparkles,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -80,6 +82,116 @@ export const MapLocationPointerIcon: React.FC<{ className?: string; size?: numbe
   </svg>
 );
 
+/**
+ * Resolves the ideal broadcast display font style for news ticker crawls:
+ * - Telugu: Ramabhadra (the gold standard for bold Telugu broadcast tickers)
+ * - Other languages: Ramabhadra-like bold, impactful broadcast display fonts:
+ *   - Hindi/Marathi/Devanagari: Khand / Mukta (exact broadcast equivalent to Ramabhadra)
+ *   - Tamil: Catamaran / Pavanam
+ *   - Kannada: Noto Sans Kannada
+ *   - Malayalam: Manjari
+ *   - Bengali: Hind Siliguri
+ *   - Gujarati: Mukta Vaani
+ *   - Punjabi: Mukta Mahee
+ *   - Odia: Noto Sans Oriya
+ *   - English/Universal: Khand / Cinzel / Roboto
+ */
+export const getBroadcastTickerFont = (
+  text: string,
+  language?: string
+): { fontFamily: string; fontWeight: number; fontLabel: string; isTelugu: boolean } => {
+  const content = text || '';
+  const isTelugu = /[\u0C00-\u0C7F]/.test(content) || language === 'te';
+  if (isTelugu) {
+    return {
+      fontFamily: '"Ramabhadra", "Noto Sans Telugu", sans-serif',
+      fontWeight: 400,
+      fontLabel: 'Ramabhadra • Telugu',
+      isTelugu: true,
+    };
+  }
+  const isDevanagari = /[\u0900-\u097F]/.test(content) || language === 'hi' || language === 'mr';
+  if (isDevanagari) {
+    return {
+      fontFamily: '"Khand", "Mukta", "Noto Sans Devanagari", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Khand • Devanagari',
+      isTelugu: false,
+    };
+  }
+  const isTamil = /[\u0B80-\u0BFF]/.test(content) || language === 'ta';
+  if (isTamil) {
+    return {
+      fontFamily: '"Catamaran", "Pavanam", "Noto Sans Tamil", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Catamaran • Tamil',
+      isTelugu: false,
+    };
+  }
+  const isKannada = /[\u0C80-\u0CFF]/.test(content) || language === 'kn';
+  if (isKannada) {
+    return {
+      fontFamily: '"Noto Sans Kannada", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Noto Sans • Kannada',
+      isTelugu: false,
+    };
+  }
+  const isMalayalam = /[\u0D00-\u0D7F]/.test(content) || language === 'ml';
+  if (isMalayalam) {
+    return {
+      fontFamily: '"Manjari", "Chilanka", "Noto Sans Malayalam", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Manjari • Malayalam',
+      isTelugu: false,
+    };
+  }
+  const isBengali = /[\u0980-\u09FF]/.test(content) || language === 'bn';
+  if (isBengali) {
+    return {
+      fontFamily: '"Hind Siliguri", "Noto Sans Bengali", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Hind Siliguri • Bengali',
+      isTelugu: false,
+    };
+  }
+  const isGujarati = /[\u0A80-\u0AFF]/.test(content) || language === 'gu';
+  if (isGujarati) {
+    return {
+      fontFamily: '"Mukta Vaani", "Noto Sans Gujarati", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Mukta Vaani • Gujarati',
+      isTelugu: false,
+    };
+  }
+  const isPunjabi = /[\u0A00-\u0A7F]/.test(content) || language === 'pa';
+  if (isPunjabi) {
+    return {
+      fontFamily: '"Mukta Mahee", "Noto Serif Gurmukhi", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Mukta Mahee • Punjabi',
+      isTelugu: false,
+    };
+  }
+  const isOdia = /[\u0B00-\u0B7F]/.test(content) || language === 'or';
+  if (isOdia) {
+    return {
+      fontFamily: '"Noto Sans Oriya", "Noto Serif Oriya", sans-serif',
+      fontWeight: 600,
+      fontLabel: 'Noto Sans • Odia',
+      isTelugu: false,
+    };
+  }
+
+  // English / Universal: Khand is a high-impact broadcast display font matching Ramabhadra's boldness
+  return {
+    fontFamily: '"Khand", "Cinzel", "Roboto", "Segoe UI", sans-serif',
+    fontWeight: 600,
+    fontLabel: 'Khand • Broadcast Display',
+    isTelugu: false,
+  };
+};
+
 export const YouTubeNewsStudioPage: React.FC = () => {
   const { currentTenant } = useTenant();
   const [settings, setSettings] = useState<YouTubeChannelBrandingSettings>(() => YouTubeService.getSettings());
@@ -88,6 +200,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
   // Form Inputs: 3 Dedicated Sequential Clip Slots (Opening, Main Speech, Conclusion)
   const [newsText, setNewsText] = useState<string>('');
   const [newsLocation, setNewsLocation] = useState<string>('');
+  const [tickerText, setTickerText] = useState<string>('');
   const [selectedLanguage, setSelectedLanguage] = useState<SupportedIndianLanguage>(settings.defaultLanguage || 'te');
   const [clips, setClips] = useState<(NewsVideoClipItem | null)[]>([null, null, null]);
   const [clipDurationMode, setClipDurationMode] = useState<'bulletin' | '60s' | '120s' | '300s' | 'full'>('full');
@@ -129,6 +242,17 @@ export const YouTubeNewsStudioPage: React.FC = () => {
       return true;
     }).slice(0, 30);
   }, [currentTenant?.tenantId]);
+
+  // Live state-level news ticker headlines from the newsroom feed (fallback when ticker field is blank)
+  const defaultStateTicker = React.useMemo(() => {
+    return newsSubmissionService.getStateTickerString(currentTenant?.tenantId);
+  }, [currentTenant?.tenantId]);
+
+  // Active ticker text and typography (Ramabhadra for Telugu, broadcast display for other languages)
+  const activeTickerText = tickerText.trim() || defaultStateTicker;
+  const tickerFont = React.useMemo(() => {
+    return getBroadcastTickerFont(activeTickerText, selectedLanguage);
+  }, [activeTickerText, selectedLanguage]);
 
   const handleLoadStoryManuscript = (articleId: string) => {
     if (!articleId) return;
@@ -219,6 +343,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
   const handleReset = () => {
     VideoCompositorService.clearVideoUploadCache();
     setClips([null, null, null]);
+    setTickerText('');
     setPublishedResult(null);
     setErrorMessage(null);
     setComplianceWarning(null);
@@ -353,6 +478,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
         outroVideoUrl: settings.outroVideoUrl,
         watermarkSettings: settings.watermark,
         newsLocation: newsLocation.trim(),
+        tickerText: tickerText.trim() || defaultStateTicker,
         clipDurationMode,
         sourceDuration: totalFootageDuration,
         thumbnailBlob: thumb.blob,
@@ -396,7 +522,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans">
+    <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans w-full min-w-0 overflow-x-hidden">
       {/* Top Header */}
       <PageHeader
         title="YouTube News Video Studio"
@@ -406,40 +532,39 @@ export const YouTubeNewsStudioPage: React.FC = () => {
           { label: 'YouTube Studio' },
         ]}
         actions={
-          <div className="flex flex-row items-center gap-2 sm:gap-3 flex-wrap">
-            {account.isConnected && (
-              <div className="flex flex-row items-center gap-2">
-                <div className="inline-flex flex-row items-center gap-2 bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-full text-xs font-bold shadow-xs whitespace-nowrap">
-                  <span className="w-5 h-5 rounded-md bg-red-600 text-white inline-flex items-center justify-center shrink-0 shadow-xs">
-                    <Youtube className="w-3 h-3 text-white" />
+          <div className="flex items-center gap-2 flex-nowrap shrink-0">
+            {account.isConnected ? (
+              <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold shadow-xs">
+                <span className="w-5 h-5 rounded-md bg-red-600 text-white inline-flex items-center justify-center shrink-0 shadow-xs">
+                  <Youtube className="w-3 h-3 text-white" />
+                </span>
+                <span className="truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px]">{account.channelTitle || 'Connected Channel'}</span>
+                {account.refreshToken ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 sm:px-2 py-0.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Linked
                   </span>
-                  <span className="truncate max-w-[140px] sm:max-w-[200px]">{account.channelTitle || 'Connected Channel'}</span>
-                  {account.refreshToken ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Linked
-                    </span>
-                  ) : (
-                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 ml-0.5" title="Active session" />
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={handleReconnectChannel}
-                  title="Refresh channel authorization"
-                  className="inline-flex flex-row items-center gap-2 text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:text-[#1a73e8] dark:hover:text-white bg-white dark:bg-[#28292a] hover:bg-[#f1f3f4] px-3 py-1.5 rounded-full border border-[#dadce0] dark:border-[#444746] shadow-xs transition cursor-pointer whitespace-nowrap"
-                >
-                  <span className="w-5 h-5 rounded-md bg-[#f1f3f4] dark:bg-[#1f1f1f] text-[#5f6368] dark:text-[#a8c7fa] inline-flex items-center justify-center shrink-0 border border-[#dadce0] dark:border-[#444746]">
-                    <RotateCw className="w-3 h-3" />
-                  </span>
-                  <span>Reconnect</span>
-                </button>
+                ) : (
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 ml-0.5" title="Active session" />
+                )}
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleReconnectChannel}
+                title="Connect or ReConnect YouTube Channel"
+                className="inline-flex items-center gap-1.5 sm:gap-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-3 py-1.5 rounded-full shadow-xs transition cursor-pointer whitespace-nowrap"
+              >
+                <span className="w-5 h-5 rounded-md bg-white/20 text-white inline-flex items-center justify-center shrink-0">
+                  <Youtube className="w-3 h-3" />
+                </span>
+                <span>ReConnect</span>
+              </button>
             )}
             <button
               type="button"
               onClick={() => navigateTo('/settings?tab=youtube')}
-              className="inline-flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] text-xs font-semibold text-[#3c4043] dark:text-[#e3e3e3] shadow-xs transition cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] text-xs font-semibold text-[#3c4043] dark:text-[#e3e3e3] shadow-xs transition cursor-pointer whitespace-nowrap"
             >
               <span className="w-5 h-5 rounded-md bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] inline-flex items-center justify-center shrink-0 border border-[#d2e3fc] dark:border-[#1a73e8]">
                 <Settings className="w-3 h-3" />
@@ -654,16 +779,23 @@ export const YouTubeNewsStudioPage: React.FC = () => {
           )}
 
           {/* Main Production Broadcast Card */}
-          <Card className="p-6 sm:p-8 space-y-6 shadow-sm rounded-2xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#1f1f1f]">
+          <Card className="p-3.5 sm:p-6 lg:p-8 space-y-6 shadow-sm rounded-2xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#1f1f1f]">
             {/* Input 1: Field Video Footage (3 Dedicated Sequential Slots) */}
-            <div className="space-y-3.5">
+            <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <label className="text-sm font-semibold text-[#202124] dark:text-[#f2f2f2] flex flex-row items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 border border-red-200 dark:border-red-800">
-                    <Video className="w-3.5 h-3.5" />
+                <div className="flex items-start gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 border border-red-200 dark:border-red-800 mt-0.5">
+                    <Video className="w-4 h-4" />
                   </span>
-                  <span>1. Field News Footage (3 Sequential Clip Slots &bull; Up to 10 Min Max)</span>
-                </label>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
+                      1. Field News Footage
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
+                      (3 Sequential Clip Slots &bull; Up to 10 Min Max)
+                    </p>
+                  </div>
+                </div>
 
                 <div className="flex items-center gap-2 text-xs">
                   <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium">
@@ -681,8 +813,8 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3 Dedicated Video Upload Slots Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+              {/* 3 Dedicated Video Upload Slots Grid (Compact Sizing) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
                   {
                     idx: 0,
@@ -707,7 +839,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                   return (
                     <div
                       key={slot.idx}
-                      className={`rounded-2xl border p-3.5 flex flex-col justify-between transition-all ${
+                      className={`rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between transition-all ${
                         clip
                           ? 'bg-blue-50/40 dark:bg-blue-950/20 border-[#1a73e8]/70 shadow-xs'
                           : 'bg-[#f8fafd] dark:bg-[#1f1f1f] border-dashed border-[#dadce0] dark:border-[#444746] hover:border-[#1a73e8]'
@@ -715,9 +847,9 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                     >
                       <div>
                         {/* Slot Header */}
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-1.5">
                           <span className="flex items-center gap-1.5 min-w-0">
-                            <span className={`w-5 h-5 rounded-md font-bold text-[11px] flex items-center justify-center shrink-0 ${
+                            <span className={`w-4.5 h-4.5 rounded-md font-bold text-[10px] flex items-center justify-center shrink-0 ${
                               clip ? 'bg-[#1a73e8] text-white' : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
                             }`}>
                               #{slot.idx + 1}
@@ -737,14 +869,42 @@ export const YouTubeNewsStudioPage: React.FC = () => {
 
                         {/* Slot Body: Upload Box or Video Player Preview */}
                         {clip ? (
-                          <div className="space-y-2">
-                            <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-[#dadce0] dark:border-[#3c4043]">
+                          <div className="space-y-1.5">
+                            <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-[#dadce0] dark:border-[#3c4043] group">
                               <video
                                 ref={slot.idx === 0 ? videoRef : undefined}
                                 src={clip.previewUrl}
                                 controls
                                 className="w-full h-full object-contain"
                               />
+
+                              {/* Live TV Ticker Overlay on Main Video Footage Player */}
+                              {slot.idx === 0 && (
+                                <div className="absolute bottom-0 left-0 right-0 h-6.5 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] border-t border-amber-400 flex items-center px-2 pointer-events-none z-10 overflow-hidden shadow-lg">
+                                  <div
+                                    className="bg-[#450a0a] px-1.5 py-0.5 rounded text-[9px] text-amber-300 mr-2 shrink-0 border-r border-amber-400/80 uppercase tracking-wider flex items-center gap-1 font-normal"
+                                    style={{
+                                      fontFamily: tickerFont.isTelugu
+                                        ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
+                                        : '"Khand", "Cinzel", "Roboto", sans-serif',
+                                      fontWeight: tickerFont.isTelugu ? 400 : 700,
+                                    }}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                    <span>BREAKING NEWS</span>
+                                  </div>
+                                  <div
+                                    className="text-white truncate drop-shadow-md leading-normal"
+                                    style={{
+                                      fontFamily: tickerFont.fontFamily,
+                                      fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
+                                      fontSize: tickerFont.isTelugu ? '12px' : '10.5px',
+                                    }}
+                                  >
+                                    {activeTickerText}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             <div className="text-[11px] text-[#202124] dark:text-[#f2f2f2] truncate font-medium">
                               {clip.name}
@@ -757,14 +917,14 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <label className="aspect-video rounded-xl border-2 border-dashed border-[#dadce0] dark:border-[#444746] flex flex-col items-center justify-center cursor-pointer hover:border-[#1a73e8] hover:bg-white dark:hover:bg-[#28292a] p-3 transition group text-center">
-                            <div className="w-8 h-8 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] text-[#5f6368] group-hover:text-[#1a73e8] group-hover:bg-[#e8f0fe] transition flex items-center justify-center mb-1">
-                              <Upload className="w-4 h-4" />
+                          <label className="min-h-[84px] sm:min-h-[92px] rounded-lg border-2 border-dashed border-[#dadce0] dark:border-[#444746] flex flex-col items-center justify-center cursor-pointer hover:border-[#1a73e8] hover:bg-white dark:hover:bg-[#28292a] py-2 px-2 transition group text-center">
+                            <div className="w-7 h-7 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] text-[#5f6368] group-hover:text-[#1a73e8] group-hover:bg-[#e8f0fe] transition flex items-center justify-center mb-1">
+                              <Upload className="w-3.5 h-3.5" />
                             </div>
                             <span className="font-semibold text-xs text-[#202124] dark:text-[#f2f2f2]">
                               {slot.idx === 0 ? 'Upload Clip 1' : `+ Add Clip ${slot.idx + 1}`}
                             </span>
-                            <span className="text-[10px] text-[#5f6368] dark:text-[#8e918f] mt-0.5 leading-snug">
+                            <span className="text-[9.5px] text-[#5f6368] dark:text-[#8e918f] mt-0.5 leading-tight">
                               {slot.sub}
                             </span>
                             <input
@@ -780,8 +940,8 @@ export const YouTubeNewsStudioPage: React.FC = () => {
 
                       {/* Slot Footer Controls */}
                       {clip && (
-                        <div className="pt-2 border-t border-[#dadce0]/70 dark:border-[#444746]/70 mt-2 flex items-center justify-between">
-                          <label className="text-[11px] text-[#1a73e8] dark:text-[#8ab4f8] hover:underline cursor-pointer font-semibold">
+                        <div className="pt-1.5 border-t border-[#dadce0]/70 dark:border-[#444746]/70 mt-1.5 flex items-center justify-between">
+                          <label className="text-[10.5px] text-[#1a73e8] dark:text-[#8ab4f8] hover:underline cursor-pointer font-semibold">
                             Change File
                             <input
                               type="file"
@@ -793,7 +953,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleRemoveSlot(slot.idx)}
-                            className="text-[11px] text-red-600 dark:text-red-400 hover:underline cursor-pointer flex items-center gap-1 font-medium"
+                            className="text-[10.5px] text-red-600 dark:text-red-400 hover:underline cursor-pointer flex items-center gap-1 font-medium"
                           >
                             <Trash2 className="w-3 h-3" />
                             <span>Remove</span>
@@ -823,7 +983,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() => setClipDurationMode('bulletin')}
@@ -918,21 +1078,28 @@ export const YouTubeNewsStudioPage: React.FC = () => {
 
             {/* Input 2: News Story Manuscript */}
             <div>
-              <div className="flex justify-between items-center mb-2.5">
-                <label className="text-sm font-semibold text-[#202124] dark:text-[#f2f2f2] flex flex-row items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950/60 text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800">
-                    <FileText className="w-3.5 h-3.5" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5 w-full min-w-0">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800 mt-0.5">
+                    <FileText className="w-4 h-4" />
                   </span>
-                  <span>2. News Story Manuscript (Source Text)</span>
-                </label>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
+                      2. News Story Manuscript
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
+                      (Source Text &bull; Story Dispatches &amp; Reporting Content)
+                    </p>
+                  </div>
+                </div>
 
                 {/* Quick Newsroom Story Loader + Language Selector */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   {newsroomStories.length > 0 && (
                     <select
                       defaultValue=""
                       onChange={(e) => handleLoadStoryManuscript(e.target.value)}
-                      className="px-2.5 py-1 max-w-[240px] bg-blue-50 dark:bg-[#004a77] border border-[#d2e3fc] dark:border-[#1a73e8] rounded-full text-xs font-semibold text-[#1a73e8] dark:text-[#c2e7ff] cursor-pointer truncate"
+                      className="px-2.5 py-1 w-full sm:w-auto max-w-full sm:max-w-[240px] bg-blue-50 dark:bg-[#004a77] border border-[#d2e3fc] dark:border-[#1a73e8] rounded-full text-xs font-semibold text-[#1a73e8] dark:text-[#c2e7ff] cursor-pointer truncate"
                     >
                       <option value="">Load Story from Newsroom...</option>
                       {newsroomStories.map((st) => (
@@ -979,12 +1146,19 @@ export const YouTubeNewsStudioPage: React.FC = () => {
             {/* Input 3: Reporting Location (TV Watermark Badge) */}
             <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] shadow-xs space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <label className="text-sm font-semibold text-[#202124] dark:text-[#f2f2f2] flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-800">
-                    <MapLocationPointerIcon className="w-3.5 h-3.5" size={16} />
+                <div className="flex items-start gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-800 mt-0.5">
+                    <MapLocationPointerIcon className="w-4 h-4" size={16} />
                   </span>
-                  <span>3. News Reporting Location (TV Watermark Badge)</span>
-                </label>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
+                      3. News Reporting Location
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
+                      (TV Watermark Badge &bull; Live On-Screen Location)
+                    </p>
+                  </div>
+                </div>
                 <span className="text-xs text-[#5f6368] dark:text-[#8e918f]">
                   Appears directly under Channel Logo with circular map pointer badge
                 </span>
@@ -999,7 +1173,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                     type="text"
                     value={newsLocation}
                     onChange={(e) => setNewsLocation(e.target.value)}
-                    placeholder="Enter location (e.g., హైదరాబాద్ / Amaravati / New Delhi / Tirupati)..."
+                    placeholder="Enter reporting location (e.g., New Delhi, Hyderabad, Amaravati, Mumbai, Tirupati)..."
                     className="w-full pl-10 pr-14 py-2.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#121212] text-sm text-[#202124] dark:text-[#f2f2f2] placeholder-[#70757a] focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] focus:outline-none transition-all"
                   />
                   {newsLocation && (
@@ -1028,7 +1202,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
               {/* Quick Suggestion Chips */}
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[11px] font-medium text-[#5f6368] dark:text-[#8e918f] mr-1">Quick Select:</span>
-                {['హైదరాబాద్', 'అమరావతి', 'విజయవాడ', 'విశాఖపట్నం', 'న్యూఢిల్లీ', 'తిరుపతి', 'వరంగల్', 'కర్నూలు'].map((loc) => (
+                {['New Delhi', 'Hyderabad', 'Amaravati', 'Vijayawada', 'Visakhapatnam', 'Bengaluru', 'Mumbai', 'Tirupati'].map((loc) => (
                   <button
                     key={loc}
                     type="button"
@@ -1043,6 +1217,146 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                     <span>{loc}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Input 4: Video News Ticker */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] shadow-xs space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800 mt-0.5">
+                    <Tv className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
+                      4. Video News Ticker
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
+                      (Bottom Breaking News Scrolling Ticker &bull; Broadcast Overlay)
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      tickerText.trim()
+                        ? 'bg-blue-50 text-[#1a73e8] border-blue-200 dark:bg-blue-950/60 dark:text-[#8ab4f8] dark:border-blue-800'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                    }`}
+                  >
+                    {tickerText.trim() ? 'Custom Headlines Active' : 'Auto: State-Level Headlines'}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-[#5f6368] dark:text-[#8e918f] leading-relaxed">
+                Broadcast ticker displayed continuously at the bottom of the video, matching TV news channels. You can enter custom headlines here; if left blank, live state headlines from your newsroom will scroll automatically.
+              </p>
+
+              <div className="space-y-2">
+                <textarea
+                  rows={2}
+                  value={tickerText}
+                  onChange={(e) => setTickerText(e.target.value)}
+                  placeholder={defaultStateTicker ? `Leave blank for auto newsroom headlines: ${defaultStateTicker.slice(0, 110)}...` : 'Enter custom scrolling headlines for the bottom TV ticker...'}
+                  className="w-full p-3.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#121212] text-sm text-[#202124] dark:text-[#f2f2f2] placeholder-[#70757a] focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] focus:outline-none leading-relaxed transition-all"
+                />
+
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] font-medium text-[#5f6368] dark:text-[#8e918f]">Quick Actions:</span>
+                    <button
+                      type="button"
+                      onClick={() => setTickerText(defaultStateTicker)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc] dark:bg-[#004a77] dark:text-[#c2e7ff] border border-blue-200 dark:border-blue-800 transition cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Load State Headlines</span>
+                    </button>
+
+                    {newsText.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const firstLine = newsText
+                            .trim()
+                            .split('\n')[0]
+                            .replace(/^([^\n:,\-–—]{2,25})\s*[:\-–—]/, '')
+                            .trim();
+                          if (firstLine) {
+                            setTickerText(firstLine);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed] dark:bg-[#28292a] dark:text-[#e3e3e3] border border-[#dadce0] dark:border-[#444746] transition cursor-pointer"
+                      >
+                        <FileText className="w-3 h-3" />
+                        <span>Use Story Headline</span>
+                      </button>
+                    )}
+
+                    {tickerText && (
+                      <button
+                        type="button"
+                        onClick={() => setTickerText('')}
+                        className="text-[11px] text-red-600 dark:text-red-400 hover:underline font-medium ml-1 cursor-pointer"
+                      >
+                        Reset to Auto Headlines
+                      </button>
+                    )}
+                  </div>
+
+                  <span className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
+                    {tickerText.trim() ? `${tickerText.trim().length} characters (Custom)` : 'Automatic Default Selected'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Live Animated TV Ticker Preview */}
+              <div className="rounded-xl overflow-hidden border border-red-800/80 bg-red-950 shadow-md">
+                <div className="px-3 py-1 bg-red-950/90 border-b border-red-900/60 flex items-center justify-between text-[10px] text-red-200/80 font-bold uppercase tracking-wider">
+                  <span>
+                    TV Broadcast Ticker Preview ({tickerFont.fontLabel} &bull; Live Crawl)
+                  </span>
+                  <span className="text-amber-300 flex items-center gap-1 font-mono">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
+                    LIVE TV PREVIEW
+                  </span>
+                </div>
+                <div className="h-12 sm:h-13 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] flex items-stretch border-t-2 border-amber-400 relative overflow-hidden shadow-inner">
+                  {/* Left Dark Maroon / Red Badge with Gold Border */}
+                  <div
+                    className="z-10 px-3.5 bg-gradient-to-r from-[#450a0a] via-[#5c0e0e] to-[#7f1d1d] border-r-2 border-amber-400 text-white text-xs uppercase flex items-center gap-2 shrink-0 shadow-lg tracking-wide font-normal"
+                    style={{
+                      fontFamily: tickerFont.isTelugu
+                        ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
+                        : '"Khand", "Cinzel", "Roboto", sans-serif',
+                      fontWeight: tickerFont.isTelugu ? 400 : 700,
+                    }}
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-300 animate-pulse" />
+                    <span>BREAKING NEWS</span>
+                  </div>
+
+                  {/* Scrolling Headlines: Increased size, strict 400 normal weight for Ramabhadra */}
+                  <div className="flex-1 overflow-hidden relative flex items-center px-4 bg-gradient-to-r from-red-900/40 via-red-800/20 to-red-900/40">
+                    <div
+                      className="np-ticker-track text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tracking-wide cursor-default"
+                      style={{
+                        fontFamily: tickerFont.fontFamily,
+                        fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
+                        fontSize: tickerFont.isTelugu ? '21px' : '18px',
+                        lineHeight: 1.25,
+                      }}
+                    >
+                      <span className="pr-16 inline-block">
+                        {activeTickerText}
+                      </span>
+                      <span className="pr-16 inline-block">
+                        {activeTickerText}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1068,7 +1382,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 text-[10px] text-center text-neutral-400 font-medium">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 text-[9px] sm:text-[10px] text-center text-neutral-400 font-medium">
                     <span className={progressPercent >= 10 ? 'text-emerald-400 font-bold' : ''}>1. Editorial Review</span>
                     <span className={progressPercent >= 25 ? 'text-emerald-400 font-bold' : ''}>2. Script Manuscript</span>
                     <span className={progressPercent >= 45 ? 'text-emerald-400 font-bold' : ''}>3. Anchor Narration</span>
@@ -1083,12 +1397,12 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                 type="button"
                 onClick={() => handlePublish()}
                 disabled={isPublishing || activeClips.length === 0 || !newsText.trim()}
-                className="w-full inline-flex flex-row items-center justify-center gap-3 bg-[#1a73e8] hover:bg-[#1557b0] active:bg-[#174ea6] text-white font-bold text-base py-3.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
+                className="w-full inline-flex flex-row items-center justify-center gap-2 sm:gap-3 bg-[#1a73e8] hover:bg-[#1557b0] active:bg-[#174ea6] text-white font-bold text-sm sm:text-base py-3 sm:py-3.5 px-4 sm:px-6 rounded-xl shadow-sm hover:shadow-md transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
               >
-                <span className="w-7 h-7 rounded-lg bg-white/20 text-white inline-flex items-center justify-center shrink-0">
-                  <Rocket className={`w-4 h-4 ${isPublishing ? 'animate-bounce' : ''}`} />
+                <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white inline-flex items-center justify-center shrink-0">
+                  <Rocket className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isPublishing ? 'animate-bounce' : ''}`} />
                 </span>
-                <span className="whitespace-nowrap font-bold">
+                <span className="font-bold text-center break-words">
                   {isPublishing ? `Broadcasting in progress (${progressPercent}%)...` : 'Publish to YouTube (News Broadcast)'}
                 </span>
               </button>

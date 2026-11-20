@@ -61,22 +61,22 @@ export const Modal: React.FC<ModalProps> = ({
       />
 
       {/* Modal Dialog */}
-      <div className="min-h-full flex items-center justify-center p-4 text-center">
+      <div className="min-h-full flex items-center justify-center p-2.5 sm:p-4 text-center">
         <div
-          className={`w-full ${maxWidthStyles[maxWidth]} transform overflow-hidden rounded-3xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] text-left align-middle shadow-xl transition-all relative z-50`}
+          className={`w-full ${maxWidthStyles[maxWidth]} transform overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] text-left align-middle shadow-2xl transition-all relative z-50`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-[#dadce0] dark:border-[#444746] flex items-center justify-between bg-white dark:bg-[#28292a]">
-            <div>
-              <h3 className="text-base font-semibold text-[#202124] dark:text-[#f2f2f2] font-sans tracking-tight">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#dadce0] dark:border-[#444746] flex items-center justify-between bg-white dark:bg-[#28292a]">
+            <div className="pr-2 min-w-0">
+              <h3 className="text-base font-semibold text-[#202124] dark:text-[#f2f2f2] font-sans tracking-tight truncate">
                 {title}
               </h3>
-              {subtitle && <p className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal mt-0.5">{subtitle}</p>}
+              {subtitle && <p className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal mt-0.5 truncate">{subtitle}</p>}
             </div>
             <button
               onClick={onClose}
-              className="text-[#5f6368] dark:text-[#c4c7c5] hover:text-[#202124] dark:hover:text-white p-2 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#333537] transition-colors cursor-pointer"
+              className="text-[#5f6368] dark:text-[#c4c7c5] hover:text-[#202124] dark:hover:text-white p-1.5 sm:p-2 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#333537] transition-colors cursor-pointer shrink-0"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -84,13 +84,13 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5 max-h-[75vh] overflow-y-auto text-sm text-[#3c4043] dark:text-[#e3e3e3] bg-white dark:bg-[#28292a] font-sans">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-5 max-h-[80dvh] sm:max-h-[75vh] overflow-y-auto text-sm text-[#3c4043] dark:text-[#e3e3e3] bg-white dark:bg-[#28292a] font-sans">
             {children}
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-6 py-4 bg-[#f8fafd] dark:bg-[#202124] border-t border-[#dadce0] dark:border-[#444746] flex items-center justify-end gap-3 font-sans">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-[#f8fafd] dark:bg-[#202124] border-t border-[#dadce0] dark:border-[#444746] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 font-sans">
               {footer}
             </div>
           )}

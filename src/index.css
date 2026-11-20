@@ -104,18 +104,57 @@
 }
 
 @layer base {
-  html, body {
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  body {
     background-color: var(--color-canvas);
     color: var(--color-text-body);
     font-family: var(--font-sans);
     min-height: 100%;
     letter-spacing: -0.01em;
+    overflow-x: hidden;
+    width: 100%;
+    touch-action: manipulation;
   }
 
   h1, h2, h3, h4, h5, h6 {
     color: var(--color-text-heading);
     font-family: var(--font-sans);
     letter-spacing: -0.02em;
+  }
+
+  /* Prevent automatic zoom in on mobile iOS Safari when focusing text inputs */
+  @media screen and (max-width: 768px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Smooth momentum touch scrolling for mobile containers */
+  .overflow-x-auto,
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide scrollbar utility for clean mobile horizontal rails */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 
   /* Google-style subtle rounded scrollbars */
@@ -375,3 +414,19 @@ button.inline-flex,
 
 
 /* v2.1 */
+
+/* YouTube News Studio Broadcast Ticker Animations */
+@keyframes npTickerLoop {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.np-ticker-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: npTickerLoop 40s linear infinite;
+}
+
+.np-ticker-track:hover {
+  animation-play-state: paused;
+}

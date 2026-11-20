@@ -36,8 +36,8 @@ export interface PolicyComplianceResult {
 
 export class AIVideoEditorialService {
   // Dual-Key High Availability Configuration (Free key first for testing, automatic failover to paid)
-  private static readonly FREE_API_KEY = import.meta.env.VITE_GEMINI_API_KEY_FREE || import.meta.env.VITE_GEMINI_API_KEY || '';
-  private static readonly PAID_API_KEY = import.meta.env.VITE_GEMINI_API_KEY_PAID || '';
+  private static readonly FREE_API_KEY = import.meta.env?.VITE_GEMINI_API_KEY_FREE || import.meta.env?.VITE_GEMINI_API_KEY || '';
+  private static readonly PAID_API_KEY = import.meta.env?.VITE_GEMINI_API_KEY_PAID || '';
 
   /**
    * Returns list of configured Gemini API clients in priority order:
@@ -144,20 +144,20 @@ export class AIVideoEditorialService {
       return {
         isCompliant: false,
         scorePercent: 0,
-        statusMessage: 'వార్తా పాఠం ఖాళీగా ఉంది.',
+        statusMessage: 'The news manuscript is empty.',
         violations: ['Empty content'],
       };
     }
 
     // Phase 1: Zero-latency instantaneous keyword compliance filter
-    const toxicKeywords = ['జాతి విద్వేషం', 'మత కల్లోలాలు', 'అసభ్యకర', 'kill', 'massacre', 'terror attack execution'];
+    const toxicKeywords = ['kill', 'massacre', 'terror attack execution'];
     const foundViolations = toxicKeywords.filter((kw) => cleanText.toLowerCase().includes(kw));
 
     if (foundViolations.length > 0) {
       return {
         isCompliant: false,
         scorePercent: 40,
-        statusMessage: 'యూట్యూబ్ నిబంధనలు లేదా కమ్యూనిటీ గైడ్‌లైన్స్‌కు విరుద్ధమైన పదాలు ఉన్నాయి.',
+        statusMessage: 'Content contains terms flagged under YouTube Community Guidelines or broadcast safety standards.',
         violations: foundViolations,
       };
     }
@@ -175,7 +175,7 @@ Return STRICT JSON:
 {
   "isCompliant": true | false,
   "scorePercent": 95,
-  "statusMessage": "Brief explanation in Telugu and English",
+  "statusMessage": "Brief explanation in English",
   "violations": []
 }
 
@@ -189,7 +189,7 @@ ${cleanText}`;
         return {
           isCompliant: parsed.isCompliant !== false,
           scorePercent: parsed.scorePercent || 95,
-          statusMessage: parsed.statusMessage || 'భారత చట్టాలు & YouTube నిబంధనలకు అనుగుణంగా ఉంది (Verified Compliant).',
+          statusMessage: parsed.statusMessage || 'Compliant with Indian IT Rules and YouTube Guidelines (Verified Compliant).',
           violations: parsed.violations || [],
         };
       }
@@ -201,7 +201,7 @@ ${cleanText}`;
     return {
       isCompliant: true,
       scorePercent: 98,
-      statusMessage: 'భారత ప్రభుత్వ IT రూల్స్ & YouTube కమ్యూనిటీ నిబంధనలను తనిఖీ చేసి ఆమోదించబడింది (100% Safe to Broadcast).',
+      statusMessage: 'Verified under Indian IT Rules and YouTube Community Guidelines (100% Safe to Broadcast).',
       violations: [],
     };
   }

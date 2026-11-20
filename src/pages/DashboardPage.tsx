@@ -159,7 +159,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       )}
 
       {/* Top Bar: Clean Workspace Greeting & Direct 1-Click Actions */}
-      <div className="bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[11px] uppercase tracking-wider font-semibold bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] px-3 py-0.5 rounded-full border border-[#d2e3fc] dark:border-[#1a73e8]">
@@ -177,10 +177,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap w-full md:w-auto shrink-0">
           <button
             onClick={() => onNavigate('/newsroom/youtube-studio')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fce8e6] hover:bg-[#fad2cf] text-[#d93025] dark:bg-[#3c1410] dark:text-[#f28b82] font-medium text-xs border border-[#f5c2c7] dark:border-[#d93025] transition-all cursor-pointer"
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-[#fce8e6] hover:bg-[#fad2cf] text-[#d93025] dark:bg-[#3c1410] dark:text-[#f28b82] font-medium text-xs border border-[#f5c2c7] dark:border-[#d93025] transition-all cursor-pointer whitespace-nowrap"
           >
             <Youtube className="w-4 h-4 text-[#d93025]" />
             <span>Create YouTube Video</span>
@@ -188,7 +188,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => setIsQuickStoryOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-xs transition-all cursor-pointer"
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-xs transition-all cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>Write Story</span>
@@ -196,7 +196,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
           <button
             onClick={() => onNavigate('/newspaper/page-designer')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1f1f1f] hover:bg-[#f8fafd] border border-[#dadce0] dark:border-[#444746] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-xs transition-all cursor-pointer"
+            className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-white dark:bg-[#1f1f1f] hover:bg-[#f8fafd] border border-[#dadce0] dark:border-[#444746] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-xs transition-all cursor-pointer whitespace-nowrap"
           >
             <BookOpen className="w-4 h-4" />
             <span>Read Newspaper</span>
@@ -345,11 +345,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left 2 Cols: Reporter Review & Published Stories */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between border-b border-[#dadce0] dark:border-[#444746] pb-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between border-b border-[#dadce0] dark:border-[#444746] pb-3 gap-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
               <button
                 onClick={() => setActiveTab('queue')}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'queue'
                     ? 'bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#004a77] dark:text-[#a8c7fa] font-semibold'
                     : 'text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a]'
@@ -370,7 +370,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
               <button
                 onClick={() => setActiveTab('dispatches')}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                   activeTab === 'dispatches'
                     ? 'bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#004a77] dark:text-[#a8c7fa] font-semibold'
                     : 'text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a]'
@@ -388,6 +388,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 onNavigate(activeTab === 'queue' ? '/newsroom/editorial-queue' : '/newsroom/news')
               }
               rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              className="self-end sm:self-auto text-xs"
             >
               View All
             </Button>
@@ -414,8 +415,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                       key={item.reviewId}
                       className="p-4 rounded-xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs space-y-3"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="space-y-1 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-[11px] font-bold text-[#1a73e8] dark:text-[#8ab4f8] bg-[#e8f0fe] dark:bg-[#004a77] px-2 py-0.5 rounded-md">
                               {item.desk}
@@ -432,7 +433,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                           </h3>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
                           <button
                             onClick={(e) => handleFastApprove(e, item)}
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors cursor-pointer"
