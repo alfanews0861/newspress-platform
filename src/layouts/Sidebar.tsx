@@ -21,6 +21,11 @@ import {
   Sliders,
   Youtube,
   UploadCloud,
+  Share2,
+  User,
+  CreditCard,
+  Coins,
+  Send,
 } from 'lucide-react';
 import { NAVIGATION_SECTIONS } from '../config/navigation';
 import { usePermission } from '../hooks/usePermission';
@@ -36,6 +41,13 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   my_listings: <UploadCloud className="w-4 h-4" />,
   reporters: <Users className="w-4 h-4" />,
   settings: <Settings className="w-4 h-4" />,
+  affiliate: <Share2 className="w-4 h-4 text-emerald-600" />,
+  user_portal: <User className="w-4 h-4 text-blue-600" />,
+  user_plan: <CreditCard className="w-4 h-4 text-purple-600" />,
+  user_credits: <Coins className="w-4 h-4 text-amber-600" />,
+  user_paper: <BookOpen className="w-4 h-4 text-emerald-600" />,
+  user_reporter: <Send className="w-4 h-4 text-indigo-600" />,
+  user_youtube: <Youtube className="w-4 h-4 text-red-600" />,
 };
 
 export interface SidebarProps {

@@ -295,7 +295,7 @@ export const TenantExecutiveDashboard: React.FC = () => {
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-800/60">
-                <span className="text-slate-400">AI Tokens Used:</span>
+                <span className="text-slate-400">Editorial Operations Used:</span>
                 <span className="font-mono font-bold text-indigo-400">
                   {planUtilization?.aiUsed} / {planUtilization?.aiLimit}
                 </span>

@@ -43,7 +43,7 @@ import { navigateTo } from '../../utils/navigation';
 
 export const LANGUAGE_FILTER_OPTIONS = [
   { id: 'all', label: 'All Languages' },
-  { id: 'te', label: 'Telugu (తెలుగు)' },
+  { id: 'te', label: 'Telugu' },
   { id: 'ta', label: 'Tamil (தமிழ்)' },
   { id: 'kn', label: 'Kannada (ಕನ್ನಡ)' },
   { id: 'bn', label: 'Bengali (বাংলা)' },

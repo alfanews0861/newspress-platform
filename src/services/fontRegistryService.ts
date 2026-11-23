@@ -174,7 +174,7 @@ export class FontRegistryService {
   public static detectScript(text: string): 'telugu' | 'latin' | 'mixed' | 'empty' {
     if (!text || text.trim().length === 0) return 'empty';
 
-    // Telugu Unicode block: U+0C00–U+0C7F
+    // Telugu Unicode block: U+0C00-U+0C7F
     const teluguRegex = /[\u0C00-\u0C7F]/;
     const latinRegex = /[a-zA-Z]/;
 

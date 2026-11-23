@@ -62,6 +62,44 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
     ],
   },
   {
+    id: 'user_section',
+    title: 'User Portal',
+    defaultCollapsed: false,
+    items: [
+      {
+        id: 'user_portal',
+        label: 'My Account & KYC',
+        href: '/user/portal',
+        badge: 'Alfa Hub',
+      },
+      {
+        id: 'user_plan',
+        label: 'User Plan & Billing',
+        href: '/user/portal?tab=plan',
+      },
+      {
+        id: 'user_credits',
+        label: 'Balance Credits & Wallet',
+        href: '/user/portal?tab=credits',
+      },
+      {
+        id: 'user_paper',
+        label: 'My ePaper Editions',
+        href: '/user/portal?tab=paper',
+      },
+      {
+        id: 'user_reporter',
+        label: 'As Reporter & Wire Desk',
+        href: '/user/portal?tab=reporter',
+      },
+      {
+        id: 'user_youtube',
+        label: 'YouTube Settings',
+        href: '/user/portal?tab=youtube',
+      },
+    ],
+  },
+  {
     id: 'setup',
     title: 'Setup & Reporters',
     defaultCollapsed: false,
@@ -88,6 +126,12 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
         label: 'Channel & Settings',
         href: '/settings',
         requiredPermission: 'tenant.manage_settings',
+      },
+      {
+        id: 'affiliate',
+        label: 'Affiliate & Earn',
+        href: '/affiliate',
+        badge: '25% Cut',
       },
     ],
   },

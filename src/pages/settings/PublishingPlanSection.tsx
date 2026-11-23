@@ -84,15 +84,15 @@ export const PublishingPlanSection: React.FC = () => {
               </Badge>
             </div>
             <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 font-sans mt-1.5">
-              Editorial AI Capabilities & Production Entitlements
+              Editorial Desk Capabilities & Production Entitlements
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-              Governs generative AI editorial assistance, model tiers, and copy fitting engine access.
+              Governs editorial desk assistance, production tiers, and copy fitting engine access.
             </p>
           </div>
 
           <div className="text-left md:text-right shrink-0">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-0.5">Monthly AI Operations</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-0.5">Monthly Operations</span>
             <div className="flex items-baseline md:justify-end gap-1.5 font-mono">
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {usageStats.currentMonthlyUsage}
@@ -153,7 +153,7 @@ export const PublishingPlanSection: React.FC = () => {
             <div>
               <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-sans">Content As Submitted</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 min-h-[36px] leading-relaxed">
-                Authoritative human editorial text. No generative AI rewriting or fact alterations.
+                Authoritative human editorial text with verified factual accuracy.
               </p>
             </div>
 
@@ -171,8 +171,8 @@ export const PublishingPlanSection: React.FC = () => {
                 <span>Broadsheet & Tabloid templates</span>
               </div>
               <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
-                <span className="w-4 h-4 text-center font-bold shrink-0">✕</span>
-                <span>No Generative AI Operations</span>
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Standard Editorial Tools</span>
               </div>
             </div>
           </div>
@@ -219,7 +219,7 @@ export const PublishingPlanSection: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-sans">Light AI Assistance</h4>
+              <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-sans">Standard Editorial Suite</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 min-h-[36px] leading-relaxed">
                 Lightweight headline lab, copy-fitting suggestions, and summary options with fact integrity guard.
               </p>
@@ -228,7 +228,7 @@ export const PublishingPlanSection: React.FC = () => {
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-semibold text-slate-800 dark:text-slate-200">500 Monthly AI Operations</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">500 Monthly Operations</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -291,7 +291,7 @@ export const PublishingPlanSection: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-sans">Advanced AI Desk</h4>
+              <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-sans">Advanced Editorial Desk</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 min-h-[36px] leading-relaxed">
                 Advanced copy restructuring, photo quality intelligence, non-generative optical enhancement, & full capacity.
               </p>
@@ -300,7 +300,7 @@ export const PublishingPlanSection: React.FC = () => {
             <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-2 font-medium">
                 <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span className="font-semibold text-slate-800 dark:text-slate-200">2,500 Monthly AI Operations</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">2,500 Monthly Operations</span>
               </div>
               <div className="flex items-center gap-2 font-medium">
                 <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />

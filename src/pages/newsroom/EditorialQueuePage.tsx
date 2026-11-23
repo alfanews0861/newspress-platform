@@ -95,7 +95,7 @@ export const EditorialQueuePage: React.FC = () => {
   const [isEventAssignModalOpen, setIsEventAssignModalOpen] = useState(false);
   const [availableEventGroups, setAvailableEventGroups] = useState<EventGroup[]>([]);
 
-  // Phase 6 AI Modal States
+  // Phase 6 Editorial Modal States
   const [isHeadlineLabOpen, setIsHeadlineLabOpen] = useState(false);
   const [isSideBySideOpen, setIsSideBySideOpen] = useState(false);
   const [isCopyFittingOpen, setIsCopyFittingOpen] = useState(false);
@@ -271,12 +271,12 @@ export const EditorialQueuePage: React.FC = () => {
               </div>
             </Card>
 
-            {/* AI Editorial Assistant Tools Bar */}
+            {/* Editorial Assistant Tools Bar */}
             <Card variant="default">
               <div className="space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                   <span className="text-xs font-bold font-sans text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" /> AI Editorial Assistant
+                    <Sparkles className="w-3.5 h-3.5" /> Editorial Assistant
                   </span>
                   <Badge variant="outline" className="border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-[10px]">
                     Fact Integrity Guard Active

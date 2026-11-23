@@ -41,11 +41,29 @@ export const SUPPORTED_INDIAN_LANGUAGES: LanguageOption[] = [
 export type WatermarkPlacement = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
 
 export interface WatermarkSettings {
+  // Channel Logo Settings (Static & Animated Broadcast Logo Bug)
   logoUrl?: string;
   logoDataUrl?: string; // base64 / blob
-  placement: WatermarkPlacement;
-  scalePercent: number; // 10% to 30% of video width
-  opacityPercent: number; // 20% to 100%
+  isAnimatedLogo?: boolean;
+  logoFormat?: 'video' | 'gif' | 'image';
+  logoAnimationType?: '3d_spin' | 'shimmer_shine' | 'pulse_glow' | 'none';
+  logoVideoUrl?: string;
+  logoVideoBlob?: Blob;
+  logoFileName?: string;
+  logoPlacement?: WatermarkPlacement; // Default: 'top-right'
+  logoScalePercent?: number; // 10% to 35% of video width
+  logoOpacityPercent?: number; // 10% to 100%
+  logoXPercent?: number; // 0% (Left) to 100% (Right), Default: 88%
+  logoYPercent?: number; // 0% (Top) to 100% (Bottom), Default: 8%
+
+  // Watermark Text Settings (White Color, Custom / Middle / Left Placement)
+  text?: string; // White text watermark (Channel name or custom text)
+  textColor?: string; // Default: #ffffff (White)
+  placement?: WatermarkPlacement; // Default: 'top-left' (Left side)
+  scalePercent: number; // 10% to 35% of video width
+  opacityPercent: number; // 10% to 100%
+  xPercent?: number; // 0% (Left) to 100% (Right), Default: 50% (Center/Middle)
+  yPercent?: number; // 0% (Top) to 100% (Bottom), Default: 50% (Center/Middle)
   offsetX: number; // padding px
   offsetY: number; // padding px
 }
@@ -59,6 +77,94 @@ export interface NewsVideoClipItem {
   name: string;
 }
 
+export interface VoiceActorProfile {
+  id: string;
+  name: string;
+  teluguName: string;
+  englishName: string;
+  googleOriginalVoice: string; // 'Fenrir' | 'Charon' | 'Kore' | 'Aoede' | 'Puck'
+  gender: 'male' | 'female';
+  roleTitle: string;
+  emotionalTone: string;
+  styleInstruction: string;
+  defaultPitch: number;
+  badge: string;
+}
+
+export type EmotionalNewsStyle =
+  | 'emotional_breaking'
+  | 'dramatic_primetime'
+  | 'urgent_investigative'
+  | 'speed_bulletin';
+
+export const VOICE_ACTORS: VoiceActorProfile[] = [
+  {
+    id: 'ravi_shankar',
+    name: 'Ravi Shankar',
+    teluguName: 'Ravi Shankar',
+    englishName: 'Ravi Shankar',
+    googleOriginalVoice: 'Fenrir',
+    gender: 'male',
+    roleTitle: 'Senior Prime-Time News Anchor',
+    emotionalTone: 'Authoritative & Deep Emotional Delivery',
+    styleInstruction: 'High-energy, authoritative, deeply emotional Indian prime-time news anchor delivery with powerful vocal presence, dramatic emphasis, and intense breaking news cadence.',
+    defaultPitch: 1.0,
+    badge: 'Recommended',
+  },
+  {
+    id: 'krishna_murthy',
+    name: 'Krishna Murthy',
+    teluguName: 'Krishna Murthy',
+    englishName: 'Krishna Murthy',
+    googleOriginalVoice: 'Charon',
+    gender: 'male',
+    roleTitle: 'Breaking News Announcer',
+    emotionalTone: 'Urgent & Dramatic Breaking Cadence',
+    styleInstruction: 'Urgent, high-voltage, fast-paced breaking news presentation with dramatic emotional intensity, suspenseful pauses, and passionate cadence.',
+    defaultPitch: 0.96,
+    badge: 'Breaking News',
+  },
+  {
+    id: 'sunitha',
+    name: 'Sunitha',
+    teluguName: 'Sunitha',
+    englishName: 'Sunitha',
+    googleOriginalVoice: 'Kore',
+    gender: 'female',
+    roleTitle: 'Chief News Presenter',
+    emotionalTone: 'Heartfelt & Clear Delivery',
+    styleInstruction: 'Heartfelt, expressive, deeply empathetic female TV news presenter with clear diction, compelling emotional resonance, and dignified gravitas.',
+    defaultPitch: 1.05,
+    badge: 'Expressive',
+  },
+  {
+    id: 'priyanka',
+    name: 'Priyanka',
+    teluguName: 'Priyanka',
+    englishName: 'Priyanka',
+    googleOriginalVoice: 'Aoede',
+    gender: 'female',
+    roleTitle: 'Dynamic Speed News & Live Anchor',
+    emotionalTone: 'Dynamic & Vibrant Energy',
+    styleInstruction: 'Fast-paced, vibrant, energetic delivery with youthful excitement and rhythmic cadence, ideal for rapid news bulletins and viral reports.',
+    defaultPitch: 1.1,
+    badge: 'Energetic Speed',
+  },
+  {
+    id: 'rajesh',
+    name: 'Rajesh',
+    teluguName: 'Rajesh',
+    englishName: 'Rajesh',
+    googleOriginalVoice: 'Puck',
+    gender: 'male',
+    roleTitle: 'Investigative & Ground Field Reporter',
+    emotionalTone: 'Investigative & Ground Tension',
+    styleInstruction: 'Gritty, suspenseful, investigative field-reporter tone with conversational authenticity, emotional tension, and urgent realism.',
+    defaultPitch: 0.98,
+    badge: 'Investigative Report',
+  },
+];
+
 export interface YouTubeChannelBrandingSettings {
   introVideoUrl?: string;
   introVideoFileName?: string;
@@ -67,7 +173,9 @@ export interface YouTubeChannelBrandingSettings {
   watermark: WatermarkSettings;
   defaultLanguage: SupportedIndianLanguage;
   voiceGender: 'male' | 'female';
-  speechRate: number; // 0.8 to 1.3
+  voiceActorId?: string; // 'ravi_shankar' | 'krishna_murthy' | 'sunitha' | 'priyanka' | 'rajesh'
+  emotionalStyle?: EmotionalNewsStyle; // 'emotional_breaking' | 'dramatic_primetime' | 'urgent_investigative' | 'speed_bulletin'
+  speechRate: number; // default: 1.3 (0.8 to 1.6)
   defaultCategory: string; // '25' = News & Politics
   defaultTags: string[];
   descriptionTemplate: string;
@@ -132,3 +240,25 @@ export interface YouTubePublishResult {
   privacyStatus: string;
   thumbnailUploaded: boolean;
 }
+
+export interface YouTubeBroadcastRecord {
+  videoId: string;
+  youtubeUrl: string;
+  embedUrl?: string;
+  title: string;
+  publishedAt: string;
+  privacyStatus?: string;
+  thumbnailUrl?: string;
+  newsLocation?: string;
+  location?: string;
+  durationMode?: string;
+  language?: string;
+  voiceActorId?: string;
+  voiceActorName?: string;
+  channelTitle?: string;
+  status?: 'processing' | 'ready' | 'published';
+  isSdReady?: boolean;
+}
+
+export * from './youtubeQueue';
+

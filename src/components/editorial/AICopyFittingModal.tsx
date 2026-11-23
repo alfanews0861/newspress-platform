@@ -87,7 +87,7 @@ export const AICopyFittingModal: React.FC<AICopyFittingModalProps> = ({
         headline: article.headline,
         leadParagraph: article.leadParagraph,
         bodyContent: shortenedCopy,
-        changeSummary: `Applied ${reductionPercent}% AI copy-fitting reduction for newspaper column layout`,
+        changeSummary: `Applied ${reductionPercent}% copy-fitting reduction for newspaper column layout`,
       });
 
       onApplied?.({ ...article, bodyContent: res.bodyContent, wordCount: res.bodyContent.split(/\s+/).length });

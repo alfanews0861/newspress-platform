@@ -69,7 +69,7 @@ export const AISummaryModal: React.FC<AISummaryModalProps> = ({ isOpen, onClose,
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="AI Summary & Teaser Generator"
+      title="Executive Summary & Teaser Desk"
       subtitle="Generate 30, 50, 60, and 80-word executive teasers for front page promos and digital syndication."
       maxWidth="xl"
     >

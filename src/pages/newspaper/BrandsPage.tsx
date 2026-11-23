@@ -76,7 +76,7 @@ const FREQUENCIES: { id: PublicationFrequency; name: string; desc: string; defau
 const SUPPORTED_LANGUAGES = [
   { code: 'en', label: 'English (National Language of Record)' },
   { code: 'hi', label: 'Hindi (हिन्दी)' },
-  { code: 'te', label: 'Telugu (తెలుగు)' },
+  { code: 'te', label: 'Telugu' },
   { code: 'mixed', label: 'Bilingual / Multi-language Edition' },
   { code: 'ta', label: 'Tamil (தமிழ்)' },
   { code: 'kn', label: 'Kannada (ಕನ್ನಡ)' },
@@ -87,7 +87,7 @@ const SUPPORTED_LANGUAGES = [
   { code: 'pa', label: 'Punjabi (ਪੰਜਾਬੀ)' },
   { code: 'ur', label: 'Urdu (اردو)' },
   { code: 'or', label: 'Odia (ଓଡ଼ିଆ)' },
-  { code: 'as', label: 'Assamese (অসমీయా)' },
+  { code: 'as', label: 'Assamese (অসমীয়া)' },
 ];
 
 export const BrandsPage: React.FC = () => {

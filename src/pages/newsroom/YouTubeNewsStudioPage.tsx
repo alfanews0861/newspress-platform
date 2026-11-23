@@ -40,6 +40,11 @@ import {
   MapPin,
   Tv,
   Sparkles,
+  Zap,
+  Download,
+  Loader2,
+  Info,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
@@ -214,8 +219,40 @@ export const YouTubeNewsStudioPage: React.FC = () => {
   const [publishedThumbnailUrl, setPublishedThumbnailUrl] = useState<string>('');
   const [copiedUrl, setCopiedUrl] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [youtubeProcessingState, setYoutubeProcessingState] = useState<'idle' | 'checking' | 'processing' | 'processed' | 'background'>('idle');
+  const [isExtractingStory, setIsExtractingStory] = useState<boolean>(false);
+
+  // YouTube Thumbnail Studio States
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string>('');
+  const [thumbnailCustomBlob, setThumbnailCustomBlob] = useState<Blob | null>(null);
+  const [isCustomThumbnailUploaded, setIsCustomThumbnailUploaded] = useState<boolean>(false);
+  const [customThumbnailFileName, setCustomThumbnailFileName] = useState<string>('');
+  const [thumbnailHeadline, setThumbnailHeadline] = useState<string>('');
+  const [thumbnailBadge, setThumbnailBadge] = useState<string>('BREAKING!');
+  const [thumbnailCuriosity, setThumbnailCuriosity] = useState<string>('What Just Happened?');
+  const [thumbnailThemeColor, setThumbnailThemeColor] = useState<'fire_red' | 'electric_yellow' | 'shock_blue' | 'crimson_dark'>('fire_red');
+  const [thumbnailKeyframeTimeSec, setThumbnailKeyframeTimeSec] = useState<number>(2.0);
+  const [thumbnailKeyframeBase64, setThumbnailKeyframeBase64] = useState<string>('');
+  const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState<boolean>(false);
+  const [thumbnailModelUsed, setThumbnailModelUsed] = useState<string>('');
+  const [thumbnailSource, setThumbnailSource] = useState<'gemini-image-model' | 'broadcast-canvas' | 'custom-upload' | ''>('');
+
+  const LANGUAGE_BADGE_PRESETS: Record<string, string[]> = {
+    te: ['BREAKING!', 'MAJOR UPDATE!', 'SPECIAL REPORT!', 'WHAT HAPPENED?', 'HIGH ALERT!'],
+    hi: ['BREAKING!', 'BIG REVELATION!', 'SPECIAL REPORT!', 'WHAT HAPPENED?'],
+    ta: ['BREAKING!', 'TOP STORY!', 'SPECIAL REPORT!'],
+    kn: ['BREAKING!', 'TOP STORY!', 'SPECIAL REPORT!'],
+    ml: ['BREAKING!', 'SPECIAL REPORT!'],
+    bn: ['BREAKING!', 'SPECIAL REPORT!'],
+    mr: ['BREAKING!', 'SPECIAL REPORT!'],
+    gu: ['BREAKING!', 'SPECIAL REPORT!'],
+    pa: ['BREAKING!', 'SPECIAL REPORT!'],
+    or: ['BREAKING!', 'SPECIAL REPORT!'],
+    en: ['SHOCKING REVELATION!', 'BREAKING REPORT!', 'UNEXPECTED TWIST!', 'WHAT HAPPENED?'],
+  };
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const thumbnailFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSettings(YouTubeService.getSettings());
@@ -303,6 +340,29 @@ export const YouTubeNewsStudioPage: React.FC = () => {
     });
   };
 
+  const handleExtractStoryFromVideo = async (videoFile?: File | Blob) => {
+    const targetFile = videoFile || clips[0]?.file;
+    if (!targetFile) return;
+    setIsExtractingStory(true);
+    setErrorMessage(null);
+    try {
+      const result = await AIVideoEditorialService.draftStoryFromVideo(targetFile, selectedLanguage);
+      if (result.story) {
+        setNewsText(result.story);
+      }
+      if (result.headline) {
+        setThumbnailHeadline(result.headline);
+      }
+      if (result.location && !newsLocation) {
+        setNewsLocation(result.location);
+      }
+    } catch (e: any) {
+      console.warn('AI story extraction notice:', e);
+    } finally {
+      setIsExtractingStory(false);
+    }
+  };
+
   const handleSlotUpload = async (slotIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
@@ -330,6 +390,18 @@ export const YouTubeNewsStudioPage: React.FC = () => {
 
     setClips(next);
     e.target.value = '';
+
+    // Automatically extract news story manuscript from footage if manuscript is empty
+    if (!newsText.trim() && files[0] && slotIdx === 0) {
+      handleExtractStoryFromVideo(files[0]);
+    }
+
+    // Automatically generate thumbnail from footage only if user has not uploaded a custom thumbnail
+    if (!isCustomThumbnailUploaded) {
+      setTimeout(() => {
+        handleGenerateAIThumbnail();
+      }, 600);
+    }
   };
 
   const handleRemoveSlot = (slotIdx: number) => {
@@ -349,6 +421,47 @@ export const YouTubeNewsStudioPage: React.FC = () => {
     setComplianceWarning(null);
     setProgressPercent(0);
     setCurrentStep('');
+    setIsCustomThumbnailUploaded(false);
+    setCustomThumbnailFileName('');
+    setThumbnailCustomBlob(null);
+    setThumbnailPreviewUrl('');
+    setThumbnailSource('');
+  };
+
+  const handleCustomThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please upload a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setThumbnailPreviewUrl(dataUrl);
+      setThumbnailCustomBlob(file);
+      setIsCustomThumbnailUploaded(true);
+      setCustomThumbnailFileName(file.name);
+      setThumbnailSource('custom-upload');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveCustomThumbnail = () => {
+    setIsCustomThumbnailUploaded(false);
+    setCustomThumbnailFileName('');
+    setThumbnailCustomBlob(null);
+    setThumbnailPreviewUrl('');
+    setThumbnailSource('');
+    // If video footage is already uploaded, auto-generate thumbnail from footage
+    if (activeClips.some((c) => Boolean(c))) {
+      setTimeout(() => {
+        handleGenerateAIThumbnail();
+      }, 200);
+    }
   };
 
   const handleReconnectChannel = async () => {
@@ -360,6 +473,78 @@ export const YouTubeNewsStudioPage: React.FC = () => {
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to reconnect YouTube channel.');
     }
+  };
+
+  // 100% Autonomous AI YouTube Thumbnail Generation with Gemini Image Model
+  const handleGenerateAIThumbnail = async () => {
+    // If user uploaded their own custom thumbnail, strictly do not generate AI thumbnail
+    if (isCustomThumbnailUploaded) {
+      return;
+    }
+    try {
+      setIsGeneratingThumbnail(true);
+      setErrorMessage(null);
+
+      let keyframe = thumbnailKeyframeBase64;
+      if (videoRef.current && videoRef.current.videoWidth > 0) {
+        keyframe = await ThumbnailGeneratorService.extractBestFaceKeyframe(videoRef.current, [1.0, 2.5, 4.0]);
+        if (keyframe) {
+          setThumbnailKeyframeBase64(keyframe);
+        }
+      }
+
+      // Auto-extract headline from manuscript if not pre-set
+      let activeHeadline = thumbnailHeadline.trim();
+      if (!activeHeadline && newsText.trim()) {
+        const firstLine = newsText.trim().split('\n')[0].replace(/^([^\n:,\-–—]{2,25})\s*[:\-–—]/, '').trim();
+        if (firstLine) {
+          activeHeadline = firstLine.slice(0, 42);
+        }
+      }
+      if (!activeHeadline) {
+        activeHeadline = 'BREAKING NEWS REPORT';
+      }
+
+      const activeBadge = thumbnailBadge.trim() || 'BREAKING!';
+      const activeCuriosity = thumbnailCuriosity.trim() || 'What Just Happened?';
+
+      setThumbnailHeadline(activeHeadline);
+      setThumbnailBadge(activeBadge);
+      setThumbnailCuriosity(activeCuriosity);
+
+      const result = await ThumbnailGeneratorService.generateAIThumbnail({
+        videoElement: videoRef.current || undefined,
+        keyframeImageUrl: keyframe,
+        headlineText: activeHeadline,
+        badgeText: activeBadge,
+        curiosityLine: activeCuriosity,
+        themeColor: thumbnailThemeColor,
+        logoDataUrl: settings.watermark.logoDataUrl,
+        channelName: account.channelTitle || 'NEWSPRESS 24x7',
+        language: selectedLanguage,
+        preferGeminiImageModel: true,
+      });
+
+      setThumbnailPreviewUrl(result.dataUrl);
+      setThumbnailCustomBlob(result.blob);
+      setThumbnailModelUsed(result.modelUsed);
+      setThumbnailSource(result.source);
+    } catch (err: any) {
+      console.warn('AI Thumbnail Generation error:', err);
+    } finally {
+      setIsGeneratingThumbnail(false);
+    }
+  };
+
+  const handleDownloadThumbnail = () => {
+    const url = thumbnailPreviewUrl || publishedThumbnailUrl;
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `youtube_thumbnail_${selectedLanguage}_${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   // Complete Newsroom Broadcast Pipeline
@@ -395,45 +580,39 @@ export const YouTubeNewsStudioPage: React.FC = () => {
       return;
     }
 
-    // Pacing Manager:
-    let estimatedTotalSeconds = 45;
-    if (clipDurationMode === '60s') estimatedTotalSeconds = 60;
-    if (clipDurationMode === '120s') estimatedTotalSeconds = 90;
-    if (clipDurationMode === '300s') estimatedTotalSeconds = 150;
-    if (clipDurationMode === 'full') {
-      estimatedTotalSeconds = Math.max(90, Math.min(360, Math.round((totalFootageDuration || 60) * 0.5) + 60));
-    }
+    // Pacing Manager for Cloud Studio Mastering
+    const estimatedMasteringSec = Math.max(
+      30,
+      Math.min(180, Math.round((totalFootageDuration || 60) * 0.35) + 15)
+    );
 
-    setProgressPercent(4);
+    let masteringInterval: NodeJS.Timeout | null = null;
+    setYoutubeProcessingState('idle');
+
+    setProgressPercent(6);
     setCurrentStep('Reviewing news manuscript against editorial standards...');
-
-    const progressInterval = setInterval(() => {
-      setProgressPercent((prev) => {
-        if (prev >= 92) return 92;
-        const step = Math.max(0.35, (92 - prev) / (estimatedTotalSeconds * 0.7));
-        return Math.min(92, Math.round(prev + step));
-      });
-    }, 1000);
 
     try {
       // Step 1: Legal & Compliance Verification
       if (!isOverride) {
         const compliance = await AIVideoEditorialService.verifyEditorialCompliance(newsText);
         if (!compliance.isCompliant) {
-          clearInterval(progressInterval);
           setComplianceWarning(compliance.statusMessage || 'The news content flagged an editorial compliance advisory.');
           setIsPublishing(false);
           return;
         }
       }
+      setProgressPercent(16);
 
       // Step 2: News Manuscript & Broadcast Headlines Formatting
-      setCurrentStep('Formatting broadcast news script and headlines...');
+      setCurrentStep('Formatting broadcast news script and headlines from story and video footage...');
       const editorialPkg = await AIVideoEditorialService.generateBroadcastPackage({
-        newsText,
+        newsText: newsText.trim() || 'Latest Breaking News Update',
         language: selectedLanguage,
         channelName: account.channelTitle || 'NewsPress Network',
+        videoClips: activeClips.map((c) => c.file),
       });
+      setProgressPercent(28);
 
       // Step 3: Studio Anchor Narration Audio Recording
       const langObj = SUPPORTED_INDIAN_LANGUAGES.find((l) => l.code === selectedLanguage);
@@ -444,27 +623,54 @@ export const YouTubeNewsStudioPage: React.FC = () => {
         rate: settings.speechRate,
         gender: settings.voiceGender,
       });
+      setProgressPercent(40);
 
-      // Step 4: Extract Keyframe from Uploaded Footage & Compose Broadcast Graphics
-      setCurrentStep('Extracting keyframe from news footage and designing broadcast graphics...');
-      let keyframeUrl: string | undefined;
-      if (videoRef.current && videoRef.current.videoWidth > 0) {
-        keyframeUrl = await ThumbnailGeneratorService.extractFrameFromVideo(videoRef.current, 2);
+      // Step 4: Video Thumbnail (Custom Uploaded or Auto Generated)
+      let finalThumbBlob: Blob;
+      let finalThumbDataUrl: string;
+
+      if (isCustomThumbnailUploaded && thumbnailCustomBlob && thumbnailPreviewUrl) {
+        setCurrentStep('Attaching your custom uploaded thumbnail...');
+        finalThumbBlob = thumbnailCustomBlob;
+        finalThumbDataUrl = thumbnailPreviewUrl;
+      } else {
+        setCurrentStep('Designing broadcast thumbnail from video footage...');
+        let keyframeUrl = thumbnailKeyframeBase64;
+        if (!keyframeUrl && videoRef.current && videoRef.current.videoWidth > 0) {
+          keyframeUrl = await ThumbnailGeneratorService.extractBestFaceKeyframe(videoRef.current, [1, 2.5, 4]);
+        }
+        const thumb = await ThumbnailGeneratorService.generateAIThumbnail({
+          videoElement: videoRef.current || undefined,
+          keyframeImageUrl: keyframeUrl,
+          headlineText: thumbnailHeadline || editorialPkg.thumbnailHeadline,
+          badgeText: thumbnailBadge || editorialPkg.thumbnailBadge,
+          curiosityLine: thumbnailCuriosity || editorialPkg.thumbnailCuriosityLine,
+          themeColor: thumbnailThemeColor || editorialPkg.thumbnailColorTheme || 'fire_red',
+          logoDataUrl: settings.watermark.logoDataUrl,
+          channelName: account.channelTitle || 'NEWSPRESS 24x7',
+          language: selectedLanguage,
+          preferGeminiImageModel: true,
+        });
+        finalThumbBlob = thumb.blob;
+        finalThumbDataUrl = thumb.dataUrl;
+        setThumbnailPreviewUrl(thumb.dataUrl);
+        setThumbnailCustomBlob(thumb.blob);
       }
-      const thumb = await ThumbnailGeneratorService.renderThumbnail({
-        videoElement: videoRef.current || undefined,
-        keyframeImageUrl: keyframeUrl,
-        headlineText: editorialPkg.thumbnailHeadline,
-        badgeText: editorialPkg.thumbnailBadge,
-        curiosityLine: editorialPkg.thumbnailCuriosityLine,
-        themeColor: editorialPkg.thumbnailColorTheme || 'fire_red',
-        logoDataUrl: settings.watermark.logoDataUrl,
-        channelName: account.channelTitle || 'NEWSPRESS 24x7',
-      });
-      setPublishedThumbnailUrl(thumb.dataUrl);
+      setPublishedThumbnailUrl(finalThumbDataUrl);
+      setProgressPercent(46);
 
-      // Step 5 & 6: Studio Composition & Direct Channel Publication
-      setCurrentStep(`Mastering broadcast package (${activeClips.length} sequential clips + bumpers) and preparing transmission...`);
+      // Step 5: Studio Composition & Mastering on Cloud Run
+      setCurrentStep(`Mastering broadcast package (${activeClips.length} sequential clips + bumpers) with 2-tier tickers & watermark...`);
+
+      // Start smooth pacing interval for mastering stage: smoothly climbs from 46% up to 82%
+      masteringInterval = setInterval(() => {
+        setProgressPercent((prev) => {
+          if (prev >= 82) return 82;
+          const step = Math.max(0.4, (82 - prev) / (estimatedMasteringSec * 0.7));
+          return Math.min(82, Math.round(prev + step));
+        });
+      }, 1000);
+
       const { introVideoBlob, outroVideoBlob } = await YouTubeService.getHydratedIntroOutroBlobs();
       const broadcastResult = await VideoCompositorService.composeAndPublishDirectToYouTube({
         mainVideoBlob: activeClips[0]?.file,
@@ -481,7 +687,8 @@ export const YouTubeNewsStudioPage: React.FC = () => {
         tickerText: tickerText.trim() || defaultStateTicker,
         clipDurationMode,
         sourceDuration: totalFootageDuration,
-        thumbnailBlob: thumb.blob,
+        thumbnailBlob: finalThumbBlob,
+        channelTitle: account.channelTitle || 'NewsPress 24x7',
         youtubeTitle: editorialPkg.headlineTitle,
         youtubeDescription: editorialPkg.youtubeDescription,
         youtubeTags: editorialPkg.tags,
@@ -499,24 +706,76 @@ export const YouTubeNewsStudioPage: React.FC = () => {
         },
       });
 
-      clearInterval(progressInterval);
+      if (masteringInterval) {
+        clearInterval(masteringInterval);
+        masteringInterval = null;
+      }
+
+      // Step 6: Direct Transmission to YouTube Succeeded
+      setProgressPercent(86);
+      setCurrentStep('Delivered to YouTube! Verifying live SD/HD stream processing...');
+      setYoutubeProcessingState('checking');
+
+      // Step 7: Poll YouTube Data API for live processing status (SD transcode ready)
+      const pollStart = Date.now();
+      const maxPollMs = 35000;
+      let isVerifiedSdReady = false;
+
+      while (Date.now() - pollStart < maxPollMs) {
+        try {
+          const ytStatus = await YouTubeService.getVideoProcessingStatus(
+            broadcastResult.videoId,
+            activeAccessToken
+          );
+          if (ytStatus.isSdReady || ytStatus.uploadStatus === 'processed' || ytStatus.processingStatus === 'succeeded') {
+            isVerifiedSdReady = true;
+            setYoutubeProcessingState('processed');
+            break;
+          } else if (ytStatus.uploadStatus === 'uploaded' || ytStatus.processingStatus === 'processing') {
+            setYoutubeProcessingState('processing');
+            const ytPct = ytStatus.progressPercentage ? ` (${ytStatus.progressPercentage}%)` : '';
+            setCurrentStep(`Processing video on YouTube: preparing SD quality${ytPct}...`);
+            setProgressPercent((prev) => Math.min(98, prev + 2));
+          }
+        } catch (pollErr) {
+          console.warn('YouTube processing status poll notice:', pollErr);
+        }
+        await new Promise((r) => setTimeout(r, 3000));
+      }
+
+      if (!isVerifiedSdReady) {
+        setYoutubeProcessingState('background');
+      }
+
       setProgressPercent(100);
-      setCurrentStep('Published successfully to YouTube broadcast channel!');
-      setPublishedResult({
+      setCurrentStep(
+        isVerifiedSdReady
+          ? 'Broadcast Ready! SD video processing completed and ready to watch on YouTube.'
+          : 'Video published successfully to YouTube! Ready to share and watch.'
+      );
+
+      const pubRes: YouTubePublishResult = {
         videoId: broadcastResult.videoId,
         youtubeUrl: broadcastResult.youtubeUrl,
         embedUrl: `https://www.youtube.com/embed/${broadcastResult.videoId}`,
         title: broadcastResult.title,
         privacyStatus: 'public',
-        publishedAt: broadcastResult.publishedAt,
+        publishedAt: broadcastResult.publishedAt || new Date().toISOString(),
         thumbnailUploaded: true,
-      });
+      };
+      setPublishedResult(pubRes);
     } catch (err: any) {
-      clearInterval(progressInterval);
+      if (masteringInterval) {
+        clearInterval(masteringInterval);
+        masteringInterval = null;
+      }
       console.error('Publishing failed:', err);
       setErrorMessage(err?.message || 'An error occurred during video processing or YouTube publishing.');
     } finally {
-      clearInterval(progressInterval);
+      if (masteringInterval) {
+        clearInterval(masteringInterval);
+        masteringInterval = null;
+      }
       setIsPublishing(false);
     }
   };
@@ -636,22 +895,41 @@ export const YouTubeNewsStudioPage: React.FC = () => {
 
           {/* Video Preview & Details Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-7 bg-black rounded-xl overflow-hidden shadow-sm border border-[#dadce0] dark:border-[#3c4043] aspect-video relative">
-              {publishedResult.embedUrl ? (
-                <iframe
-                  src={publishedResult.embedUrl}
-                  title={publishedResult.title}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : publishedThumbnailUrl ? (
-                <img
-                  src={publishedThumbnailUrl}
-                  alt={publishedResult.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : null}
+            <div className="lg:col-span-7 space-y-3">
+              <div className="bg-black rounded-xl overflow-hidden shadow-sm border border-[#dadce0] dark:border-[#3c4043] aspect-video relative">
+                {publishedResult.embedUrl ? (
+                  <iframe
+                    src={publishedResult.embedUrl}
+                    title={publishedResult.title}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : publishedThumbnailUrl ? (
+                  <img
+                    src={publishedThumbnailUrl}
+                    alt={publishedResult.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : null}
+              </div>
+
+              {youtubeProcessingState === 'processing' && (
+                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                  <span className="font-medium">
+                    Processing video stream on YouTube (SD/HD). Player will become available for broadcast in a few moments.
+                  </span>
+                </div>
+              )}
+              {youtubeProcessingState === 'processed' && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="font-semibold">
+                    YouTube broadcast verified! Video stream is live and ready for high-definition playback.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-5 space-y-4">
@@ -878,32 +1156,81 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                                 className="w-full h-full object-contain"
                               />
 
-                              {/* Live TV Ticker Overlay on Main Video Footage Player */}
+                              {/* Live TV Watermark, Location Badge & Two-Tier Ticker Overlay on Slot 1 Player */}
                               {slot.idx === 0 && (
-                                <div className="absolute bottom-0 left-0 right-0 h-6.5 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] border-t border-amber-400 flex items-center px-2 pointer-events-none z-10 overflow-hidden shadow-lg">
-                                  <div
-                                    className="bg-[#450a0a] px-1.5 py-0.5 rounded text-[9px] text-amber-300 mr-2 shrink-0 border-r border-amber-400/80 uppercase tracking-wider flex items-center gap-1 font-normal"
-                                    style={{
-                                      fontFamily: tickerFont.isTelugu
-                                        ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
-                                        : '"Khand", "Cinzel", "Roboto", sans-serif',
-                                      fontWeight: tickerFont.isTelugu ? 400 : 700,
-                                    }}
-                                  >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                                    <span>BREAKING NEWS</span>
+                                <>
+                                  {/* Top-Right: Channel Watermark Logo */}
+                                  <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none drop-shadow-md">
+                                    {settings.watermark.logoDataUrl ? (
+                                      <img
+                                        src={settings.watermark.logoDataUrl}
+                                        alt="Channel Logo"
+                                        className="h-7 w-auto object-contain opacity-90"
+                                      />
+                                    ) : (
+                                      <div className="bg-[#1e1b4b]/90 border border-amber-400 text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wider shadow-sm flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                                        <span>{(account.channelTitle || 'NEWS 24X7').slice(0, 16)}</span>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div
-                                    className="text-white truncate drop-shadow-md leading-normal"
-                                    style={{
-                                      fontFamily: tickerFont.fontFamily,
-                                      fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
-                                      fontSize: tickerFont.isTelugu ? '12px' : '10.5px',
-                                    }}
-                                  >
-                                    {activeTickerText}
+
+                                  {/* Top-Left: TV News Reporting Location Badge */}
+                                  {newsLocation.trim() && (
+                                    <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none flex items-center gap-1 bg-[#1e293b]/90 border border-amber-400/80 px-2 py-0.5 rounded text-[10px] text-white font-medium shadow-md">
+                                      <MapPin className="w-3 h-3 text-red-400" />
+                                      <span>{newsLocation.trim()}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Bottom Two-Tier TV News Tickers */}
+                                  <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none flex flex-col shadow-lg overflow-hidden">
+                                    {/* Tier 2: Headlines Strap (Upper Bar) */}
+                                    <div className="h-5.5 bg-gradient-to-r from-[#061738] via-[#1e3a8a] to-[#071530] border-t border-amber-400/80 border-b border-[#38bdf8]/60 flex items-center px-2">
+                                      <div className="bg-[#0f172a] px-1.5 py-0.2 rounded text-[8.5px] text-[#38bdf8] mr-2 shrink-0 border-r border-[#38bdf8]/80 uppercase tracking-wider flex items-center gap-1 font-bold">
+                                        <span className="w-1 h-1 rounded-full bg-[#38bdf8] animate-ping" />
+                                        <span>HEADLINES</span>
+                                      </div>
+                                      <div
+                                        className="text-white truncate drop-shadow-md leading-normal text-[10px] font-medium"
+                                        style={{
+                                          fontFamily: tickerFont.fontFamily,
+                                        }}
+                                      >
+                                        {thumbnailHeadline.trim() || activeTickerText.split('✦')[0]?.trim() || 'TODAY BREAKING HEADLINES'}
+                                      </div>
+                                    </div>
+
+                                    {/* Tier 1: Continuous Scrolling Crawler (Lower Bar) */}
+                                    <div className="h-6.5 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] border-t border-amber-400 flex items-center px-2 overflow-hidden shadow-inner">
+                                      <div
+                                        className="bg-[#450a0a] px-1.5 py-0.5 rounded text-[9px] text-amber-300 mr-2 shrink-0 border-r border-amber-400/80 uppercase tracking-wider flex items-center gap-1 font-normal z-20"
+                                        style={{
+                                          fontFamily: tickerFont.isTelugu
+                                            ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
+                                            : '"Khand", "Cinzel", "Roboto", sans-serif',
+                                          fontWeight: tickerFont.isTelugu ? 400 : 700,
+                                        }}
+                                      >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                        <span>BREAKING NEWS</span>
+                                      </div>
+                                      <div className="flex-1 overflow-hidden relative flex items-center">
+                                        <div
+                                          className="np-ticker-track text-white drop-shadow-md tracking-wide cursor-default whitespace-nowrap"
+                                          style={{
+                                            fontFamily: tickerFont.fontFamily,
+                                            fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
+                                            fontSize: tickerFont.isTelugu ? '12px' : '10.5px',
+                                          }}
+                                        >
+                                          <span className="pr-12 inline-block">{activeTickerText}</span>
+                                          <span className="pr-12 inline-block">{activeTickerText}</span>
+                                        </div>
+                                      </div>
+                                    </div>
                                   </div>
-                                </div>
+                                </>
                               )}
                             </div>
                             <div className="text-[11px] text-[#202124] dark:text-[#f2f2f2] truncate font-medium">
@@ -1128,6 +1455,28 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Draft Story from Uploaded Footage Button */}
+              {clips[0]?.file && (
+                <div className="flex flex-wrap items-center gap-2 mb-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleExtractStoryFromVideo()}
+                    disabled={isExtractingStory}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-full text-xs font-semibold shadow-xs transition disabled:opacity-50 cursor-pointer"
+                  >
+                    <Sparkles className={`w-3.5 h-3.5 ${isExtractingStory ? 'animate-spin' : ''}`} />
+                    <span>
+                      {isExtractingStory
+                        ? 'Analyzing video audio & footage...'
+                        : '✨ Draft Story from Video'}
+                    </span>
+                  </button>
+                  <span className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
+                    Extracts dialogue, spoken facts, and narrative from video footage
+                  </span>
+                </div>
+              )}
+
               <textarea
                 rows={5}
                 value={newsText}
@@ -1311,18 +1660,47 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Live Animated TV Ticker Preview */}
+              {/* Live Animated 2-Tier TV Ticker Preview */}
               <div className="rounded-xl overflow-hidden border border-red-800/80 bg-red-950 shadow-md">
                 <div className="px-3 py-1 bg-red-950/90 border-b border-red-900/60 flex items-center justify-between text-[10px] text-red-200/80 font-bold uppercase tracking-wider">
                   <span>
-                    TV Broadcast Ticker Preview ({tickerFont.fontLabel} &bull; Live Crawl)
+                    TV Broadcast 2-Tier Ticker Preview ({tickerFont.fontLabel} &bull; Upper Headlines + Lower Crawler)
                   </span>
                   <span className="text-amber-300 flex items-center gap-1 font-mono">
                     <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
-                    LIVE TV PREVIEW
+                    LIVE 2-TIER PREVIEW
                   </span>
                 </div>
-                <div className="h-12 sm:h-13 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] flex items-stretch border-t-2 border-amber-400 relative overflow-hidden shadow-inner">
+
+                {/* Tier 2: Headlines Strap (Upper Bar) */}
+                <div className="h-9 sm:h-10 bg-gradient-to-r from-[#061738] via-[#1e3a8a] to-[#071530] flex items-stretch border-t-2 border-amber-400 border-b border-[#38bdf8]/60 relative overflow-hidden shadow-inner">
+                  <div
+                    className="z-10 px-3.5 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#1e3a8a] border-r-2 border-[#38bdf8] text-white text-xs uppercase flex items-center gap-2 shrink-0 shadow-lg tracking-wide font-normal"
+                    style={{
+                      fontFamily: tickerFont.isTelugu
+                        ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
+                        : '"Khand", "Cinzel", "Roboto", sans-serif',
+                      fontWeight: tickerFont.isTelugu ? 400 : 700,
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-ping" />
+                    <span>HEADLINES</span>
+                  </div>
+                  <div className="flex-1 overflow-hidden relative flex items-center px-4 bg-gradient-to-r from-blue-900/40 via-blue-800/20 to-blue-900/40">
+                    <div
+                      className="text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tracking-wide cursor-default truncate font-medium"
+                      style={{
+                        fontFamily: tickerFont.fontFamily,
+                        fontSize: tickerFont.isTelugu ? '17px' : '15px',
+                      }}
+                    >
+                      {thumbnailHeadline.trim() || activeTickerText.split('✦')[0]?.trim() || 'TODAY BREAKING HEADLINES'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tier 1: Continuous Scrolling Crawler (Lower Bar) */}
+                <div className="h-11 sm:h-12 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] flex items-stretch border-t border-amber-400 relative overflow-hidden shadow-inner">
                   {/* Left Dark Maroon / Red Badge with Gold Border */}
                   <div
                     className="z-10 px-3.5 bg-gradient-to-r from-[#450a0a] via-[#5c0e0e] to-[#7f1d1d] border-r-2 border-amber-400 text-white text-xs uppercase flex items-center gap-2 shrink-0 shadow-lg tracking-wide font-normal"
@@ -1344,7 +1722,7 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                       style={{
                         fontFamily: tickerFont.fontFamily,
                         fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
-                        fontSize: tickerFont.isTelugu ? '21px' : '18px',
+                        fontSize: tickerFont.isTelugu ? '20px' : '17px',
                         lineHeight: 1.25,
                       }}
                     >
@@ -1354,6 +1732,219 @@ export const YouTubeNewsStudioPage: React.FC = () => {
                       <span className="pr-16 inline-block">
                         {activeTickerText}
                       </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Input 5: YouTube Thumbnail Studio (Custom Upload or Studio Frame) */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#dadce0] dark:border-[#3c4043] pb-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0 mt-0.5">
+                    <ImageIcon className="w-4 h-4 text-white" />
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
+                        5. YouTube Thumbnail (16:9 HD)
+                      </h3>
+                      {isCustomThumbnailUploaded ? (
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                          <span>Custom Thumbnail Uploaded</span>
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Studio Footage Cover</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
+                      Upload your custom 16:9 thumbnail, or render a high-definition frame cover from your video footage.
+                    </p>
+                  </div>
+                </div>
+
+                {(thumbnailPreviewUrl || publishedThumbnailUrl) && (
+                  <button
+                    type="button"
+                    onClick={handleDownloadThumbnail}
+                    className="px-3.5 py-2 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#28292a] text-[#202124] dark:text-[#f2f2f2] text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-[#333] flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+                  >
+                    <Download className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Download Thumbnail (1280x720)</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Hidden file input for custom thumbnail */}
+              <input
+                ref={thumbnailFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleCustomThumbnailUpload}
+                className="hidden"
+              />
+
+              {/* 2-Column: Upload Control (Left) + 16:9 HD Preview (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start text-xs">
+                {/* Left Column: Upload Custom Thumbnail Card */}
+                <div className="lg:col-span-5 space-y-3">
+                  {!isCustomThumbnailUploaded ? (
+                    <div className="space-y-3">
+                      <div
+                        onClick={() => thumbnailFileInputRef.current?.click()}
+                        className="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] hover:border-blue-500 dark:hover:border-blue-400 rounded-xl p-5 text-center cursor-pointer transition-colors bg-[#f8fafd] dark:bg-[#181818] hover:bg-blue-50/40 dark:hover:bg-blue-950/20 group flex flex-col items-center justify-center gap-2.5"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-[#202124] dark:text-[#f2f2f2]">
+                            Upload Custom Thumbnail
+                          </p>
+                          <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f] mt-0.5">
+                            PNG, JPG or WEBP (16:9 recommended)
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="mt-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
+                        >
+                          Choose Image
+                        </button>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-neutral-50 dark:bg-[#202124] border border-[#dadce0] dark:border-[#3c4043] space-y-2">
+                        <div className="flex items-start gap-2">
+                          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                          <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f] leading-relaxed">
+                            <strong className="text-[#202124] dark:text-[#f2f2f2]">Automatic Thumbnail: </strong>
+                            If you do not upload a custom image, the system automatically creates a 16:9 thumbnail from your video footage.
+                          </p>
+                        </div>
+
+                        {activeClips.some((c) => Boolean(c)) && (
+                          <button
+                            type="button"
+                            onClick={handleGenerateAIThumbnail}
+                            disabled={isGeneratingThumbnail}
+                            className="w-full mt-1 px-3 py-1.5 rounded-lg border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#28292a] hover:bg-neutral-100 dark:hover:bg-[#333] text-xs font-medium text-[#202124] dark:text-[#f2f2f2] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            {isGeneratingThumbnail ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                                <span>Generating Thumbnail...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                <span>Regenerate Footage Cover</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 space-y-3">
+                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="text-xs font-bold">Custom Thumbnail Attached</span>
+                      </div>
+                      <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f] leading-relaxed">
+                        <span className="font-semibold text-[#202124] dark:text-[#f2f2f2] truncate block">
+                          {customThumbnailFileName || 'Custom Image Uploaded'}
+                        </span>
+                        Custom cover selected. Your uploaded image will be published to YouTube.
+                      </p>
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => thumbnailFileInputRef.current?.click()}
+                          className="flex-1 px-3 py-1.5 rounded-lg border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#28292a] text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] hover:bg-neutral-100 dark:hover:bg-[#333] flex items-center justify-center gap-1.5"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Replace</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCustomThumbnail}
+                          className="px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center gap-1.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Live 16:9 Thumbnail Graphic Preview Card */}
+                <div className="lg:col-span-7 space-y-2.5">
+                  <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-700 shadow-md">
+                    <div className="flex items-center justify-between px-2 py-1.5 text-xs text-neutral-300 border-b border-neutral-800 mb-2">
+                      <span className="font-bold flex items-center gap-1.5 text-neutral-200">
+                        <ImageIcon className="w-3.5 h-3.5 text-blue-400" />
+                        <span>16:9 HD Thumbnail Live Preview (1280x720)</span>
+                      </span>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono ${
+                        isCustomThumbnailUploaded
+                          ? 'bg-blue-950 text-blue-300 border border-blue-800'
+                          : thumbnailPreviewUrl
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
+                      }`}>
+                        {isCustomThumbnailUploaded ? 'Custom Upload' : (thumbnailPreviewUrl ? 'Footage Cover' : 'No Thumbnail')}
+                      </span>
+                    </div>
+
+                    {/* 16:9 Aspect Ratio Frame */}
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black flex items-center justify-center border border-neutral-800 shadow-inner group">
+                      {isGeneratingThumbnail ? (
+                        <div className="flex flex-col items-center justify-center text-white space-y-2 p-6 text-center">
+                          <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+                          <span className="text-xs font-semibold">Creating 16:9 thumbnail from footage...</span>
+                        </div>
+                      ) : (thumbnailPreviewUrl || publishedThumbnailUrl) ? (
+                        <img
+                          src={thumbnailPreviewUrl || publishedThumbnailUrl}
+                          alt="Video Thumbnail Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-neutral-500 space-y-2 p-6 text-center">
+                          <ImageIcon className="w-10 h-10 stroke-1" />
+                          <span className="text-xs font-medium">
+                            Upload a custom image or add video footage to generate thumbnail.
+                          </span>
+                        </div>
+                      )}
+
+                      {/* YouTube Desktop Preview Emulation (Duration Badge) */}
+                      <div className="absolute bottom-2 right-2 bg-black/85 text-white text-[10px] font-mono px-1.5 py-0.5 rounded font-bold pointer-events-none">
+                        {formatDuration(totalFootageDuration || 65)}
+                      </div>
+                    </div>
+
+                    {/* Status bar */}
+                    <div className="flex items-center justify-between pt-2 px-1 text-[11px] text-neutral-400">
+                      <span>
+                        {isCustomThumbnailUploaded
+                          ? 'Source: Custom Image Upload'
+                          : thumbnailPreviewUrl
+                          ? 'Source: Broadcast Footage Cover'
+                          : 'Status: Waiting for input'}
+                      </span>
+                      {(thumbnailPreviewUrl || publishedThumbnailUrl) && (
+                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>Ready for YouTube</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

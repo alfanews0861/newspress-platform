@@ -188,7 +188,7 @@ export const PublisherBillingPage: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white font-sans">Publisher Subscription & Billing</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage newsroom publishing plans, billing cycles, AI usage quotas, and invoices.
+            Manage newsroom publishing plans, billing cycles, editorial quotas, and invoices.
           </p>
         </div>
 
@@ -267,11 +267,11 @@ export const PublisherBillingPage: React.FC = () => {
 
           {/* Visual Usage Meters Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-            {/* Meter 1: AI Operations */}
+            {/* Meter 1: Editorial Operations */}
             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" /> AI Editorial Operations
+                  <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Editorial Desk Operations
                 </span>
                 <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
                   {aiUsage.used} / {aiUsage.limit === 0 ? '0' : aiUsage.limit}
@@ -284,7 +284,7 @@ export const PublisherBillingPage: React.FC = () => {
                 />
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {aiUsage.limit === 0 ? 'Generative AI disabled on Basic' : `${aiUsage.remaining} operations remaining this cycle`}
+                {aiUsage.limit === 0 ? 'Standard tools only on Basic' : `${aiUsage.remaining} operations remaining this cycle`}
               </p>
             </div>
 
@@ -357,31 +357,42 @@ export const PublisherBillingPage: React.FC = () => {
       {/* Publishing Plans Comparison Grid */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white font-sans">Available Publishing Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plans.map((plan) => {
             const isCurrent = subscription?.planId === plan.planId;
+            const isPayg = plan.planId === 'PAY_AS_YOU_GO';
             return (
               <Card
                 key={plan.planId}
                 className={`flex flex-col justify-between border transition-all ${
                   isCurrent
                     ? 'border-blue-600 ring-2 ring-blue-500/30'
+                    : isPayg
+                    ? 'border-emerald-500/60 hover:border-emerald-500 ring-1 ring-emerald-500/20'
                     : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      {plan.planId === 'PREMIUM' ? (
-                        <Crown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      {plan.planId === 'PREMIUM' || plan.planId === 'ENTERPRISE' ? (
+                        <Crown className="w-4 h-4 text-amber-500" />
                       ) : plan.planId === 'STANDARD' ? (
                         <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      ) : isPayg ? (
+                        <Sparkles className="w-4 h-4 text-emerald-500" />
                       ) : (
                         <Shield className="w-4 h-4 text-slate-400" />
                       )}
-                      {plan.planId}
+                      {plan.planId.replace(/_/g, ' ')}
                     </span>
-                    {isCurrent && <Badge variant="blue">Active</Badge>}
+                    {isCurrent ? (
+                      <Badge variant="blue">Active</Badge>
+                    ) : isPayg ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300">
+                        Prepaid Wallet
+                      </span>
+                    ) : null}
                   </div>
 
                   <div>
@@ -390,18 +401,28 @@ export const PublisherBillingPage: React.FC = () => {
                   </div>
 
                   <div className="text-3xl font-bold text-slate-900 dark:text-white font-mono pt-2">
-                    ₹{plan.price.toLocaleString()}{' '}
-                    <span className="text-xs font-sans font-normal text-slate-500 dark:text-slate-400">/ month</span>
+                    {isPayg ? '₹0' : `₹${plan.price.toLocaleString()}`}{' '}
+                    <span className="text-xs font-sans font-normal text-slate-500 dark:text-slate-400">
+                      {isPayg ? '/ month (Pay per use)' : '/ month'}
+                    </span>
                   </div>
 
                   <div className="border-t border-slate-200 dark:border-slate-800 pt-4 space-y-2 text-xs text-slate-700 dark:text-slate-300">
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>{plan.limits.monthlyAIUsageLimit} Monthly AI Operations</span>
+                      <span>
+                        {isPayg
+                          ? 'Metered: ₹1.50 per Editorial Operation'
+                          : `${plan.limits.monthlyAIUsageLimit} Monthly Operations`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>{plan.limits.editionLimit} Newspaper Editions / mo</span>
+                      <span>
+                        {isPayg
+                          ? 'Metered: ₹49 per 300 DPI Vector Plate'
+                          : `${plan.limits.editionLimit} Newspaper Editions / mo`}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -422,10 +443,10 @@ export const PublisherBillingPage: React.FC = () => {
                   <Button
                     onClick={() => handleOpenPlanModal(plan)}
                     disabled={isCurrent}
-                    variant={isCurrent ? 'outline' : 'primary'}
-                    className="w-full"
+                    variant={isCurrent ? 'outline' : isPayg ? 'primary' : 'primary'}
+                    className={`w-full ${isPayg ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
                   >
-                    {isCurrent ? 'Current Plan' : `Switch to ${plan.planId}`}
+                    {isCurrent ? 'Current Plan' : `Switch to ${plan.planId.replace(/_/g, ' ')}`}
                   </Button>
                 </div>
               </Card>

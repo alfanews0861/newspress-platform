@@ -656,7 +656,7 @@ export const PlatformSuperAdminPage: React.FC = () => {
                     <span className="font-mono text-slate-800 dark:text-slate-200">{plan.trialDays} Days</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">AI Assistance Tier:</span>
+                    <span className="text-slate-500 dark:text-slate-400">Editorial Assistance Tier:</span>
                     <Badge variant={plan.aiTierAllowed === 'NONE' ? 'amber' : plan.aiTierAllowed === 'LIGHT' ? 'blue' : 'purple'} size="sm">
                       {plan.aiTierAllowed}
                     </Badge>

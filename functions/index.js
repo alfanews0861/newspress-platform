@@ -32,7 +32,7 @@ if (!admin.apps.length) {
 }
 
 // Global Default OAuth Credentials for YouTube Publishing
-const DEFAULT_CLIENT_ID = process.env.VITE_YOUTUBE_CLIENT_ID || '';
+const DEFAULT_CLIENT_ID = process.env.VITE_YOUTUBE_CLIENT_ID || process.env.YOUTUBE_CLIENT_ID || '';
 const DEFAULT_CLIENT_SECRET = process.env.YOUTUBE_CLIENT_SECRET || process.env.VITE_YOUTUBE_CLIENT_SECRET || '';
 
 // Ensure Storage Bucket CORS allows browser downloads
@@ -56,37 +56,56 @@ ffmpeg.setFfprobePath(ffprobeInstaller.path);
  * Uses flagship Gemini 3.8 Flash-TTS (gemini-3.8-flash-tts) for 24kHz studio broadcast clarity.
  * Delivers energetic, crisp, authoritative television broadcast delivery (never slow or monotonous).
  */
-async function synthesizeNewsAnchorAudio(text, lang = 'te') {
+async function synthesizeNewsAnchorAudio(text, lang = 'te', options = {}) {
   if (!text || !text.trim()) return null;
+
+  const speaker = options.speaker || options.voiceActorGoogleVoice || 'Fenrir';
+  const rate = options.rate || 1.3;
+  const style = options.style || 'High-energy, authoritative, deeply emotional Indian prime-time news anchor delivery with powerful vocal presence, dramatic emphasis, and intense breaking news cadence.';
 
   // 1. Primary: Gemini 3.8 Flash-TTS Studio Anchor (Flagship 24kHz Audio Model)
   // Try Paid Key first to prevent Free Tier 10-requests/day 429 quota exhaustion, then fallback
   const geminiKeys = [
-    process.env.GEMINI_API_KEY_PAID,
     process.env.GEMINI_API_KEY,
+    process.env.VITE_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_PAID,
+    process.env.VITE_GEMINI_API_KEY_PAID,
   ].filter(Boolean);
 
   for (const geminiKey of geminiKeys) {
     try {
-      console.log(`[composeVideo] Synthesizing 24kHz broadcast anchor audio via gemini-3.8-flash-tts...`);
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/interactions?key=${geminiKey}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Api-Revision': '2026-05-20',
-        },
-        body: JSON.stringify({
-          model: 'gemini-3.8-flash-tts',
-          input: text.slice(0, 1000),
-        }),
-      });
+      console.log(`[composeVideo] Synthesizing 24kHz broadcast anchor audio via gemini-3.8-flash-tts (speaker: ${speaker}, rate: ${rate}x)...`);
+      const resp = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: text.slice(0, 1000) }] }],
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: speaker,
+                  },
+                },
+              },
+            },
+          }),
+        }
+      );
       if (resp.ok) {
         const data = await resp.json();
-        const audioPart = data.steps?.[0]?.content?.find((c) => c.type === 'audio');
-        if (audioPart?.data) {
-          console.log(`[composeVideo] Gemini 3.8 Flash-TTS generated ${audioPart.data.length} chars of studio audio!`);
+        const audioPart = data.candidates?.[0]?.content?.parts?.find(
+          (p) => p.inlineData?.mimeType?.startsWith('audio/')
+        );
+        if (audioPart?.inlineData?.data) {
+          console.log(`[composeVideo] Gemini 3.8 Flash-TTS generated ${audioPart.inlineData.data.length} chars of studio audio!`);
           return {
-            buffer: Buffer.from(audioPart.data, 'base64'),
+            buffer: Buffer.from(audioPart.inlineData.data, 'base64'),
             format: 'wav',
           };
         }
@@ -515,7 +534,10 @@ exports.composeVideo = onRequest(
         if (req.query.action === 'tts' || req.query.text) {
           const text = req.query.text || '';
           const lang = req.query.lang || 'te';
-          const ttsResult = await synthesizeNewsAnchorAudio(text, lang);
+          const speaker = req.query.speaker || 'Fenrir';
+          const rate = parseFloat(req.query.rate || '1.3');
+          const style = req.query.style || '';
+          const ttsResult = await synthesizeNewsAnchorAudio(text, lang, { speaker, rate, style });
           if (ttsResult && ttsResult.buffer) {
             res.setHeader('Content-Type', ttsResult.format === 'wav' ? 'audio/wav' : 'audio/mpeg');
             return res.send(ttsResult.buffer);
@@ -640,9 +662,20 @@ exports.composeVideo = onRequest(
           }
         }
 
-        const watermarkPlacement = fields.watermarkPlacement || 'top-right';
+        // 1. Channel Logo Settings (Independent Image Badge with 2D Slider Position)
+        const logoPlacement = fields.logoPlacement || 'top-right';
+        const logoScale = parseInt(fields.logoScalePercent || '18', 10);
+        const logoOpacity = parseInt(fields.logoOpacityPercent || '90', 10);
+        const logoXPercent = Math.max(0, Math.min(100, parseInt(fields.logoXPercent !== undefined ? fields.logoXPercent : (logoPlacement.endsWith('right') ? '88' : '10'), 10)));
+        const logoYPercent = Math.max(0, Math.min(100, parseInt(fields.logoYPercent !== undefined ? fields.logoYPercent : (logoPlacement.startsWith('bottom') ? '85' : '8'), 10)));
+
+        // 2. Watermark Settings (Independent White Text Overlay with 2D Slider Position - Middle default)
+        const watermarkPlacement = fields.watermarkPlacement || 'top-left';
         const watermarkScale = parseInt(fields.watermarkScalePercent || '18', 10);
-        const watermarkOpacity = parseInt(fields.watermarkOpacityPercent || '90', 10);
+        const watermarkOpacity = parseInt(fields.watermarkOpacityPercent || '85', 10);
+        const watermarkText = (fields.watermarkText || '').trim();
+        const wmXPercent = Math.max(0, Math.min(100, parseInt(fields.watermarkXPercent !== undefined ? fields.watermarkXPercent : (fields.xPercent !== undefined ? fields.xPercent : '50'), 10)));
+        const wmYPercent = Math.max(0, Math.min(100, parseInt(fields.watermarkYPercent !== undefined ? fields.watermarkYPercent : (fields.yPercent !== undefined ? fields.yPercent : '50'), 10)));
         if (fields.newsLocation) {
           console.log(`[composeVideo] Broadcast reporting location: "${fields.newsLocation}"`);
         }
@@ -653,7 +686,11 @@ exports.composeVideo = onRequest(
         // 5. Server-Side Real Broadcast Anchor TTS Synthesis if voice audio was not uploaded but script text is present
         if (!voiceAudioPath && fields.voiceScriptText) {
           console.log(`[composeVideo] Synthesizing Gemini 3.8 Flash-TTS broadcast news anchor voice for: "${fields.voiceScriptText.slice(0, 50)}..."`);
-          const ttsResult = await synthesizeNewsAnchorAudio(fields.voiceScriptText, fields.language || 'te');
+          const ttsResult = await synthesizeNewsAnchorAudio(fields.voiceScriptText, fields.language || 'te', {
+            speaker: fields.voiceActorGoogleVoice || 'Fenrir',
+            rate: parseFloat(fields.speechRate || '1.3'),
+            style: fields.emotionalStyle,
+          });
           if (ttsResult && ttsResult.buffer) {
             const ext = ttsResult.format === 'wav' ? 'wav' : 'mp3';
             const ttsPath = path.join(tmpDir, `tts_${Date.now()}.${ext}`);
@@ -754,27 +791,103 @@ exports.composeVideo = onRequest(
 
           let nextInputIdx = videoInputs.length;
 
-          // Watermark Logo Overlay
+          // 1. Channel Logo Overlay (Positioned anywhere using 2D Sliders)
           if (watermarkLogoPath && fs.existsSync(watermarkLogoPath)) {
             const logoInputIdx = nextInputIdx++;
             command.input(watermarkLogoPath);
-            const logoWidth = Math.round(1920 * (watermarkScale / 100));
+            const logoWidth = Math.round(1920 * (logoScale / 100));
+            const overlayCoord = `x='(main_w-overlay_w)*${(logoXPercent / 100).toFixed(4)}':y='(main_h-overlay_h)*${(logoYPercent / 100).toFixed(4)}'`;
 
-            let overlayCoord = 'main_w-overlay_w-40:40'; // top-right default
-            if (watermarkPlacement === 'top-left') overlayCoord = '40:40';
-            if (watermarkPlacement === 'bottom-right') overlayCoord = 'main_w-overlay_w-40:main_h-overlay_h-60';
-            if (watermarkPlacement === 'bottom-left') overlayCoord = '40:main_h-overlay_h-60';
-
-            const alphaVal = (watermarkOpacity / 100).toFixed(2);
+            const alphaVal = (logoOpacity / 100).toFixed(2);
             filterComplex.push(
               `[${logoInputIdx}:v]scale=${logoWidth}:-1,format=rgba,colorchannelmixer=aa=${alphaVal}[v_logo]`
             );
-            filterComplex.push(`[${currentVideoStream}][v_logo]overlay=${overlayCoord}[v_watermarked]`);
-            currentVideoStream = 'v_watermarked';
+            filterComplex.push(`[${currentVideoStream}][v_logo]overlay=${overlayCoord}[v_logoed]`);
+            currentVideoStream = 'v_logoed';
+            console.log(`[composeVideo] Applied channel logo image: coord=${overlayCoord} (X: ${logoXPercent}%, Y: ${logoYPercent}%), opacity=${alphaVal}`);
           }
 
-          // TV News Bottom Ticker Overlay (Breaking News Strip)
-          if (tickerOverlayPath && fs.existsSync(tickerOverlayPath)) {
+          // 2. White Text Watermark Overlay (Positioned anywhere using 2D Sliders - Middle/Center by default)
+          if (watermarkText) {
+            const alphaVal = (watermarkOpacity / 100).toFixed(2);
+            const fontSize = Math.round(36 * (watermarkScale / 18));
+            const xExpr = `(w-tw)*${(wmXPercent / 100).toFixed(4)}`;
+            const yExpr = `(h-th)*${(wmYPercent / 100).toFixed(4)}`;
+
+            const sanitizedText = watermarkText.replace(/[:\\']/g, '\\$&');
+            filterComplex.push(
+              `[${currentVideoStream}]drawtext=text='${sanitizedText}':fontcolor=white@${alphaVal}:fontsize=${fontSize}:x=${xExpr}:y=${yExpr}:shadowcolor=black@0.85:shadowx=2:shadowy=2[v_watermarked]`
+            );
+            currentVideoStream = 'v_watermarked';
+            console.log(`[composeVideo] Applied white text watermark: "${watermarkText}" at X: ${wmXPercent}%, Y: ${wmYPercent}% (opacity: ${alphaVal})`);
+          }
+
+          // 2. TV News Reporting Location Badge (100% Solid Crisp Broadcast Pill)
+          const locationBadgePath = uploads.locationBadge;
+          if (locationBadgePath && fs.existsSync(locationBadgePath)) {
+            const locInputIdx = nextInputIdx++;
+            command.input(locationBadgePath);
+            // If watermark is at top-right, place location badge at top-left (40:40) like TV9 / NTV
+            // If watermark is at top-left, place location badge at top-right
+            const locCoord = watermarkPlacement === 'top-left' ? 'main_w-overlay_w-40:40' : '40:40';
+            filterComplex.push(
+              `[${locInputIdx}:v]scale=-1:44,format=rgba[v_loc]`
+            );
+            filterComplex.push(`[${currentVideoStream}][v_loc]overlay=${locCoord}[v_located]`);
+            currentVideoStream = 'v_located';
+            console.log(`[composeVideo] Applied crisp TV News reporting location badge at ${locCoord}`);
+          }
+
+          // 3. TV News Bottom Tickers (Tier 2 Headline Banner + Tier 1 Scrolling Crawler)
+          const headlineBannerPath = uploads.headlineBannerOverlay || uploads.bannerOverlay;
+          if (headlineBannerPath && fs.existsSync(headlineBannerPath)) {
+            const hInputIdx = nextInputIdx++;
+            command.input(headlineBannerPath);
+            filterComplex.push(`[${hInputIdx}:v]scale=1920:-1,format=rgba[v_headline_banner]`);
+            filterComplex.push(`[${currentVideoStream}][v_headline_banner]overlay=0:main_h-92-overlay_h[v_with_headline]`);
+            currentVideoStream = 'v_with_headline';
+            console.log('[composeVideo] Applied TV News Tier 2 headline banner overlay above scrolling crawler');
+          }
+
+          // Tier 1: TV News Bottom Scrolling Crawler (or Fallback Static Strap)
+          const tickerStrapBgPath = uploads.tickerStrapBg;
+          const tickerTextStripPath = uploads.tickerTextStrip;
+          const tickerBadgePath = uploads.tickerBadge;
+
+          if (tickerStrapBgPath && tickerTextStripPath && fs.existsSync(tickerStrapBgPath) && fs.existsSync(tickerTextStripPath)) {
+            const bgInputIdx = nextInputIdx++;
+            command.input(tickerStrapBgPath);
+
+            const textInputIdx = nextInputIdx++;
+            command.input(tickerTextStripPath);
+
+            let textWidth = parseInt(fields.tickerTextWidth || '2400', 10);
+            if (isNaN(textWidth) || textWidth < 1000) textWidth = 2400;
+
+            const scrollSpeed = 85; // 85 pixels per second for comfortable TV reading
+            const loopDist = textWidth + 1920;
+
+            // A. Overlay bottom strap background bar (1920x92)
+            filterComplex.push(`[${bgInputIdx}:v]scale=1920:92,format=rgba[v_strap_bg]`);
+            filterComplex.push(`[${currentVideoStream}][v_strap_bg]overlay=0:main_h-92[v_with_strap]`);
+
+            // B. Overlay horizontal scrolling text strip across the strap
+            filterComplex.push(`[${textInputIdx}:v]format=rgba[v_text_strip]`);
+            filterComplex.push(
+              `[v_with_strap][v_text_strip]overlay=x='1920-mod(t*${scrollSpeed}\\,${loopDist})':y=main_h-92[v_with_crawler]`
+            );
+            currentVideoStream = 'v_with_crawler';
+
+            // C. Overlay "BREAKING NEWS" / "తాజా వార్తలు" wedge badge on the left (on top of scrolling text)
+            if (tickerBadgePath && fs.existsSync(tickerBadgePath)) {
+              const badgeInputIdx = nextInputIdx++;
+              command.input(tickerBadgePath);
+              filterComplex.push(`[${badgeInputIdx}:v]scale=-1:92,format=rgba[v_badge]`);
+              filterComplex.push(`[${currentVideoStream}][v_badge]overlay=0:main_h-92[v_ticker_done]`);
+              currentVideoStream = 'v_ticker_done';
+            }
+            console.log(`[composeVideo] Applied TV News animated scrolling ticker (speed: ${scrollSpeed}px/s, loop: ${loopDist}px)`);
+          } else if (tickerOverlayPath && fs.existsSync(tickerOverlayPath)) {
             const tickerInputIdx = nextInputIdx++;
             command.input(tickerOverlayPath);
             filterComplex.push(
@@ -791,20 +904,22 @@ exports.composeVideo = onRequest(
             const voInputIdx = nextInputIdx++;
             command.input(voiceAudioPath);
 
-            const effectiveVoDuration = voDuration / 1.12;
+            const voSpeedRate = parseFloat(fields.speechRate || '1.3');
+            const tempoVal = Math.min(2.0, Math.max(0.75, isNaN(voSpeedRate) ? 1.3 : voSpeedRate));
+            const effectiveVoDuration = voDuration / tempoVal;
             const voStartSec = introDuration;
             const voEndSec = voStartSec + effectiveVoDuration;
             const delayMs = Math.round(voStartSec * 1000);
 
-            console.log(`[composeVideo] Voiceover timing sync: Intro duration=${introDuration.toFixed(2)}s, VO start=${voStartSec.toFixed(2)}s, VO end=${voEndSec.toFixed(2)}s, Audio delay=${delayMs}ms`);
+            console.log(`[composeVideo] Voiceover timing sync: Intro duration=${introDuration.toFixed(2)}s, VO start=${voStartSec.toFixed(2)}s, VO end=${voEndSec.toFixed(2)}s, Speed rate=${tempoVal}x, Audio delay=${delayMs}ms`);
 
             if (delayMs > 0) {
               filterComplex.push(
-                `[${voInputIdx}:a]atempo=1.12,equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5,aformat=channel_layouts=stereo:sample_rates=44100,adelay=delays=${delayMs}|${delayMs}[a_vo]`
+                `[${voInputIdx}:a]atempo=${tempoVal.toFixed(2)},equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5,aformat=channel_layouts=stereo:sample_rates=44100,adelay=delays=${delayMs}|${delayMs}[a_vo]`
               );
             } else {
               filterComplex.push(
-                `[${voInputIdx}:a]atempo=1.12,equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5,aformat=channel_layouts=stereo:sample_rates=44100[a_vo]`
+                `[${voInputIdx}:a]atempo=${tempoVal.toFixed(2)},equalizer=f=120:width_type=h:width=60:g=3.5,equalizer=f=3200:width_type=h:width=1000:g=3.0,compand=attacks=0.02:decays=0.15:points=-60/-60|-24/-12|-12/-6|0/-2:gain=2.5,aformat=channel_layouts=stereo:sample_rates=44100[a_vo]`
               );
             }
 
@@ -813,15 +928,17 @@ exports.composeVideo = onRequest(
               .filter((vi) => vi.role !== 'intro' && vi.role !== 'outro')
               .reduce((acc, vi) => acc + (vi.duration || 0), 0);
 
-            // Mute news footage sound completely to 0% (zero camera/field background noise) so only the AI anchor narration is heard with studio clarity.
-            // Channel Intro and Channel Outro bumpers retain 100% crisp full volume.
-            const muteStartSec = introDuration;
-            const muteEndSec = outroInput ? Math.max(voEndSec, introDuration + userClipsDuration) : Math.max(voEndSec, maxDurationSec);
+            // Audio Mixing & Dynamic Ducking:
+            // Duck field video audio down to 5% (0.05) exclusively while voice-over is speaking.
+            // As soon as the voice-over narration finishes (t >= voEndSec), seamlessly restore the original video audio to full 100% volume (1.0)!
+            // Channel Intro and Channel Outro bumpers also play at 100% full volume.
+            const duckStartSec = introDuration;
+            const duckEndSec = voEndSec;
 
-            console.log(`[composeVideo] Ambient footage audio mute (0%): start=${muteStartSec.toFixed(2)}s, end=${muteEndSec.toFixed(2)}s`);
+            console.log(`[composeVideo] Original footage audio ducking (5% during VO, 100% restored after VO): duckStart=${duckStartSec.toFixed(2)}s, duckEnd=${duckEndSec.toFixed(2)}s`);
 
             filterComplex.push(
-              `[${currentAudioStream}]volume='if(gte(t\\,${muteStartSec.toFixed(2)})*lt(t\\,${muteEndSec.toFixed(2)})\\,0.0\\,1.0)':eval=frame[a_bg]`
+              `[${currentAudioStream}]volume='if(gte(t\\,${duckStartSec.toFixed(2)})*lt(t\\,${duckEndSec.toFixed(2)})\\,0.05\\,1.0)':eval=frame[a_bg]`
             );
             filterComplex.push(`[a_bg][a_vo]amix=inputs=2:duration=first:dropout_transition=2[a_mixed]`);
             currentAudioStream = 'a_mixed';
@@ -888,6 +1005,29 @@ exports.composeVideo = onRequest(
                     tags: parsedTags,
                     privacyStatus: fields.youtubePrivacyStatus || 'public',
                   });
+
+                  // Persist broadcast record to Firestore so it is never lost even if browser crashed/closed
+                  try {
+                    const record = {
+                      videoId: ytResult.videoId,
+                      youtubeUrl: ytResult.youtubeUrl,
+                      embedUrl: `https://www.youtube.com/embed/${ytResult.videoId}`,
+                      title: ytResult.title,
+                      publishedAt: ytResult.publishedAt || new Date().toISOString(),
+                      newsLocation: fields.newsLocation || '',
+                      language: fields.language || 'te',
+                      voiceActorId: fields.voiceActorId || 'ravi_shankar',
+                      channelTitle: fields.channelTitle || '',
+                      status: 'published',
+                      isSdReady: true,
+                      thumbnailUrl: `https://img.youtube.com/vi/${ytResult.videoId}/hqdefault.jpg`,
+                      sourceDuration: fields.sourceDuration ? parseInt(fields.sourceDuration, 10) : 0,
+                    };
+                    await admin.firestore().collection('youtube_broadcasts').doc(ytResult.videoId).set(record, { merge: true });
+                    console.log(`[composeVideo] Persisted broadcast record ${ytResult.videoId} to Firestore!`);
+                  } catch (fsErr) {
+                    console.warn('[composeVideo] Could not persist to Firestore:', fsErr.message);
+                  }
 
                   cleanFiles(filesToClean);
                   return res.status(200).json({

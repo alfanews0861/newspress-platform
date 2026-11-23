@@ -24,6 +24,7 @@
     "test:phase15": "tsx src/tests/phase15_enterprise_api.test.ts",
     "test:phase16": "tsx src/tests/phase16_reliability_security.test.ts",
     "test:phase17": "tsx src/tests/phase17_commercial_launch.test.ts",
+    "test:youtube": "tsx src/tests/youtube_studio.test.ts",
     "test": "tsx src/tests/originality.test.ts && tsx src/tests/marketplace.test.ts && tsx src/tests/layout.test.ts && tsx src/tests/production.test.ts && tsx src/tests/editorial_ai.test.ts && tsx src/tests/billing.test.ts && tsx src/tests/newsroom.test.ts && tsx src/tests/edition_workflow.test.ts && tsx src/tests/phase10_production_ops.test.ts && tsx src/tests/phase11_finance.test.ts && tsx src/tests/phase12_marketplace_workspace.test.ts && tsx src/tests/phase13_mobile_operations.test.ts && tsx src/tests/phase14_analytics.test.ts && tsx src/tests/phase15_enterprise_api.test.ts && tsx src/tests/phase16_reliability_security.test.ts && tsx src/tests/phase17_commercial_launch.test.ts",
     "lint": "tsc --noEmit"
   },

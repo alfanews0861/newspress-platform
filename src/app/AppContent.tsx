@@ -49,6 +49,7 @@ import { ExecutiveIntelligenceDashboard } from '../pages/analytics/ExecutiveInte
 import { MISReportBuilderPage } from '../pages/analytics/MISReportBuilderPage';
 import { PublisherBillingPage } from '../pages/finance/PublisherBillingPage';
 import { BillingAdminPage } from '../pages/admin/BillingAdminPage';
+import { AffiliateProgramPage } from '../pages/affiliate/AffiliateProgramPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { StaffManagementPage } from '../pages/newsroom/StaffManagementPage';
@@ -73,6 +74,8 @@ import { LaunchReadinessDashboardPage } from '../pages/admin/LaunchReadinessDash
 import { CustomerHandoverDocumentationPage } from '../pages/admin/CustomerHandoverDocumentationPage';
 import { LandingPage } from '../pages/public/LandingPage';
 import { LegalCenterPage, LegalTabKey } from '../pages/public/LegalCenterPage';
+import { AccountDeletionPage } from '../pages/public/AccountDeletionPage';
+import { UserPortalPage, UserPortalTabKey } from '../pages/user/UserPortalPage';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingState } from '../components/ui/LoadingState';
 import { getCurrentPath, navigateTo } from '../utils/navigation';
@@ -152,20 +155,50 @@ export const AppContent: React.FC = () => {
     basePath === '/editorial-policy' ||
     basePath === '/grievance' ||
     basePath === '/cookies' ||
-    basePath === '/marketplace-terms'
+    basePath === '/marketplace-terms' ||
+    basePath === '/google-youtube-policy' ||
+    basePath === '/play-store-policy' ||
+    basePath === '/liability-refund'
   ) {
-    let initialTab: LegalTabKey = 'privacy';
-    if (basePath === '/terms') initialTab = 'terms';
+    let initialTab: LegalTabKey = 'terms';
+    if (basePath === '/privacy') initialTab = 'privacy';
     else if (basePath === '/editorial-policy') initialTab = 'editorial';
     else if (basePath === '/grievance') initialTab = 'grievance';
     else if (basePath === '/cookies') initialTab = 'cookies';
     else if (basePath === '/marketplace-terms') initialTab = 'marketplace';
+    else if (basePath === '/google-youtube-policy') initialTab = 'google-youtube';
+    else if (basePath === '/play-store-policy') initialTab = 'play-store';
+    else if (basePath === '/liability-refund') initialTab = 'liability-refund';
 
     return <LegalCenterPage initialTab={initialTab} onNavigate={navigateTo} />;
   }
 
+  // Google Play Store Account & Data Deletion Public Web Page
+  if (basePath === '/account-deletion' || basePath === '/user/account-deletion') {
+    return <AccountDeletionPage onNavigate={navigateTo} />;
+  }
+
   const renderCurrentPage = () => {
     switch (basePath) {
+      case '/user':
+      case '/user/portal':
+      case '/user/account':
+      case '/profile':
+        return <UserPortalPage initialTab="profile" onNavigate={navigateTo} />;
+      case '/user/plan':
+        return <UserPortalPage initialTab="plan" onNavigate={navigateTo} />;
+      case '/user/credits':
+      case '/user/wallet':
+        return <UserPortalPage initialTab="credits" onNavigate={navigateTo} />;
+      case '/user/paper':
+      case '/user/epaper':
+        return <UserPortalPage initialTab="paper" onNavigate={navigateTo} />;
+      case '/user/reporter':
+        return <UserPortalPage initialTab="reporter" onNavigate={navigateTo} />;
+      case '/user/youtube':
+        return <UserPortalPage initialTab="youtube" onNavigate={navigateTo} />;
+      case '/user/legal':
+        return <UserPortalPage initialTab="legal" onNavigate={navigateTo} />;
       case '/dashboard':
       case '/overview':
         return <DashboardPage onNavigate={navigateTo} />;
@@ -244,6 +277,9 @@ export const AppContent: React.FC = () => {
         return <ProductionQueuePage />;
       case '/production/downloads':
         return <DownloadsPage />;
+      case '/affiliate':
+      case '/partner':
+        return <AffiliateProgramPage />;
       case '/finance/billing':
         return <PublisherBillingPage />;
       case '/admin/billing':

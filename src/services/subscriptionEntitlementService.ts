@@ -220,7 +220,7 @@ export class SubscriptionEntitlementService {
     if (!features.generativeAiAllowed || sub.planId === 'BASIC' || features.aiTier === 'NONE') {
       return {
         allowed: false,
-        reason: 'Basic plan does not permit Generative AI editorial assistance. Upgrade to Standard or Premium.',
+        reason: 'Basic plan does not permit advanced editorial assistance. Upgrade to Standard or Premium.',
       };
     }
 
@@ -256,12 +256,12 @@ export class SubscriptionEntitlementService {
         action: 'USAGE_LIMIT_REACHED',
         entityType: 'PublisherSubscription',
         entityId: sub.subscriptionId,
-        reason: `Monthly AI operation limit of ${limits.monthlyAIUsageLimit} reached.`,
+        reason: `Monthly editorial operations limit of ${limits.monthlyAIUsageLimit} reached.`,
       });
 
       return {
         allowed: false,
-        reason: `Monthly AI operation limit of ${limits.monthlyAIUsageLimit} reached for current billing cycle.`,
+        reason: `Monthly editorial operations limit of ${limits.monthlyAIUsageLimit} reached for current billing cycle.`,
       };
     }
 

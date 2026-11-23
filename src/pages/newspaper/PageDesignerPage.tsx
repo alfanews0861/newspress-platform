@@ -2205,7 +2205,7 @@ export const PageDesignerPage: React.FC = () => {
             </div>
 
             <div className="text-[10px] font-normal text-slate-800 flex items-center gap-2">
-              <span style={{ letterSpacing: 'normal' }}>{edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}</span>
+              <span style={{ letterSpacing: 'normal' }}>{edition.publicationDate || 'Friday, 30 October 2026'}</span>
               <span className="text-slate-400">•</span>
               <span className="bg-slate-900 text-amber-300 px-2 py-0.5 rounded-xs font-normal" style={{ letterSpacing: 'normal' }}>
                 {`${pageLabels.pageWord} ${pageToRender.pageNumber}`}
@@ -2286,15 +2286,15 @@ export const PageDesignerPage: React.FC = () => {
                 {/* Cartoon Title Header */}
                 <div className="flex items-center justify-between border-b border-slate-800 pb-1 mb-1 shrink-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="bg-red-800 text-white font-normal text-xs px-2 py-0.5 rounded-none shadow-2xs font-telugu">
-                      {block.cartoon?.title || 'షో..!'}
+                    <span className="bg-red-800 text-white font-normal text-xs px-2 py-0.5 rounded-none shadow-2xs">
+                      {block.cartoon?.title || 'EDITORIAL TOON'}
                     </span>
                     <span className="text-[8.5px] font-normal text-slate-800">
-                      {block.cartoon?.subtitle || 'ఆంధ్ర ప్రభ వ్యంగ్య చిత్రం'}
+                      {block.cartoon?.subtitle || 'Daily Satirical Sketch'}
                     </span>
                   </div>
                   <span className="text-[8px] font-normal bg-slate-900 text-amber-300 px-1.5 py-0.5 rounded-xs">
-                    {block.cartoon?.cartoonist || 'శేఖర్..!'}
+                    {block.cartoon?.cartoonist || 'Shekhar'}
                   </span>
                 </div>
 
@@ -2328,16 +2328,16 @@ export const PageDesignerPage: React.FC = () => {
                         <path d="M153,42 Q158,38 163,42" stroke="#0f172a" strokeWidth="1.8" fill="none" />
                         <rect x="142" y="49" width="32" height="27" rx="3" fill="#fecaca" stroke="#0f172a" strokeWidth="1.8" />
                       </svg>
-                      <div className="w-full bg-slate-900 text-white text-[8.5px] px-2 py-1 rounded font-telugu shadow-xs leading-snug shrink-0 font-normal">
-                        💬 "{block.cartoon?.dialogue || 'అక్కడెలాగో నెగ్గాం.. మరి ఇక్కడ 2047 నాటికి ఎలా గట్టెక్కేది..?!!'}"
+                      <div className="w-full bg-slate-900 text-white text-[8.5px] px-2 py-1 rounded shadow-xs leading-snug shrink-0 font-normal">
+                        💬 "{block.cartoon?.dialogue || 'Policy reforms underway: Balancing the national roadmap towards 2047!'}"
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div className="text-[7.5px] text-slate-700 flex items-center justify-between font-normal mt-0.5 shrink-0">
-                  <span>సమకాలీన రాజకీయ వ్యంగ్యాస్త్రం</span>
-                  <span className="italic">- శేఖర్ కార్టూన్</span>
+                  <span>Contemporary Political & Social Satire</span>
+                  <span className="italic">- Editorial Sketch</span>
                 </div>
               </div>
             );
@@ -3129,11 +3129,11 @@ export const PageDesignerPage: React.FC = () => {
                   {/* Top Sponsor Header Ribbon */}
                   <div className="bg-amber-400 text-slate-950 px-4 py-1.5 flex items-center justify-between border-b-2 border-amber-600 shrink-0">
                     <div className="flex items-center gap-2">
-                      <span className="bg-red-800 text-white text-[10px] px-2 py-0.5">★ APARNA CONSTRUCTIONS ★</span>
-                      <span className="text-[13px] text-slate-950">అపర్ణ కన్‌స్ట్రక్షన్స్ — 28 ఏళ్ల నమ్మకం, నాణ్యతకు మారుపేరు</span>
+                      <span className="bg-red-800 text-white text-[10px] px-2 py-0.5">★ APARNA LUXURY REALTY ★</span>
+                      <span className="text-[13px] text-slate-950">Aparna Constructions — 28 Years of Building Trust & Excellence</span>
                     </div>
                     <span className="text-[9.5px] bg-slate-950 text-amber-300 px-2.5 py-0.5">
-                      హాఫ్ పేజీ వాణిజ్య ప్రకటన / HALF-PAGE DISPLAY AD (8 COLS × 25 CM)
+                      HALF-PAGE DISPLAY AD (8 COLS × 25 CM)
                     </span>
                   </div>
 
@@ -3141,35 +3141,35 @@ export const PageDesignerPage: React.FC = () => {
                   <div className="flex-1 min-h-0 grid grid-cols-12 gap-4 p-4 items-stretch">
                     <div className="col-span-6 flex flex-col justify-between bg-slate-900/90 border border-amber-400/50 p-4">
                       <div>
-                        <div className="inline-block bg-red-700 text-amber-200 text-[11px] px-2.5 py-0.5 mb-2">
-                          హైదరాబాద్ ఫైనాన్షియల్ డిస్ట్రిక్ట్ & కోకాపేట్‌లో మెగా లాంచ్!
+                        <div className="inline-block bg-red-700 text-amber-200 text-[11px] px-2.5 py-0.5 mb-2 font-semibold">
+                          MEGA LAUNCH AT FINANCIAL DISTRICT & PRIME BOULEVARD!
                         </div>
                         <h3
-                          className="text-[34px] text-amber-300 leading-tight mb-2"
-                          style={{ fontFamily: "'Ramabhadra', serif" }}
+                          className="text-[30px] text-amber-300 leading-tight mb-2 font-bold"
+                          style={{ fontFamily: "'Cinzel', serif" }}
                         >
-                          అపర్ణ సన్-స్టోన్ లగ్జరీ గేటెడ్ కమ్యూనిటీ విల్లాలు & స్మార్ట్ హోమ్స్
+                          Aparna Sun-Stone Luxury Gated Community Villas & Smart Homes
                         </h3>
                         <p className="text-[13px] text-slate-200 leading-relaxed mb-3">
-                          100 ఎకరాల విశాలమైన పచ్చని వాతావరణంలో అంతర్జాతీయ స్థాయి క్లబ్‌హౌస్, స్విమ్మింగ్ పూల్, ఇండోర్ స్టేడియం, సోలార్ రూఫ్‌టాప్ మరియు 24×7 ఐదు అంచెల భద్రతతో కూడిన 3 & 4 BHK లగ్జరీ అపార్ట్‌మెంట్లు, ట్రిప్లెక్స్ విల్లాలు.
+                          Sprawling over 100 acres of lush greenery with Olympic-class clubhouse, swimming pools, indoor sports arena, solar power, and 24x7 5-tier security in 3 & 4 BHK luxury residences.
                         </p>
 
                         <div className="grid grid-cols-2 gap-2.5 text-[11.5px] text-amber-100 border-t border-slate-700 pt-2.5">
-                          <div>✦ HMDA & TS-RERA పూర్తి అనుమతులు</div>
-                          <div>✦ 80% ఓపెన్ గ్రీన్ ల్యాండ్‌స్కేప్ గార్డెన్స్</div>
-                          <div>✦ ఓఆర్ఆర్ (ORR Exit-2) కు కేవలం 3 నిమిషాలు</div>
-                          <div>✦ ప్రముఖ బ్యాంకుల నుంచి 90% హోమ్ లోన్ సదుపాయం</div>
+                          <div>✦ RERA Approved & 100% Clear Titles</div>
+                          <div>✦ 80% Open Green Landscaped Gardens</div>
+                          <div>✦ Direct 3-minute access to Express Highway</div>
+                          <div>✦ 90% Pre-approved Home Loans Available</div>
                         </div>
                       </div>
 
                       <div className="bg-amber-400 text-slate-950 p-2.5 flex items-center justify-between mt-3">
                         <div>
-                          <div className="text-[10px] text-red-900">ప్రారంభ ధర (Starting Price):</div>
-                          <div className="text-[22px] text-slate-950 leading-none">₹ 1.45 కోట్లు* <span className="text-[11px]">నుంచి మాత్రమే</span></div>
+                          <div className="text-[10px] text-red-900 font-semibold">Starting Price:</div>
+                          <div className="text-[22px] text-slate-950 leading-none font-bold">₹ 1.45 Cr* <span className="text-[11px] font-normal">onwards</span></div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[10px] text-slate-800">నేడే సైట్ విజిట్ బుక్ చేసుకోండి:</div>
-                          <div className="text-[18px] font-mono text-red-900 leading-none">📞 040-4455 8899 / 91000 22334</div>
+                          <div className="text-[10px] text-slate-800 font-semibold">Book Site Visit Today:</div>
+                          <div className="text-[18px] font-mono text-red-900 leading-none font-bold">📞 1800-4455-8899 / 91000 22334</div>
                         </div>
                       </div>
                     </div>
@@ -3182,7 +3182,7 @@ export const PageDesignerPage: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute bottom-2 right-2 bg-slate-950/85 text-amber-300 text-[10px] px-2.5 py-1 border border-amber-400">
-                          TS-RERA Regd. No: P02400004891 • www.aparnaconstructions.com
+                          RERA Regd. No: P02400004891 • www.aparnaconstructions.com
                         </div>
                       </div>
                     </div>
@@ -3190,8 +3190,8 @@ export const PageDesignerPage: React.FC = () => {
 
                   {/* Bottom Address & Offer Footer */}
                   <div className="bg-red-900 text-white px-4 py-1.5 text-[10.5px] flex items-center justify-between shrink-0">
-                    <span>కార్పొరేట్ కార్యాలయం: ఆస్ట్రల్ హైట్స్, రోడ్ నెం. 1, బంజారాహిల్స్, హైదరాబాద్ - 500034</span>
-                    <span className="text-amber-300">★ పండుగ బుకింగ్‌పై 10 గ్రాముల బంగారు నాణెం & జీరో రిజిస్ట్రేషన్ చార్జీలు ★</span>
+                    <span>Corporate Office: Astral Heights, Road No. 1, Banjara Hills, Hyderabad - 500034</span>
+                    <span className="text-amber-300 font-semibold">★ Special Launch Benefit: Gold Coin on Spot Booking & Zero Registration Fee ★</span>
                   </div>
                 </div>
               ) : isQuarterPageAd ? (
@@ -3200,18 +3200,18 @@ export const PageDesignerPage: React.FC = () => {
                   <div className="bg-[#0369a1] text-white px-3 py-1.5 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2">
                       <span className="w-5 h-5 rounded-full bg-white text-[#0369a1] flex items-center justify-center text-[11px]">●</span>
-                      <span className="text-[13px]">భారతీయ స్టేట్ బ్యాంక్ (STATE BANK OF INDIA)</span>
+                      <span className="text-[13px] font-bold">STATE BANK OF INDIA (SBI)</span>
                     </div>
-                    <span className="text-[8.5px] bg-amber-300 text-slate-950 px-2 py-0.5">
+                    <span className="text-[8.5px] bg-amber-300 text-slate-950 px-2 py-0.5 font-bold">
                       QUARTER-PAGE AD (4 COLS × 24 CM)
                     </span>
                   </div>
 
                   <div className="p-3 flex-1 min-h-0 flex flex-col justify-between">
                     <div className="text-center border-b border-sky-200 pb-2">
-                      <div className="text-[10.5px] text-red-800">ప్రతి భారతీయుడి స్వప్నాన్ని నిజం చేసే బ్యాంక్!</div>
-                      <h3 className="text-[24px] text-[#0c4a6e] leading-tight mt-0.5" style={{ fontFamily: "'Ramabhadra', serif" }}>
-                        ఎస్‌బీఐ పండుగ ఉత్సవ్ — గృహ, వాహన & బంగారు రుణాల మహా మేళా
+                      <div className="text-[10.5px] text-red-800 font-semibold">The Banker to Every Indian — Making Dreams Come True</div>
+                      <h3 className="text-[24px] text-[#0c4a6e] leading-tight mt-0.5 font-bold" style={{ fontFamily: "'Cinzel', serif" }}>
+                        SBI Festive Utsav — Grand Carnival for Home, Auto & Gold Loans
                       </h3>
                     </div>
 
@@ -3225,22 +3225,22 @@ export const PageDesignerPage: React.FC = () => {
                       </div>
                       <div className="col-span-6 flex flex-col justify-between space-y-2 text-left">
                         <div className="bg-white border-l-4 border-red-700 p-2 shadow-2xs">
-                          <div className="text-[10px] text-slate-600">ఎస్‌బీఐ హోమ్ లోన్ వడ్డీ రేటు:</div>
-                          <div className="text-[20px] text-red-800 leading-none">8.35% p.a.* <span className="text-[9.5px] text-slate-700">నుంచి</span></div>
+                          <div className="text-[10px] text-slate-600 font-semibold">SBI Home Loan Interest Rate:</div>
+                          <div className="text-[20px] text-red-800 leading-none font-bold">8.35% p.a.* <span className="text-[9.5px] text-slate-700 font-normal">onwards</span></div>
                         </div>
                         <div className="bg-white border-l-4 border-[#0369a1] p-2 shadow-2xs">
-                          <div className="text-[10px] text-slate-600">కారు & ఈవీ వాహన రుణాలు:</div>
-                          <div className="text-[18px] text-[#0369a1] leading-none">8.65% p.a.* • 100% ప్రాసెసింగ్ ఫీజు మాఫీ!</div>
+                          <div className="text-[10px] text-slate-600 font-semibold">Car & EV Vehicle Loans:</div>
+                          <div className="text-[18px] text-[#0369a1] leading-none font-bold">8.65% p.a.* • 100% Processing Fee Waiver!</div>
                         </div>
-                        <div className="bg-amber-100 border border-amber-400 p-1.5 text-[10px] text-slate-900">
-                          ✦ YONO SBI యాప్ ద్వారా 15 నిమిషాల్లో ఇన్-ప్రిన్సిపుల్ లోన్ అప్రూవల్!
+                        <div className="bg-amber-100 border border-amber-400 p-1.5 text-[10px] text-slate-900 font-medium">
+                          ✦ In-principle loan approval within 15 minutes via YONO SBI App!
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-[#0c4a6e] text-white px-3 py-1.5 flex items-center justify-between text-[10px]">
-                      <span>సమీప ఎస్‌బీఐ బ్రాంచ్‌ను సందర్శించండి • టోల్ ఫ్రీ: 1800 1234 / 1800 2100</span>
-                      <span className="text-amber-300">bank.sbi</span>
+                      <span>Visit your nearest SBI branch • Toll Free: 1800 1234 / 1800 2100</span>
+                      <span className="text-amber-300 font-mono font-bold">bank.sbi</span>
                     </div>
                   </div>
                 </div>
@@ -3248,8 +3248,8 @@ export const PageDesignerPage: React.FC = () => {
                 /* C. COLUMN-CENTIMETER SOLUS AD 1 (Page 1: 3 Cols × 15cm Lalitha Jewellery Ad) */
                 <div className="w-full h-full flex flex-col justify-between bg-[#fffbeb] border border-amber-600 text-slate-950 overflow-hidden">
                   <div className="bg-red-800 text-white px-2.5 py-1 flex items-center justify-between shrink-0">
-                    <span className="text-[11px]">★ లలితా జ్యువెలరీ మార్ట్ (LALITHA JEWELLERY)</span>
-                    <span className="text-[8px] bg-amber-300 text-slate-950 px-1.5 py-0.2">3 COL × 15 CM AD</span>
+                    <span className="text-[11px] font-bold">★ LALITHA JEWELLERY MART</span>
+                    <span className="text-[8px] bg-amber-300 text-slate-950 px-1.5 py-0.2 font-bold">3 COL × 15 CM AD</span>
                   </div>
                   <div className="p-2 flex-1 min-h-0 flex gap-2.5 items-center">
                     <img
@@ -3259,18 +3259,18 @@ export const PageDesignerPage: React.FC = () => {
                     />
                     <div className="flex-1 flex flex-col justify-between h-full py-0.5 text-left">
                       <div>
-                        <div className="bg-amber-300 text-red-950 text-[9.5px] px-1.5 py-0.5 inline-block mb-1">
-                          BIS 916 హాల్‌మార్క్ ఆభరణాల మహా మేళా
+                        <div className="bg-amber-300 text-red-950 text-[9.5px] px-1.5 py-0.5 inline-block mb-1 font-bold">
+                          BIS 916 Hallmark Jewellery Grand Festival
                         </div>
-                        <h4 className="text-[18px] text-red-900 leading-tight mb-1" style={{ fontFamily: "'Ramabhadra', serif" }}>
-                          బంగారు ఆభరణాలపై తరుగు (VA) కేవలం 4% నుంచి మాత్రమే!
+                        <h4 className="text-[18px] text-red-900 leading-tight mb-1 font-bold">
+                          Special 4% Making Charges (VA) on Certified Gold Jewellery!
                         </h4>
                         <p className="text-[9.5px] text-slate-800 leading-snug">
-                          పాత బంగారం మార్పిడిపై గ్రాముకు రూ. 50/- అదనపు లాభం. వజ్రాభరణాలపై క్యారెట్‌కు రూ. 15,000/- తగ్గింపు!
+                          Special ₹50/g extra exchange bonus on old gold. Flat ₹15,000/- off per carat on certified diamonds!
                         </p>
                       </div>
                       <div className="bg-red-900 text-amber-200 px-2 py-1 text-[9px] leading-tight">
-                        <div>సోమాజిగూడ • కూకట్‌పల్లి • దిల్‌సుఖ్‌నగర్ • విజయవాడ • విశాఖపట్నం</div>
+                        <div>Central Plaza • Metro Towers • City Center • Prime Boulevard</div>
                         <div className="text-white font-mono mt-0.5">📞 040-2331 1166 • www.lalithajewellery.com</div>
                       </div>
                     </div>
@@ -3279,8 +3279,8 @@ export const PageDesignerPage: React.FC = () => {
               ) : isAutoAd ? (
                 /* D. COLUMN-CENTIMETER AD 2 (Page 4: 2 Cols × 18cm Tata Motors EV / SUV Ad) */
                 <div className="w-full h-full flex flex-col justify-between bg-slate-950 text-white overflow-hidden">
-                  <div className="bg-sky-700 text-white px-2.5 py-1 flex items-center justify-between text-[9.5px] shrink-0">
-                    <span>TATA MOTORS • టాటా మోటార్స్</span>
+                  <div className="bg-sky-700 text-white px-2.5 py-1 flex items-center justify-between text-[9.5px] shrink-0 font-bold">
+                    <span>TATA MOTORS • CONNECTING ASPIRATIONS</span>
                     <span className="bg-amber-300 text-slate-950 px-1 py-0.2 text-[7.5px]">2 COL × 18 CM AD</span>
                   </div>
                   <div className="relative h-[155px] w-full shrink-0 overflow-hidden border-b border-sky-800">
@@ -3289,32 +3289,32 @@ export const PageDesignerPage: React.FC = () => {
                       alt={ad.sponsorLabel}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-1.5 left-1.5 bg-red-700 text-white text-[8.5px] px-2 py-0.5">
-                      5-స్టార్ భారత్ NCAP సేఫ్టీ రేటింగ్
+                    <div className="absolute top-1.5 left-1.5 bg-red-700 text-white text-[8.5px] px-2 py-0.5 font-bold">
+                      5-Star Bharat NCAP Safety Rating
                     </div>
                   </div>
                   <div className="p-2.5 flex-1 flex flex-col justify-between text-center">
                     <div>
-                      <h4 className="text-[19px] text-amber-300 leading-tight" style={{ fontFamily: "'Ramabhadra', serif" }}>
-                        కొత్త టాటా కర్వ్ (TATA CURVV EV) & నెక్సాన్
+                      <h4 className="text-[19px] text-amber-300 leading-tight font-bold">
+                        The All-New TATA CURVV EV & NEXON
                       </h4>
                       <p className="text-[9.5px] text-slate-300 mt-1 leading-snug">
-                        ఒక్కసారి ఛార్జ్ చేస్తే 502 కి.మీ* మైలేజ్! పండుగ ఎక్స్ఛేంజ్ బోనస్ ₹65,000/- వరకు తగ్గింపు + ఉచిత హోమ్ ఛార్జర్.
+                        Up to 502 km* certified range on a single charge! Festive exchange benefits up to ₹65,000 + Complimentary Home Wallbox Charger.
                       </p>
                     </div>
-                    <div className="bg-amber-400 text-slate-950 py-1 px-2 text-[11px]">
-                      ప్రారంభ ధర: ₹ 12.49 లక్షలు* (Ex-Showroom)
+                    <div className="bg-amber-400 text-slate-950 py-1 px-2 text-[11px] font-bold">
+                      Starting Price: ₹ 12.49 Lakh* (Ex-Showroom)
                     </div>
-                    <div className="text-[8.5px] text-sky-200 border-t border-slate-800 pt-1">
-                      మాలిక్ కార్స్ & తేజస్వి మోటార్స్ — హైదరాబాద్ / విజయవాడ • 📞 98480 11223
+                    <div className="text-[8.5px] text-sky-200 border-t border-slate-800 pt-1 font-mono">
+                      Authorized Dealerships Nationwide • 📞 1800 209 8282
                     </div>
                   </div>
                 </div>
               ) : isCmrAd ? (
                 /* E. COLUMN-CENTIMETER AD 3 (Page 4: 2 Cols × 18cm CMR Shopping Mall Wedding & Silk Ad) */
                 <div className="w-full h-full flex flex-col justify-between bg-[#fff1f2] text-slate-950 overflow-hidden">
-                  <div className="bg-rose-900 text-amber-200 px-2.5 py-1 flex items-center justify-between text-[9.5px] shrink-0">
-                    <span>★ సి.ఎం.ఆర్. షాపింగ్ మాల్ (CMR)</span>
+                  <div className="bg-rose-900 text-amber-200 px-2.5 py-1 flex items-center justify-between text-[9.5px] shrink-0 font-bold">
+                    <span>★ CMR SHOPPING MALL & SILKS</span>
                     <span className="bg-white text-rose-950 px-1 py-0.2 text-[7.5px]">2 COL × 18 CM AD</span>
                   </div>
                   <div className="relative h-[155px] w-full shrink-0 overflow-hidden border-b border-rose-300">
@@ -3323,24 +3323,24 @@ export const PageDesignerPage: React.FC = () => {
                       alt={ad.sponsorLabel}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute bottom-1.5 right-1.5 bg-amber-300 text-rose-950 text-[8.5px] px-2 py-0.5">
-                      ఆషాఢం & పండుగ మెగా ఆఫర్
+                    <div className="absolute bottom-1.5 right-1.5 bg-amber-300 text-rose-950 text-[8.5px] px-2 py-0.5 font-bold">
+                      Annual Festive Mega Sale
                     </div>
                   </div>
                   <div className="p-2.5 flex-1 flex flex-col justify-between text-center">
                     <div>
-                      <h4 className="text-[19px] text-rose-900 leading-tight" style={{ fontFamily: "'Ramabhadra', serif" }}>
-                        కంచి పట్టు, ధర్మవరం & వెడ్డింగ్ కలెక్షన్స్
+                      <h4 className="text-[19px] text-rose-900 leading-tight font-bold">
+                        Pure Kanchipuram Silks, Wedding Lehengas & Ethnic Wear
                       </h4>
                       <p className="text-[9.5px] text-slate-800 mt-1 leading-snug">
-                        పెళ్లి పట్టు చీరలు, డిజైనర్ లెహంగాలు, మెన్స్ వెడ్డింగ్ సూట్లు మరియు కిడ్స్ వేర్‌పై 35% వరకు ప్రత్యక్ష తగ్గింపు!
+                        Flat 35% discount on Bridal Kanjeevaram Sarees, Designer Lehengas, Men's Sherwanis, and Kids Festive Wear!
                       </p>
                     </div>
-                    <div className="bg-rose-800 text-white py-1 px-2 text-[10.5px]">
-                      ₹10,000 షాపింగ్‌పై వెండి నాణెం ఉచితం!
+                    <div className="bg-rose-800 text-white py-1 px-2 text-[10.5px] font-bold">
+                      Free Pure Silver Coin on purchases above ₹10,000!
                     </div>
-                    <div className="text-[8.5px] text-rose-950 border-t border-rose-200 pt-1">
-                      విశాఖపట్నం • విజయవాడ • హైదరాబాద్ • తిరుపతి • 📞 0891-2556677
+                    <div className="text-[8.5px] text-rose-950 border-t border-rose-200 pt-1 font-mono">
+                      Flagship Stores Across Major Cities • 📞 1800 425 6677
                     </div>
                   </div>
                 </div>
@@ -3355,8 +3355,8 @@ export const PageDesignerPage: React.FC = () => {
                     />
                   ) : null}
                   <div className="bg-slate-900 text-white text-[9px] px-2 py-1 flex items-center justify-between shrink-0">
-                    <span className="truncate">{ad.sponsorLabel || 'వాణిజ్య ప్రకటన'}</span>
-                    <span className="text-amber-300 text-[7.5px] ml-2 shrink-0">ప్రకటన / AD ({ad.columnSpan} COLS)</span>
+                    <span className="truncate">{ad.sponsorLabel || 'Commercial Advertisement'}</span>
+                    <span className="text-amber-300 text-[7.5px] ml-2 shrink-0">ADVERTISEMENT ({ad.columnSpan} COLS)</span>
                   </div>
                 </div>
               )}
@@ -3380,9 +3380,9 @@ export const PageDesignerPage: React.FC = () => {
           >
             <div className="w-full flex items-center justify-center gap-2 border-b border-slate-300 pb-0.5 text-[8.5px] text-center whitespace-nowrap overflow-hidden">
               <span className="truncate">
-                <span className="text-red-800">ఇంప్రింట్ (PRB Act):</span>{' '}
-                {selectedBrand.imprint?.ownerName || 'ఆంధ్ర ప్రభ మీడియా ఎంటర్‌ప్రైజెస్ లిమిటెడ్'} తరపున ముద్రణకర్త & ప్రచురణకర్త: పి. రమణమూర్తి •{' '}
-                <span className="text-red-800">సంపాదకుడు:</span> కె. వెంకటేశ్వరరావు* (*చట్టం ప్రకారం వార్తల ఎంపికకు బాధ్యులు) •{' '}
+                <span className="text-red-800">Imprint (PRB Act):</span>{' '}
+                Printed & Published on behalf of {selectedBrand.imprint?.ownerName || 'NewsPress Media Enterprises Limited'} by P. Raman Murthy •{' '}
+                <span className="text-red-800">Editor:</span> K. Venkateswara Rao* (*Responsible for selection of news under PRB Act) •{' '}
                 <span className="font-mono text-[8px] text-slate-950">
                   {selectedBrand.imprint?.rniNumber || 'RNI No. TELTEL/2014/56891'} • Title Code: {selectedBrand.imprint?.titleCode || 'TELNEW00341'}
                 </span>
@@ -3390,10 +3390,10 @@ export const PageDesignerPage: React.FC = () => {
             </div>
             <div className="w-full flex items-center justify-center gap-2 pt-0.5 text-[8px] text-slate-800 text-center whitespace-nowrap overflow-hidden">
               <span className="truncate">
-                <span className="text-red-800">ముద్రణాలయం:</span> {selectedBrand.imprint?.printingPressName || 'శ్రీ సత్యసాయి రోటరీ ఆఫ్‌సెట్ ప్రింటర్స్'}, ప్లాట్ నం. 44, ఐ.డి.ఎ. మల్లాపూర్, హైదరాబాద్ - 500076 •{' '}
-                <span className="text-red-800">ప్రచురణ కార్యాలయం:</span> డోర్ నం. 8-2-293/82/A, జూబ్లీహిల్స్, హైదరాబాద్ - 500033 •{' '}
+                <span className="text-red-800">Printing Press:</span> {selectedBrand.imprint?.printingPressName || 'Satya Sai Rotary Offset Printers'}, Industrial Area, Hyderabad - 500076 •{' '}
+                <span className="text-red-800">Publishing Office:</span> Plot No. 8-2-293/82/A, Jubilee Hills, Hyderabad - 500033 •{' '}
                 <span className="text-slate-950">
-                  <span className="text-red-800">న్యాయపరిధి:</span> హైదరాబాద్ కోర్టులకు మాత్రమే • ✉ {selectedBrand.imprint?.contactEmail || 'editor@andhraprabhapress.com'}
+                  <span className="text-red-800">Jurisdiction:</span> Courts of Hyderabad Only • ✉ {selectedBrand.imprint?.contactEmail || 'editor@newspress.com'}
                 </span>
               </span>
             </div>
@@ -3522,7 +3522,7 @@ export const PageDesignerPage: React.FC = () => {
           {/* Date */}
           <div className="hidden md:flex items-center space-x-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-md whitespace-nowrap">
             <Calendar className="w-3.5 h-3.5 text-red-600 shrink-0" />
-            <span>{edition.publicationDate || '30 అక్టోబర్ 2026, శుక్రవారం'}</span>
+            <span>{edition.publicationDate || 'Friday, 30 October 2026'}</span>
           </div>
         </div>
 

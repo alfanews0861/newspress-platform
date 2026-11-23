@@ -104,7 +104,7 @@ export const HeadlineLabModal: React.FC<HeadlineLabModalProps> = ({
             editorName: user.displayName || 'Editor',
             editorRole: 'editor',
             appliedHeadline: selectedHeadline,
-            changeSummary: 'Selected AI headline from Headline Lab',
+            changeSummary: 'Selected headline from Headline Lab',
           });
           onApplied?.({ ...article, headline: res.version.headline });
         }
@@ -138,7 +138,7 @@ export const HeadlineLabModal: React.FC<HeadlineLabModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Headline Lab & Fitting Analyzer"
-      subtitle="AI-assisted headline suggestions with broadsheet column fit diagnostics & fact integrity."
+      subtitle="Headline suggestions with broadsheet column fit diagnostics & fact integrity."
       maxWidth="xl"
     >
       <div className="space-y-6 font-sans">
@@ -205,7 +205,7 @@ export const HeadlineLabModal: React.FC<HeadlineLabModalProps> = ({
         {options.length > 0 && (
           <div className="space-y-3">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              AI Editorial Options (Select or Modify)
+              Editorial Suggestions (Select or Modify)
             </h4>
             <div className="grid grid-cols-1 gap-3">
               {options.map((opt, idx) => {

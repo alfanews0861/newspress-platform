@@ -57,7 +57,7 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
   const issue = brand.issueNumber || 47822;
   const price = masthead.priceText || brand.price || '₹5.00';
   const frequencyLabel = (brand.frequency || 'daily').toUpperCase() + ' MORNING EDITION';
-  const displayEdition = editionName || (brand.editionsList?.[0] || (isTelugu ? 'హైదరాబాద్ మెయిన్ ఎడిషన్' : 'METROPOLITAN MAIN EDITION'));
+  const displayEdition = editionName || (brand.editionsList?.[0] || 'METROPOLITAN MAIN EDITION');
 
   // Detect which of the 5 layout designs is active
   // Fallbacks support templatePreset or templateLayout
@@ -106,7 +106,7 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
           {/* LEFT EAR PANEL ADVERTISEMENT: Commercial Jewellery & Silk Sarees Ad */}
           <div className="w-[232px] h-full shrink-0 border-[1.5px] border-red-800 bg-gradient-to-br from-[#fffbeb] via-white to-[#fef2f2] p-1.5 flex flex-col justify-between text-left box-border relative overflow-hidden">
             <div className="flex items-center justify-between bg-red-800 text-white px-1.5 py-0.5 leading-none shrink-0">
-              <span className="text-[9px] tracking-wide">★ లలితా జ్యువెలరీ మార్ట్</span>
+              <span className="text-[9px] tracking-wide">★ NATIONAL JEWELLERY MART</span>
               <span className="text-[7px] bg-amber-300 text-slate-950 px-1 py-0.2">EAR AD</span>
             </div>
 
@@ -124,16 +124,16 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
               />
               <div className="flex flex-col justify-center min-w-0 leading-tight">
                 <div className="text-[10.5px] text-red-900 leading-snug">
-                  బంగారు ఆభరణాలపై తరుగు (VA) కేవలం 4% మాత్రమే!
+                  Special 4% Making Charges on Certified Gold Jewellery!
                 </div>
                 <div className="text-[8px] text-slate-800 mt-0.5 leading-tight">
-                  వజ్రాభరణాలపై క్యారెట్‌కు రూ.15,000 తగ్గింపు • పాత బంగారానికి 100% విలువ
+                  Flat ₹15,000 off per carat on Diamonds • 100% Exchange Value on Old Gold
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-[7.5px] text-slate-950 bg-amber-200/85 px-1.5 py-0.5 leading-none border-t border-amber-300 shrink-0">
-              <span>సోమాజిగూడ • కూకట్‌పల్లి • విజయవాడ</span>
+              <span>Central Plaza • Metro Complex • City Center</span>
               <span className="font-mono text-red-950">📞 040-2331116</span>
             </div>
           </div>
@@ -142,8 +142,8 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
           <div className="flex-1 min-w-0 h-full flex flex-col items-center justify-between text-center px-3 pt-0.5 pb-1 relative overflow-visible bg-white">
             {/* Compact Top Motto & Establishment Ribbon */}
             <div className="w-full flex items-center justify-between px-2 text-[9.5px] text-slate-800 leading-none shrink-0 border-b border-slate-200 pb-0.5">
-              <span className="text-red-800">☀ స్థాపన (Estd): 1938</span>
-              <span className="text-[#0369a1]">✦ సత్యమేవ జయతే • ప్రజా పక్షాన నిరంతర గళం • దినపత్రిక ✦</span>
+              <span className="text-red-800">☀ Estd: 1947</span>
+              <span className="text-[#0369a1]">✦ TRUTH ALONE TRIUMPHS • NATIONAL DAILY ✦</span>
               <span className="text-red-800 font-serif italic">Journalism First!</span>
             </div>
 
@@ -164,7 +164,7 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
                   textShadow: '1px 1px 0px rgba(15, 23, 42, 0.08)',
                 }}
               >
-                {masthead.title?.trim() || brand.name || 'ఆంధ్రప్రభ'}
+                {masthead.title?.trim() || brand.name || 'NATIONAL CHRONICLE'}
               </h1>
             </div>
           </div>
@@ -190,22 +190,22 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
               />
               <div className="flex-1 min-w-0 bg-white/95 border border-amber-300 px-1.5 py-1 text-[8px] leading-snug space-y-0.5">
                 <div className="flex justify-between text-slate-900">
-                  <span>24K బంగారం (10g):</span>
+                  <span>24K Gold (10g):</span>
                   <span className="text-red-800">₹ 81,450</span>
                 </div>
                 <div className="flex justify-between text-slate-900">
-                  <span>22K ఆభరణ బంగారం:</span>
+                  <span>22K Hallmark Gold:</span>
                   <span className="text-red-800">₹ 74,650</span>
                 </div>
                 <div className="flex justify-between text-slate-900">
-                  <span>వెండి (Silver 1Kg):</span>
+                  <span>Silver (1Kg):</span>
                   <span className="text-slate-950">₹ 96,200</span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-[7.5px] text-slate-950 bg-amber-200/85 px-1.5 py-0.5 leading-none border-t border-amber-300 shrink-0">
-              <span>పంజాగుట్ట • సికింద్రాబాద్ • తిరుపతి</span>
+              <span>Connaught Place • MG Road • Park Street</span>
               <span className="font-mono text-rose-950">📞 99120 10888</span>
             </div>
           </div>
@@ -223,7 +223,7 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
               <span>
                 {brand.editionsList && brand.editionsList.length > 0 && !isAndhraPrabha
                   ? brand.editionsList.join(' • ')
-                  : 'హైదరాబాద్ • విజయవాడ • విశాఖపట్నం • తిరుపతి • వరంగల్ • గుంటూరు • రాజమండ్రి • కరీంనగర్ • నిజామాబాద్ • కర్నూలు • నెల్లూరు • అనంతపురం'}
+                  : 'NEW DELHI • MUMBAI • BENGALURU • HYDERABAD • CHENNAI • KOLKATA • AHMEDABAD • PUNE'}
               </span>
             </div>
             <div className="shrink-0 ml-2 font-mono text-[8px] text-slate-900">
@@ -273,19 +273,19 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
         <div className="bg-red-800 text-white text-[9.5px] px-3 py-0.5 flex items-center justify-between font-bold tracking-wide h-[22px] box-border">
           <div className="flex items-center gap-2">
             <span className="bg-white/20 px-1.5 py-0.2 rounded text-[8.5px] uppercase tracking-wider">
-              {isTelugu ? 'సత్యమేవ జయతే' : 'TRUTH ALONE TRIUMPHS'}
+              TRUTH ALONE TRIUMPHS
             </span>
             <span className="hidden sm:inline">
-              {isTelugu ? '• సమగ్ర జాతీయ, రాష్ట్ర దినపత్రిక' : '• Leading National Regional Daily'}
+              • Leading National Regional Daily
             </span>
           </div>
           <div className="text-amber-200 font-extrabold uppercase tracking-wider text-[9.5px]">
-            {isTelugu ? 'ప్రజా పక్షాన.. నిరంతరం మీతో!' : 'THE PEOPLE’S VOICE • MORNING DAILY'}
+            THE PEOPLE’S VOICE • MORNING DAILY
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline text-red-100 text-[8.5px]">e-Paper: epaper.daily.in</span>
             <span className="bg-amber-400 text-red-950 px-2 py-0.2 rounded font-black text-[9px]">
-              వెల: {price}
+              Price: {price}
             </span>
           </div>
         </div>
@@ -295,10 +295,10 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
           {/* LEFT FRONT-PAGE SPONSOR EAR AD (4cm x 5cm) */}
           <div className="hidden sm:flex flex-col justify-between w-[120px] h-[62px] border-2 border-dashed border-red-700/60 bg-red-50/50 p-1 text-center shrink-0 rounded">
             <div className="text-[7px] font-bold text-red-800 uppercase tracking-widest border-b border-red-200 pb-0.5">
-              {isTelugu ? 'ముందు పేజీ ప్రకటన స్థలం' : 'FRONT-PAGE EAR AD'}
+              FRONT-PAGE EAR AD
             </div>
             <div className="text-[7.5px] font-semibold text-slate-700 leading-tight">
-              {isTelugu ? 'ఈ స్థలంలో మీ ప్రకటనకు సంప్రదించండి' : 'Your Brand Ad Spotlight Here (4cm × 5cm)'}
+              Your Brand Ad Spotlight Here (4cm × 5cm)
             </div>
             <div className="text-[7px] font-bold text-red-900 bg-red-100/80 rounded py-0.2">
               📞 1800-200-NEWS
@@ -343,7 +343,7 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
             {/* Circular Stamped Regional Edition Badge (Authentic Indian newspaper hallmark) */}
             <div className="hidden md:flex flex-col items-center justify-center w-[54px] h-[54px] rounded-full border-2 border-red-800 bg-red-50 text-red-950 p-0.5 shadow-xs shrink-0 text-center">
               <span className="text-[6px] font-bold uppercase tracking-wider text-red-700">EDITION</span>
-              <span className="text-[8.5px] font-black leading-tight text-red-900" style={{ letterSpacing: 'normal' }}>{isTelugu ? 'హైదరాబాద్' : 'HYD'}</span>
+              <span className="text-[8.5px] font-black leading-tight text-red-900" style={{ letterSpacing: 'normal' }}>METRO</span>
               <span className="text-[5.5px] font-semibold text-slate-600">ESTD 1894</span>
             </div>
           </div>
@@ -351,14 +351,14 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
           {/* RIGHT FRONT-PAGE EAR AD / BULLION BOX */}
           <div className="hidden sm:flex flex-col justify-between w-[120px] h-[62px] border-2 border-red-800/40 bg-white p-1 text-center shrink-0 rounded">
             <div className="text-[7px] font-bold text-red-900 uppercase tracking-widest border-b border-red-200 pb-0.5">
-              {isTelugu ? 'నేటి మార్కెట్ విశేషాలు' : 'TODAY’S MARKETS'}
+              TODAY’S MARKETS
             </div>
             <div className="text-[7.5px] text-slate-700 space-y-0.2 text-left pl-1">
-              <div>{isTelugu ? 'బంగారం 24K: ₹78,850 ▲' : 'Gold 24K: ₹78,850 ▲'}</div>
-              <div>{isTelugu ? 'వెండి 1kg: ₹92,400 ▲' : 'Silver 1kg: ₹92,400 ▲'}</div>
+              <div>Gold 24K: ₹78,850 ▲</div>
+              <div>Silver 1kg: ₹92,400 ▲</div>
             </div>
             <div className="text-[6.5px] text-slate-500 font-medium text-right pr-1">
-              {isTelugu ? 'హైదరాబాద్ బులియన్' : 'Bullion Rates'}
+              Bullion Rates
             </div>
           </div>
         </div>
@@ -367,7 +367,7 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
         <div className="bg-red-900 text-white text-[8.5px] font-bold px-3 py-0.5 flex justify-between items-center border-t-2 border-red-950 h-[22px] box-border">
           <span style={{ letterSpacing: 'normal' }}>{publicationDate}</span>
           <span className="uppercase" style={{ letterSpacing: 'normal' }}>
-            {displayEdition} • సంపుటి: {vol} • సంచిక: {issue} • పేజీలు: {brand.pageCount || 4}
+            {displayEdition} • Vol: {vol} • Issue: {issue} • Pages: {brand.pageCount || 4}
           </span>
           <span className="text-amber-300 font-mono text-[8.5px]">
             {brand.imprint?.rniNumber || 'RNI: AP/TEL/1894/01'}
@@ -639,11 +639,11 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
         {/* LEFT EAR (Almanac & Regional Weather) */}
         <div className="hidden sm:block w-[135px] text-[8.5px] leading-tight border-r border-slate-200 pr-2 text-slate-700 text-left shrink-0 font-sans">
           <div className="font-bold text-slate-900 border-b border-slate-200 pb-0.5 mb-0.5 tracking-wider">
-            {isTelugu ? 'పంచాంగం & వాతావరణం' : 'ALMANAC & WEATHER'}
+            ALMANAC & WEATHER
           </div>
-          <div>{isTelugu ? 'సూర్యోదయం: 06:12 • అస్తమయం: 17:48' : 'Sunrise: 06:12 • Sunset: 17:48'}</div>
+          <div>Sunrise: 06:12 • Sunset: 17:48</div>
           <div className="font-semibold text-slate-800 mt-0.5">
-            {isTelugu ? 'హైదరాబాద్: గరిష్ఠం 31°C • కనిష్ఠం 21°C' : 'Capital: Max 31°C • Min 21°C'}
+            Capital: Max 31°C • Min 21°C
           </div>
         </div>
 
@@ -712,11 +712,11 @@ export const NewspaperMastheadRenderer: React.FC<NewspaperMastheadRendererProps>
         {/* RIGHT EAR (Markets & Financial Ticker) */}
         <div className="hidden sm:block w-[135px] text-[8.5px] leading-tight border-l border-slate-200 pl-2 text-slate-700 text-right shrink-0 font-sans">
           <div className="font-bold text-slate-900 border-b border-slate-200 pb-0.5 mb-0.5 tracking-wider">
-            {isTelugu ? 'బులియన్ & మార్కెట్లు' : 'MARKETS & BULLION'}
+            MARKETS & BULLION
           </div>
-          <div>{isTelugu ? 'బి.ఎస్.ఇ సెన్సెక్స్: 82,410 ▲' : 'BSE Sensex: 82,410 ▲ +420'}</div>
+          <div>BSE Sensex: 82,410 ▲ +420</div>
           <div className="font-semibold text-amber-800 mt-0.5">
-            {isTelugu ? 'బంగారం: ₹78,850 • వెండి: ₹92,400' : 'Gold (24K): ₹78,850 ▲'}
+            Gold (24K): ₹78,850 ▲ • Silver: ₹92,400
           </div>
         </div>
       </div>

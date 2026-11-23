@@ -8,30 +8,49 @@
  */
 
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from './firebase';
+import { doc, setDoc, getDocs, collection, query, orderBy, limit } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import { isFirebaseConfigured } from '../config/firebase';
+import { sanitizeFirestore } from '../utils/sanitizeFirestore';
 import {
   YouTubeConnectedAccount,
   YouTubeChannelBrandingSettings,
   YouTubePublishResult,
+  YouTubeBroadcastRecord,
   SupportedIndianLanguage,
 } from '../types/youtube';
 import { loadMediaBlob } from '../utils/mediaBlobStore';
 
 const SETTINGS_STORAGE_KEY = 'newspress_youtube_branding_settings_v1';
 const ACCOUNT_STORAGE_KEY = 'newspress_youtube_connected_account_v1';
+const ACCOUNTS_LIST_STORAGE_KEY = 'newspress_youtube_connected_accounts_list_v1';
+const BROADCAST_HISTORY_STORAGE_KEY = 'newspress_youtube_broadcast_history_v1';
 
 export const DEFAULT_BRANDING_SETTINGS: YouTubeChannelBrandingSettings = {
   watermark: {
-    placement: 'top-right',
+    // Channel Logo Settings
+    logoPlacement: 'top-right',
+    logoScalePercent: 18,
+    logoOpacityPercent: 90,
+    logoXPercent: 88, // 88% from left (Top-Right)
+    logoYPercent: 8,  // 8% from top
+
+    // White Text Watermark (Middle / Center by default, or adjustable with 2 bars)
+    placement: 'top-left',
+    text: 'NEWS 24X7',
+    textColor: '#ffffff',
     scalePercent: 18,
-    opacityPercent: 90,
+    opacityPercent: 85,
+    xPercent: 50, // 50% (Center / Middle horizontal)
+    yPercent: 50, // 50% (Center / Middle vertical)
     offsetX: 32,
     offsetY: 32,
   },
   defaultLanguage: 'te',
-  voiceGender: 'female',
-  speechRate: 1.0,
+  voiceGender: 'male',
+  voiceActorId: 'ravi_shankar',
+  emotionalStyle: 'emotional_breaking',
+  speechRate: 1.3, // High-energy fast breaking news default
   defaultCategory: '25', // News & Politics
   defaultTags: ['BreakingNews', 'NewsToday', 'TopStories', 'LatestNews'],
   descriptionTemplate: `🔴 Latest News Bulletin.\n\nSubscribe to our channel for authentic, real-time news updates.\n\nDisclaimer: This video report is produced using verified journalistic field footage and editorial summary.\n#News #BreakingNews #Updates`,
@@ -46,7 +65,14 @@ export class YouTubeService {
     try {
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
       if (stored) {
-        return { ...DEFAULT_BRANDING_SETTINGS, ...JSON.parse(stored) };
+        const parsed = JSON.parse(stored);
+        return {
+          ...DEFAULT_BRANDING_SETTINGS,
+          ...parsed,
+          voiceActorId: parsed.voiceActorId || 'ravi_shankar',
+          emotionalStyle: parsed.emotionalStyle || 'emotional_breaking',
+          speechRate: (parsed.speechRate && parsed.speechRate !== 1.0) ? parsed.speechRate : 1.3,
+        };
       }
     } catch (e) {
       console.warn('Failed to parse YouTube settings from localStorage:', e);
@@ -87,14 +113,52 @@ export class YouTubeService {
   }
 
   /**
-   * Saves or disconnects YouTube account.
+   * Retrieves all connected YouTube channels (multi-channel support for users managing multiple channels).
+   */
+  static getConnectedAccountsList(): YouTubeConnectedAccount[] {
+    try {
+      const stored = localStorage.getItem(ACCOUNTS_LIST_STORAGE_KEY);
+      if (stored) {
+        const list = JSON.parse(stored);
+        if (Array.isArray(list) && list.length > 0) return list;
+      }
+    } catch (e) {}
+    const current = this.getConnectedAccount();
+    return current.isConnected ? [current] : [];
+  }
+
+  /**
+   * Saves or disconnects YouTube account and keeps the multi-channel registry synchronized.
    */
   static saveConnectedAccount(account: YouTubeConnectedAccount): void {
     try {
       localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(account));
+      if (account.isConnected && account.channelId) {
+        const list = this.getConnectedAccountsList();
+        const existingIdx = list.findIndex((c) => c.channelId === account.channelId);
+        if (existingIdx >= 0) {
+          list[existingIdx] = account;
+        } else {
+          list.push(account);
+        }
+        localStorage.setItem(ACCOUNTS_LIST_STORAGE_KEY, JSON.stringify(list));
+      }
     } catch (e) {
       console.error('Failed to persist connected YouTube account:', e);
     }
+  }
+
+  /**
+   * Switches the active broadcast channel from the multi-channel list with 1-click.
+   */
+  static switchActiveChannel(channelId: string): YouTubeConnectedAccount | null {
+    const list = this.getConnectedAccountsList();
+    const target = list.find((c) => c.channelId === channelId);
+    if (target) {
+      this.saveConnectedAccount(target);
+      return target;
+    }
+    return null;
   }
 
   /**
@@ -105,7 +169,7 @@ export class YouTubeService {
    * Never requires manual technical token configuration from end users!
    */
   static async connectGoogleYouTubeChannel(): Promise<YouTubeConnectedAccount> {
-    const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID || '970306052942-v8nui4keia6k8kvvntgh02hset1qcqi8.apps.googleusercontent.com';
+    const clientId = import.meta.env.VITE_YOUTUBE_CLIENT_ID || '';
     const cloudRunExchangeUrl = 'https://composevideo-vz346mffwa-uc.a.run.app?action=exchange_code';
 
     // 1. Try Google Identity Services (GIS) Code Flow to get a Permanent Refresh Token
@@ -123,6 +187,7 @@ export class YouTubeService {
             client_id: clientId,
             scope: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly',
             ux_mode: 'popup',
+            select_account: true,
             callback: async (response: any) => {
               if (isHandled) return;
               isHandled = true;
@@ -138,12 +203,14 @@ export class YouTubeService {
 
               try {
                 console.log('[YouTube Auth] Exchanging authorization code via Cloud Run backend...');
+                const clientSecret = import.meta.env.VITE_YOUTUBE_CLIENT_SECRET || '';
                 const exResp = await fetch(cloudRunExchangeUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     code: response.code,
                     clientId,
+                    clientSecret,
                     redirectUri: 'postmessage',
                   }),
                 });
@@ -152,6 +219,8 @@ export class YouTubeService {
                   const accountData: YouTubeConnectedAccount = await exResp.json();
                   if (accountData.isConnected) {
                     console.log('[YouTube Auth] Permanent YouTube connection established successfully!');
+                    accountData.clientId = clientId;
+                    accountData.clientSecret = clientSecret;
                     this.saveConnectedAccount(accountData);
                     return resolve(accountData);
                   }
@@ -342,14 +411,23 @@ export class YouTubeService {
     clientId?: string,
     clientSecret?: string
   ): Promise<{ accessToken: string; expiresIn: number }> {
+    const effectiveClientId =
+      clientId?.trim() ||
+      import.meta.env.VITE_YOUTUBE_CLIENT_ID ||
+      '';
+    const effectiveClientSecret =
+      clientSecret?.trim() ||
+      import.meta.env.VITE_YOUTUBE_CLIENT_SECRET ||
+      '';
+
     const endpoint = 'https://composevideo-vz346mffwa-uc.a.run.app?action=refresh_token';
     const resp = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         refreshToken,
-        clientId,
-        clientSecret,
+        clientId: effectiveClientId,
+        clientSecret: effectiveClientSecret,
       }),
     });
     if (resp.ok) {
@@ -467,10 +545,21 @@ export class YouTubeService {
   }
 
   /**
-   * Disconnects the YouTube Channel and clears stored authentication.
+   * Disconnects a specific YouTube channel or clears all channels.
    */
-  static disconnectYouTubeChannel(): void {
-    localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+  static disconnectYouTubeChannel(channelId?: string): void {
+    if (!channelId) {
+      localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+      localStorage.removeItem(ACCOUNTS_LIST_STORAGE_KEY);
+      return;
+    }
+    const list = this.getConnectedAccountsList().filter((c) => c.channelId !== channelId);
+    localStorage.setItem(ACCOUNTS_LIST_STORAGE_KEY, JSON.stringify(list));
+    if (list.length > 0) {
+      this.saveConnectedAccount(list[0]);
+    } else {
+      localStorage.removeItem(ACCOUNT_STORAGE_KEY);
+    }
   }
 
   /**
@@ -557,7 +646,7 @@ export class YouTubeService {
         const videoData = await uploadResp.json();
         const videoId = videoData.id;
 
-        onProgress?.(80, 'Uploading AI breaking news thumbnail...');
+        onProgress?.(80, 'Uploading breaking news thumbnail...');
         let thumbSuccess = false;
         if (thumbnailBlob && videoId) {
           try {
@@ -592,6 +681,144 @@ export class YouTubeService {
         console.error('YouTube Data API execution error:', err);
         throw new Error(err?.message || 'Failed to complete video upload to YouTube Data API.');
       }
+  }
+
+  /**
+   * Queries YouTube Data API v3 to inspect live video ingestion and transcoding status.
+   * Tells users whether YouTube has finished processing SD/HD versions of their broadcast.
+   * Once uploadStatus === 'processed', SD resolution is 100% ready to watch and share!
+   */
+  static async getVideoProcessingStatus(videoId: string, token?: string): Promise<{
+    isProcessed: boolean;
+    isSdReady: boolean;
+    uploadStatus: string;
+    processingStatus: string;
+    progressPercentage?: number;
+    privacyStatus?: string;
+  }> {
+    try {
+      let accessToken = token;
+      if (!accessToken) {
+        try {
+          accessToken = await this.getValidAccessToken();
+        } catch (e) {}
+      }
+      if (!accessToken) {
+        return { isProcessed: false, isSdReady: false, uploadStatus: 'unknown', processingStatus: 'unknown' };
+      }
+
+      const resp = await fetch(
+        `https://www.googleapis.com/youtube/v3/videos?part=status,processingDetails&id=${encodeURIComponent(videoId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+        }
+      );
+      if (!resp.ok) {
+        return { isProcessed: false, isSdReady: false, uploadStatus: 'unknown', processingStatus: 'unknown' };
+      }
+      const data = await resp.json();
+      const item = data.items?.[0];
+      if (!item) {
+        return { isProcessed: false, isSdReady: false, uploadStatus: 'not_found', processingStatus: 'unknown' };
+      }
+      const uploadStatus = item.status?.uploadStatus || 'unknown';
+      const processingStatus = item.processingDetails?.processingStatus || 'unknown';
+      // In YouTube Data API, uploadStatus === 'processed' means SD processing is 100% finished and playable!
+      const isSdReady = uploadStatus === 'processed' || processingStatus === 'succeeded';
+      const isProcessed = isSdReady;
+
+      let progressPercentage: number | undefined;
+      const progress = item.processingDetails?.processingProgress;
+      if (progress && progress.partsTotal > 0) {
+        progressPercentage = Math.round((progress.partsProcessed / progress.partsTotal) * 100);
+      }
+
+      return {
+        isProcessed,
+        isSdReady,
+        uploadStatus,
+        processingStatus,
+        progressPercentage,
+        privacyStatus: item.status?.privacyStatus,
+      };
+    } catch (e) {
+      console.warn('Failed to query YouTube video processing status:', e);
+      return { isProcessed: false, isSdReady: false, uploadStatus: 'unknown', processingStatus: 'unknown' };
+    }
+  }
+
+  /**
+   * Saves a published broadcast record to local storage and Firestore.
+   * Ensures resilience against browser crash or tab closing.
+   */
+  static async saveBroadcastRecord(record: YouTubeBroadcastRecord): Promise<void> {
+    try {
+      const existing = this.getStoredBroadcastRecords();
+      const filtered = existing.filter((r) => r.videoId !== record.videoId);
+      const updated = [record, ...filtered].slice(0, 60);
+      localStorage.setItem(BROADCAST_HISTORY_STORAGE_KEY, JSON.stringify(updated));
+
+      // Persist to Firestore if live db is available
+      if (isFirebaseConfigured && db) {
+        try {
+          await setDoc(doc(db, 'youtube_broadcasts', record.videoId), sanitizeFirestore({
+            ...record,
+            savedAt: new Date().toISOString(),
+          }), { merge: true });
+        } catch (fsErr) {
+          console.warn('Could not persist broadcast record to Firestore:', fsErr);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to save broadcast record locally:', e);
+    }
+  }
+
+  /**
+   * Returns locally cached broadcast records instantly.
+   */
+  static getStoredBroadcastRecords(): YouTubeBroadcastRecord[] {
+    try {
+      const data = localStorage.getItem(BROADCAST_HISTORY_STORAGE_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Retrieves all processed broadcast records across Firestore and local storage.
+   */
+  static async getAllBroadcastRecords(): Promise<YouTubeBroadcastRecord[]> {
+    const local = this.getStoredBroadcastRecords();
+    if (!isFirebaseConfigured || !db) {
+      return local;
+    }
+    try {
+      const q = query(collection(db, 'youtube_broadcasts'), orderBy('publishedAt', 'desc'), limit(50));
+      const snap = await getDocs(q);
+      const remoteRecords: YouTubeBroadcastRecord[] = [];
+      snap.forEach((d) => {
+        const item = d.data() as YouTubeBroadcastRecord;
+        if (item.videoId) remoteRecords.push(item);
+      });
+      if (remoteRecords.length > 0) {
+        const idMap = new Map<string, YouTubeBroadcastRecord>();
+        for (const r of local) idMap.set(r.videoId, r);
+        for (const r of remoteRecords) idMap.set(r.videoId, r);
+        const merged = Array.from(idMap.values()).sort(
+          (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+        );
+        localStorage.setItem(BROADCAST_HISTORY_STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch broadcast records from Firestore, using local cache:', err);
+    }
+    return local;
   }
 
   /**

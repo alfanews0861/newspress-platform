@@ -380,7 +380,7 @@ export const NewsPage: React.FC = () => {
               )}
             </div>
           ) : viewMode === 'list' ? (
-            /* COMPACT LIST ITEMS (చిన్న బాక్సులు) */
+            /* COMPACT LIST ITEMS (Small Cards) */
             <div className="space-y-3">
               {filteredArticles.map((article) => (
                 <div
@@ -473,7 +473,7 @@ export const NewsPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            /* GRID VIEW (పెద్ద బాక్సులు) */
+            /* GRID VIEW (Large Cards) */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {filteredArticles.map((article) => (
                 <Card

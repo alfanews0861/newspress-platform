@@ -209,7 +209,7 @@ export const BillingAdminPage = (): ReactElement => {
 
                 <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2 text-xs text-slate-700 dark:text-slate-300">
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Monthly AI Limit:</span>
+                    <span className="text-slate-500 dark:text-slate-400">Monthly Operations Limit:</span>
                     <span className="font-mono">{plan.limits.monthlyAIUsageLimit} ops</span>
                   </div>
                   <div className="flex justify-between">
@@ -318,7 +318,7 @@ export const BillingAdminPage = (): ReactElement => {
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Monthly AI Operation Limit:</label>
+              <label className="block font-semibold mb-1">Monthly Operation Limit:</label>
               <input
                 type="number"
                 value={editAiLimit}

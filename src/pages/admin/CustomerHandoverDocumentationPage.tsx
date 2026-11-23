@@ -131,15 +131,15 @@ export const CustomerHandoverDocumentationPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 my-4">
                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
                     <div className="font-bold text-slate-200">BASIC (Free)</div>
-                    <div className="text-[11px] text-slate-400 mt-1">2 Editions/mo · 3 Staff · 0 Generative AI</div>
+                    <div className="text-[11px] text-slate-400 mt-1">2 Editions/mo · 3 Staff · Core Tools</div>
                   </div>
                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
                     <div className="font-bold text-slate-200">STANDARD (₹4,999)</div>
-                    <div className="text-[11px] text-slate-400 mt-1">20 Editions/mo · 10 Staff · Light AI (Headlines/Summary)</div>
+                    <div className="text-[11px] text-slate-400 mt-1">20 Editions/mo · 10 Staff · Standard Editorial Tools</div>
                   </div>
                   <div className="p-3 bg-slate-950 rounded border border-slate-800">
                     <div className="font-bold text-slate-200">PREMIUM (₹14,999)</div>
-                    <div className="text-[11px] text-slate-400 mt-1">100 Editions/mo · 50 Staff · Advanced AI (Copy Fitting/Diagnostics)</div>
+                    <div className="text-[11px] text-slate-400 mt-1">100 Editions/mo · 50 Staff · Advanced Editorial Suite</div>
                   </div>
                 </div>
                 <p className="text-slate-400">

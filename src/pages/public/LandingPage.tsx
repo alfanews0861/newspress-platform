@@ -90,7 +90,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [testimonialFilter, setTestimonialFilter] = useState<'all' | 'national' | 'regional' | 'hindi' | 'wire'>('all');
 
   // Interactive Live Engine Preview Tab
-  const [activeEngineTab, setActiveEngineTab] = useState<'plate' | 'ai' | 'wire' | 'pullout'>('plate');
+  const [activeEngineTab, setActiveEngineTab] = useState<'plate' | 'editorial' | 'wire' | 'pullout'>('plate');
 
   // Billing Toggle
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
@@ -181,8 +181,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             </h1>
             <p className="text-base sm:text-xl text-[#5f6368] dark:text-[#c4c7c5] max-w-3xl mx-auto font-normal leading-relaxed">
               {lang === 'hi'
-                ? 'गूगल-मानक स्पष्टता के साथ भारतीय समाचार पत्रों के लिए विशेष रूप से डिज़ाइन किया गया। स्मार्ट संपादकीय एआई, 8-कॉलम ब्रॉडशीट लेआउट और स्वचालित 10:00 PM नाइट प्रेस लॉक।'
-                : 'Designed with Google-standard clarity for India\'s independent newsrooms. Smart editorial AI, 8-column broadsheet layout, and automated midnight press locks.'}
+                ? 'गूगल-मानक स्पष्टता के साथ भारतीय समाचार पत्रों के लिए विशेष रूप से डिज़ाइन किया गया। आधुनिक संपादकीय तकनीक, 8-कॉलम ब्रॉडशीट लेआउट और स्वचालित 10:00 PM नाइट प्रेस लॉक।'
+                : 'Designed with Google-standard clarity for India\'s independent newsrooms. Smart editorial engine, 8-column broadsheet layout, and automated midnight press locks.'}
             </p>
           </div>
 
@@ -205,7 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
           {/* 4 Iconic Google-Style Product Cards (Material Design 3 Palette) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 pt-8 text-left">
-            {/* 1. Google Blue Card: AI Editorial */}
+            {/* 1. Google Blue Card: Digital Editorial */}
             <div
               onClick={() => navigateTo('/newsroom/editorial-queue')}
               className="p-6 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#1a73e8] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
@@ -215,7 +215,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#1a73e8] transition-colors">
-                  {lang === 'hi' ? 'एआई संपादकीय डेस्क' : 'AI Editorial Desk'}
+                  {lang === 'hi' ? 'डिजिटल संपादकीय डेस्क' : 'Digital Editorial Desk'}
                 </h3>
                 <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
                   {lang === 'hi'
@@ -243,7 +243,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </h3>
                 <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
                   {lang === 'hi'
-                    ? 'वेब-ऑफसेट रोटरी प्रेसों के लिए सीएमवाईకే प्रीफ्लाइट और रात 10:00 बजे नाइट लॉक।'
+                    ? 'वेब-ऑफसेट रोटरी प्रेसों के लिए सीएमवाईके प्रीफ्लाइट और रात 10:00 बजे नाइट लॉक।'
                     : 'Automated CMYK color separation for offset presses with 99.98% midnight lock SLA.'}
                 </p>
               </div>
@@ -291,8 +291,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 </h3>
                 <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
                   {lang === 'hi'
-                    ? 'अखबार की खबरों से 1-क्लिक में एआई वीडियो और डिजिटल ब्रॉडकास्ट तैयार करें।'
-                    : 'Turn newspaper articles into broadcast-ready video shorts with synthetic AI anchors.'}
+                    ? 'अखबार की खबरों से 1-क्लिक में न्यूज़रील्स और डिजिटल ब्रॉडकास्ट तैयार करें।'
+                    : 'Turn newspaper articles into broadcast-ready video shorts with television-grade news anchors.'}
                 </p>
               </div>
               <div className="pt-4 mt-2 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center text-xs font-medium text-[#d93025] dark:text-[#f28b82]">
@@ -495,7 +495,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
               {[
                 { id: 'plate', label: lang === 'hi' ? 'नाइट प्रेस प्लेट्स' : 'Night Press Plates' },
-                { id: 'ai', label: lang === 'hi' ? 'एआई ओरिजिनैलिटी' : 'AI Plagiarism Defense' },
+                { id: 'editorial', label: lang === 'hi' ? 'ओरिजिनैलिटी सुरक्षा' : 'Originality & Ethics Guard' },
                 { id: 'wire', label: lang === 'hi' ? 'संवाददाता मार्केटप्लेस' : 'Stringer Wire & UPI' },
                 { id: 'pullout', label: lang === 'hi' ? 'जिला पुलआउट्स' : 'District Editions' },
               ].map((tab) => (
@@ -552,7 +552,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               </div>
             )}
 
-            {activeEngineTab === 'ai' && (
+            {activeEngineTab === 'editorial' && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-6 space-y-4">
                   <span className="text-xs font-semibold text-[#1e8e3e] dark:text-[#81c995] uppercase tracking-wider">
@@ -563,12 +563,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   </h3>
                   <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
                     {lang === 'hi'
-                      ? 'हर खबर को 85% मौलिकता स्कोर पार करना होगा। एआई द्वारा संचालित तथ्य जांच और कॉपी-फिटिंग आपके संपादकों का बहुमूल्य समय बचाती है।'
+                      ? 'हर खबर को 85% मौलिकता स्कोर पार करना होगा। स्वचालित तथ्य जांच और कॉपी-फिटिंग आपके संपादकों का बहुमूल्य समय बचाती है।'
                       : 'Real-time phrase fingerprinting across 50,000+ daily sources prevents copyright infringement and defamation risks while fitting headlines precisely to newspaper column widths.'}
                   </p>
                   <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
                     <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated 0-100 Originality Scoring</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Gemini-Powered Headline Auto-Fitter</div>
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Smart Headline & Copy Fitter</div>
                     <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Dual-Source Fact Corroboration Guard</div>
                   </div>
                   <div className="pt-4">
@@ -581,7 +581,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <div className="lg:col-span-6">
                   <img
                     src="https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=800&auto=format&fit=crop&q=80"
-                    alt="Editorial AI Control Room"
+                    alt="Editorial Studio Control Room"
                     className="w-full h-80 object-cover rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md"
                   />
                 </div>
@@ -775,18 +775,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-            {/* Plan 1 */}
-            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-8 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            {/* Plan 1: Pay As You Go (PAYG) */}
+            <div className="rounded-3xl border-2 border-emerald-500 bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-all relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-emerald-600 text-white text-[9px] font-bold uppercase tracking-wider py-1 px-3 rounded-bl-xl shadow-xs">
+                {lang === 'hi' ? 'नो फिक्स्ड कॉस्ट' : 'NO FIXED MONTHLY COST'}
+              </div>
+              <div className="space-y-4">
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  {lang === 'hi' ? 'पे ऐज़ यू गो' : 'Pay As You Go (Prepaid Wallet)'}
+                </span>
+                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
+                  {lang === 'hi' ? 'छोटे व साप्ताहिक समाचार पत्र' : 'Micro & Weekly Press'}
+                </h3>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
+                    ₹0
+                  </span>
+                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (Prepaid Wallet)</span>
+                </div>
+                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
+                  {lang === 'hi'
+                    ? 'कोई मासिक प्रतिबद्धता नहीं। केवल उपयोग किए गए पृष्ठों और संपादकीय कार्यों के लिए भुगतान करें।'
+                    : 'Zero monthly commitments. Ideal for weekly tabloids, occasional specials, and indie journalists.'}
+                </p>
+                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> <strong>₹49</strong> / Print PDF Plate (300 DPI)</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> <strong>₹1.50</strong> / Headline & Copy Fitting</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> <strong>₹29</strong> / Broadcast Video Bulletin</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald-600 shrink-0" /> Minimum ₹500 UPI Top-Up</div>
+                </div>
+              </div>
+              <button
+                onClick={() => navigateTo('/login')}
+                className="mt-6 w-full py-2.5 rounded-full border border-emerald-500 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-semibold transition-all cursor-pointer shadow-none"
+              >
+                {lang === 'hi' ? 'वॉलेट रिचार्ज करें' : 'Start with Pay As You Go'}
+              </button>
+            </div>
+
+            {/* Plan 2: District Starter */}
+            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
               <div className="space-y-4">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
-                  {lang === 'hi' ? 'जिला स्टार्टर' : 'District Starter'}
+                  {lang === 'hi' ? 'जिला स्टार्टर' : 'District Starter Pro'}
                 </span>
                 <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
                   {lang === 'hi' ? 'जिला व स्वतंत्र समाचार पत्र' : 'Independent District Press'}
                 </h3>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
+                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
                     ₹{billingPeriod === 'annual' ? '3,999' : '4,999'}
                   </span>
                   <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
@@ -796,24 +834,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                     ? 'अधिकतम 2 क्षेत्रीय संस्करण, 25 रिपोर्टर सीटें और 300 DPI ब्रॉडशीट प्लेट निर्यात।'
                     : 'Up to 2 daily editions, 25 reporter seats, and vector print-ready PDF broadsheet exports.'}
                 </p>
-                <div className="space-y-2.5 pt-4 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 2 Regional Editions</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 25 Accredited Reporter Seats</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 300+ DPI Vector PDF Export</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> HarfBuzz Indic Ligature Shaper</div>
+                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 2 Regional Daily Editions</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 25 Accredited Reporter Seats</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 300+ DPI Vector PDF Export</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 500 Copy-Fitting Operations</div>
                 </div>
               </div>
               <button
                 onClick={() => navigateTo('/login')}
-                className="mt-8 w-full py-3 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
+                className="mt-6 w-full py-2.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
               >
                 {lang === 'hi' ? 'ट्रायल शुरू करें' : 'Start Free 14-Day Trial'}
               </button>
             </div>
 
-            {/* Plan 2: Most Popular */}
-            <div className="rounded-3xl border-2 border-[#1a73e8] bg-white dark:bg-[#28292a] p-8 flex flex-col justify-between shadow-md relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#1a73e8] text-white text-[10px] font-bold uppercase tracking-wider py-1 px-4 rounded-bl-xl shadow-xs">
+            {/* Plan 3: State Pro (Most Popular) */}
+            <div className="rounded-3xl border-2 border-[#1a73e8] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-[#1a73e8] text-white text-[9px] font-bold uppercase tracking-wider py-1 px-3 rounded-bl-xl shadow-xs">
                 {lang === 'hi' ? 'सबसे लोकप्रिय' : 'MOST POPULAR'}
               </div>
               <div className="space-y-4">
@@ -824,7 +862,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   {lang === 'hi' ? 'राज्य स्तरीय दैनिक समाचार पत्र' : 'State Daily Publications'}
                 </h3>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
+                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
                     ₹{billingPeriod === 'annual' ? '11,999' : '14,999'}
                   </span>
                   <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
@@ -834,33 +872,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                     ? '12 क्षेत्रीय संस्करण, असीमित रिपोर्टर, नाइट प्रेस लॉक और तत्काल UPI संवाददाता रॉयल्टी।'
                     : '12 district editions, unlimited reporters, automated night press lock, and instant UPI wire royalties.'}
                 </p>
-                <div className="space-y-2.5 pt-4 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 12 District Editions & Pullouts</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Unlimited Reporter Mobile Seats</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated Night Press Lock (10:00 PM)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Stringer Wire & Instant UPI Settlements</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 99.98% Night Press Lock SLA Guarantee</div>
+                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 12 District Editions & Pullouts</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Unlimited Reporter Mobile Seats</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Automated Night Press Lock (10:00 PM)</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 2,500 Editorial Operations + 120 Video Bulletins</div>
                 </div>
               </div>
               <button
                 onClick={() => navigateTo('/dashboard')}
-                className="mt-8 w-full py-3.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer"
+                className="mt-6 w-full py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold shadow-none hover:shadow-xs transition-all cursor-pointer"
               >
                 {lang === 'hi' ? 'प्रो संस्करण शुरू करें' : 'Launch State Pro'}
               </button>
             </div>
 
-            {/* Plan 3 */}
-            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-8 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
+            {/* Plan 4: National Enterprise */}
+            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
               <div className="space-y-4">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
                   {lang === 'hi' ? 'नेशनल एंटरप्राइज' : 'National Enterprise'}
                 </span>
                 <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                  {lang === 'hi' ? 'राष्ट्रीय मीडिया नेटवर्क' : 'Multi-Language Media Groups'}
+                  {lang === 'hi' ? 'राष्ट्रीय मीडिया नेटवर्क' : 'Multi-Language Networks'}
                 </h3>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-4xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
+                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
                     ₹{billingPeriod === 'annual' ? '31,999' : '39,999'}
                   </span>
                   <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
@@ -868,20 +905,70 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
                   {lang === 'hi'
                     ? 'असीमित संस्करण, कस्टम प्रेस क्लस्टर, समर्पित सर्वर और 24/7 आपातकालीन सहायता।'
-                    : 'Unlimited editions, dedicated high-speed rendering clusters, custom font libraries, and 24/7 emergency hotline.'}
+                    : 'Unlimited editions, dedicated high-speed rendering clusters, custom font libraries, and 24/7 hotline.'}
                 </p>
-                <div className="space-y-2.5 pt-4 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Unlimited Editions & Master Brands</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Custom Indic Font Library Integration</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Dedicated Cloud Cluster (Mumbai / Delhi)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> 24/7 Emergency Night Press Engineer</div>
+                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Unlimited Editions & Master Brands</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Dedicated Cloud Cluster (Mumbai / Hyd)</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Developer REST API & Webhooks</div>
+                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 24/7 Night Press Engineer Support</div>
                 </div>
               </div>
               <button
                 onClick={() => navigateTo('/developer')}
-                className="mt-8 w-full py-3 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
+                className="mt-6 w-full py-2.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
               >
                 {lang === 'hi' ? 'विशेष परामर्श' : 'Contact Enterprise Team'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          9B. AFFILIATE & PARTNER GROWTH PROGRAM BANNER
+          ========================================================================= */}
+      <section id="affiliate" className="py-14 bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-950 text-white border-b border-indigo-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-8 sm:p-12 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+            <div className="space-y-4 max-w-2xl">
+              <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5 text-amber-300" />
+                <span>NewsPress Partner &amp; Affiliate Program</span>
+              </span>
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+                {lang === 'hi'
+                  ? 'न्यूज़प्रेस पार्टनर बनें — हर महीने 20% से 30% आवर्ती कमीशन कमाएं'
+                  : 'Earn 20% to 30% Recurring Monthly Commission'}
+              </h2>
+              <p className="text-xs sm:text-sm text-blue-100 font-normal leading-relaxed">
+                {lang === 'hi'
+                  ? 'जिला समाचार पत्रों, प्रिंटिंग प्रेसों और मीडिया चैनलों को रेफर करें। हर महीने सीधे अपने UPI खाते में पैसिव इनकम प्राप्त करें।'
+                  : 'Recommend NewsPress to local district newspapers, DTP centers, offset printing presses, and digital news channels. Earn lifelong recurring passive income with instant UPI payouts.'}
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs text-blue-100">
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 20% - 30% Recurring Cut</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Monthly UPI Payouts</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 5% TDS (Sec 194H)</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 10% on PAYG Top-ups</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Ready WhatsApp Kit</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 60-Day Cookie Lifetime</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+              <button
+                onClick={() => navigateTo('/affiliate')}
+                className="px-8 py-4 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <span>{lang === 'hi' ? 'पार्टनर डैशबोर्ड खोलें' : 'Join Partner Program'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => navigateTo('/login')}
+                className="px-8 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs border border-white/20 transition-all cursor-pointer text-center"
+              >
+                Sign In to Account
               </button>
             </div>
           </div>
@@ -979,6 +1066,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                 <li><button onClick={() => navigateTo('/newsroom/editorial-queue')} className="hover:text-white transition-colors cursor-pointer">Editorial Queue</button></li>
                 <li><button onClick={() => navigateTo('/newsroom/assignments')} className="hover:text-white transition-colors cursor-pointer">Field Assignments</button></li>
                 <li><button onClick={() => navigateTo('/newsroom/reporters')} className="hover:text-white transition-colors cursor-pointer">Reporters Directory</button></li>
+                <li><button onClick={() => navigateTo('/affiliate')} className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors cursor-pointer flex items-center gap-1"><span>Affiliate Program (Earn 25%)</span></button></li>
               </ul>
             </div>
 
@@ -1028,7 +1116,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
           <div className="border-t border-slate-800/80 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <div>
-              © 2026 <strong>NewsPress Platform Pvt. Ltd.</strong> All Rights Reserved.
+              © 2026 <strong>Alfa New Gen Platforms</strong>. All Rights Reserved.
             </div>
             <div className="flex items-center gap-4 text-[11px]">
               <span>RNI Regd: IND-TEL-99182</span>
@@ -1124,16 +1212,16 @@ const SLIDES: Slide[] = [
   {
     image: 'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200&auto=format&fit=crop&q=80',
     tag: {
-      en: 'Press Council of India Aligned AI',
-      hi: 'प्रेस परिषद के अनुरूप एआई डेस्क',
+      en: 'Press Council of India Aligned Standards',
+      hi: 'प्रेस परिषद के अनुरूप संपादकीय डेस्क',
     },
     shortTitle: {
-      en: 'Editorial AI',
-      hi: 'संपादकीय एआई',
+      en: 'Editorial Engine',
+      hi: 'संपादकीय इंजन',
     },
     title: {
-      en: 'AI Editorial Desk with Originality Scoring & Anti-Plagiarism Shield',
-      hi: 'ओरिजिनैलिटी स्कोरिंग और साहित्यिक चोरी से सुरक्षा युक्त एआई डेस्क',
+      en: 'Digital Editorial Desk with Originality Scoring & Anti-Plagiarism Shield',
+      hi: 'ओरिजिनैलिटी स्कोरिंग और साहित्यिक चोरी से सुरक्षा युक्त संपादकीय डेस्क',
     },
     subtitle: {
       en: 'Safeguard Journalistic Integrity Under PCI Norms',

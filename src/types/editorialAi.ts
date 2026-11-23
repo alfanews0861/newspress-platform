@@ -11,7 +11,7 @@
  * 4. Fact integrity: Factual entities (names, dates, numbers, quotes, titles) are guarded.
  */
 
-export type PublishingPlanId = 'BASIC' | 'STANDARD' | 'PREMIUM';
+export type PublishingPlanId = 'BASIC' | 'PAY_AS_YOU_GO' | 'CREATOR' | 'STANDARD' | 'PREMIUM' | 'ENTERPRISE';
 export type AIModelTier = 'NONE' | 'LIGHT' | 'ADVANCED';
 
 export interface PlanFeatureConfig {
@@ -50,6 +50,40 @@ export const PUBLISHING_PLAN_CONFIGS: Record<PublishingPlanId, PlanFeatureConfig
     sectionClassification: false,
     prioritySuggestions: false,
   },
+  PAY_AS_YOU_GO: {
+    generativeAiAllowed: true,
+    allowedModelTier: 'ADVANCED',
+    monthlyOperationsLimit: -1, // Metered pay-per-use
+    headlineAssistant: true,
+    advancedHeadlineHierarchy: true,
+    summaryGeneration: true,
+    copyFittingSuggestions: true,
+    copyRestructuring: true,
+    conciseNewspaperRewrite: true,
+    intelligentPhotoSelection: true,
+    imageAnalysis: true,
+    imageEnhancement: true,
+    captionAssistance: true,
+    sectionClassification: true,
+    prioritySuggestions: true,
+  },
+  CREATOR: {
+    generativeAiAllowed: true,
+    allowedModelTier: 'ADVANCED',
+    monthlyOperationsLimit: 1000,
+    headlineAssistant: true,
+    advancedHeadlineHierarchy: true,
+    summaryGeneration: true,
+    copyFittingSuggestions: true,
+    copyRestructuring: true,
+    conciseNewspaperRewrite: true,
+    intelligentPhotoSelection: true,
+    imageAnalysis: true,
+    imageEnhancement: true,
+    captionAssistance: true,
+    sectionClassification: true,
+    prioritySuggestions: true,
+  },
   STANDARD: {
     generativeAiAllowed: true,
     allowedModelTier: 'LIGHT',
@@ -71,6 +105,23 @@ export const PUBLISHING_PLAN_CONFIGS: Record<PublishingPlanId, PlanFeatureConfig
     generativeAiAllowed: true,
     allowedModelTier: 'ADVANCED',
     monthlyOperationsLimit: 2500,
+    headlineAssistant: true,
+    advancedHeadlineHierarchy: true,
+    summaryGeneration: true,
+    copyFittingSuggestions: true,
+    copyRestructuring: true,
+    conciseNewspaperRewrite: true,
+    intelligentPhotoSelection: true,
+    imageAnalysis: true,
+    imageEnhancement: true,
+    captionAssistance: true,
+    sectionClassification: true,
+    prioritySuggestions: true,
+  },
+  ENTERPRISE: {
+    generativeAiAllowed: true,
+    allowedModelTier: 'ADVANCED',
+    monthlyOperationsLimit: 10000,
     headlineAssistant: true,
     advancedHeadlineHierarchy: true,
     summaryGeneration: true,

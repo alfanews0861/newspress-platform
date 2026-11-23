@@ -58,7 +58,7 @@ export class AIEditorialEngine {
     if (!validLicense.derivativeEditingAllowed) {
       return {
         allowed: false,
-        reason: 'The purchased marketplace license prohibits derivative editing or AI rewriting. Original text must remain intact.',
+        reason: 'The purchased marketplace license prohibits derivative editing or automated rewriting. Original text must remain intact.',
       };
     }
 
@@ -233,7 +233,7 @@ export class AIEditorialEngine {
         errorMessage: err.message,
       });
 
-      return { success: false, error: `AI Headline Assistant encountered an error: ${err.message}` };
+      return { success: false, error: `Headline Assistant encountered an error: ${err.message}` };
     }
   }
 

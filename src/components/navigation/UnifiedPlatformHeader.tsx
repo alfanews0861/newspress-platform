@@ -20,6 +20,12 @@ import {
   LogOut,
   ShieldCheck,
   User,
+  Share2,
+  Coins,
+  Youtube,
+  CreditCard,
+  Send,
+  Scale,
 } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
@@ -59,10 +65,10 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     return 'light';
   });
 
-  const [lang, setLang] = useState<'en' | 'te' | 'hi'>(() => {
+  const [lang, setLang] = useState<'en' | 'hi'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('newspress_lang');
-      if (saved === 'te' || saved === 'hi' || saved === 'en') return saved;
+      if (saved === 'hi') return 'hi';
     }
     return 'en';
   });
@@ -76,7 +82,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const handleLanguageChange = (newLang: 'en' | 'te' | 'hi') => {
+  const handleLanguageChange = (newLang: 'en' | 'hi') => {
     setLang(newLang);
     localStorage.setItem('newspress_lang', newLang);
     window.dispatchEvent(new CustomEvent('languagechange', { detail: newLang }));
@@ -104,28 +110,28 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
 
   const navLinks = [
     {
-      label: lang === 'te' ? 'హోమ్' : lang === 'hi' ? 'होम' : 'Home',
+      label: 'Home',
       path: '/dashboard',
       matchPrefix: '/dashboard',
       icon: LayoutDashboard,
       iconBoxClass: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800',
     },
     {
-      label: lang === 'te' ? 'వార్తలు' : lang === 'hi' ? 'समाचार' : 'Stories',
+      label: 'Stories',
       path: '/newsroom/news',
       matchPrefix: '/newsroom/news',
       icon: Newspaper,
       iconBoxClass: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/60 dark:text-purple-400 dark:border-purple-800',
     },
     {
-      label: lang === 'te' ? 'న్యూస్ పేపర్' : lang === 'hi' ? 'अख़बार' : 'Newspaper',
+      label: 'Newspaper',
       path: '/newspaper/editions',
       matchPrefix: '/newspaper',
       icon: BookOpen,
       iconBoxClass: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800',
     },
     {
-      label: lang === 'te' ? 'మార్కెట్‌ప్లేస్' : lang === 'hi' ? 'मार्केटप्लेस' : 'Marketplace',
+      label: 'Marketplace',
       path: '/marketplace',
       matchPrefix: '/marketplace',
       icon: ShoppingBag,
@@ -250,7 +256,7 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
               >
                 <Plus className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden sm:inline whitespace-nowrap">
-                  {lang === 'te' ? 'కొత్త వార్త' : lang === 'hi' ? 'नया समाचार' : 'Write Story'}
+                  Write Story
                 </span>
               </button>
             )}
@@ -266,26 +272,6 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                 }`}
               >
                 EN
-              </button>
-              <button
-                onClick={() => handleLanguageChange('te')}
-                className={`px-1.5 sm:px-2 py-0.5 rounded-full transition-all cursor-pointer ${
-                  lang === 'te'
-                    ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
-                    : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
-                }`}
-              >
-                తె
-              </button>
-              <button
-                onClick={() => handleLanguageChange('hi')}
-                className={`px-1.5 sm:px-2 py-0.5 rounded-full transition-all cursor-pointer ${
-                  lang === 'hi'
-                    ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
-                    : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
-                }`}
-              >
-                हिं
               </button>
             </div>
 
@@ -326,11 +312,74 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                     </div>
 
                     <button
+                      onClick={() => navigateTo('/user/portal')}
+                      className="w-full px-3 py-2 text-left text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-between cursor-pointer font-bold text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-blue-600" />
+                        <span>User Portal & KYC</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                        Alfa Hub
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('/user/portal?tab=plan')}
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
+                    >
+                      <CreditCard className="w-4 h-4 text-purple-600" />
+                      <span>User Plan & Billing</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('/user/portal?tab=credits')}
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
+                    >
+                      <Coins className="w-4 h-4 text-amber-600" />
+                      <span>Balance Credits & Wallet</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('/user/portal?tab=paper')}
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
+                    >
+                      <BookOpen className="w-4 h-4 text-emerald-600" />
+                      <span>My ePaper Editions</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('/user/portal?tab=reporter')}
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
+                    >
+                      <Send className="w-4 h-4 text-indigo-600" />
+                      <span>Reporter Desk & Royalties</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('/user/portal?tab=youtube')}
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
+                    >
+                      <Youtube className="w-4 h-4 text-red-600" />
+                      <span>YouTube Channel Settings</span>
+                    </button>
+
+                    <div className="my-1 border-t border-[#dadce0] dark:border-[#444746]" />
+
+                    <button
+                      onClick={() => navigateTo('/legal')}
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
+                    >
+                      <Scale className="w-4 h-4 text-slate-500" />
+                      <span>Legal Center & Policies</span>
+                    </button>
+
+                    <button
                       onClick={() => {
                         setIsProfileMenuOpen(false);
                         setIsTenantModalOpen(true);
                       }}
-                      className="w-full px-3 py-2 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium md:hidden"
+                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs md:hidden"
                     >
                       <Building2 className="w-4 h-4 text-[#5f6368]" />
                       <span>Switch Organization</span>
@@ -345,6 +394,19 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
                     >
                       <User className="w-4 h-4 text-[#5f6368]" />
                       <span>Switch Role Persona</span>
+                    </button>
+
+                    <button
+                      onClick={() => navigateTo('/affiliate')}
+                      className="w-full px-3 py-2 text-left text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-between cursor-pointer font-medium"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-emerald-600" />
+                        <span>Affiliate & Earn</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-bold">
+                        25% Cut
+                      </span>
                     </button>
 
                     <button

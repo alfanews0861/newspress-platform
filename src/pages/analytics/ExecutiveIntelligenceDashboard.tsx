@@ -258,7 +258,7 @@ export const ExecutiveIntelligenceDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Grounded Executive Intelligence Summary (Section 44 & 45) */}
+      {/* Grounded Executive Intelligence Summary (Section 44 & 45) */}
       {narrative && (
         <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/20 border border-amber-500/30 rounded-lg p-5">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">

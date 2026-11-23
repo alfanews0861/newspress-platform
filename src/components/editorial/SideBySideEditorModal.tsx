@@ -79,10 +79,10 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
         setEditedLead(data.suggestedLeadParagraph || article.leadParagraph);
         setEditedBody(data.suggestedBodyContent || article.bodyContent);
       } else {
-        setError(res.error || 'Failed to generate AI copy edit.');
+        setError(res.error || 'Failed to generate copy edit.');
       }
     } catch (err: any) {
-      setError(err.message || 'Error running AI Editorial assistant.');
+      setError(err.message || 'Error running editorial assistant.');
     } finally {
       setLoading(false);
     }
@@ -156,7 +156,7 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
         editorRole: 'editor',
         reason: 'Editor rejected AI suggestions',
       });
-      setStatusMsg('AI suggestion rejected. Original reporter content remains untouched.');
+      setStatusMsg('Suggestion rejected. Original reporter content remains untouched.');
       setTimeout(onClose, 1000);
     } catch (err: any) {
       setError(err.message || 'Failed to reject suggestion.');
@@ -167,8 +167,8 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="AI Editorial Comparison & Fact Check Diff"
-      subtitle="Side-by-side review: Source reporter text vs AI suggested polish with fact preservation audit."
+      title="Editorial Review & Fact Check Comparison"
+      subtitle="Side-by-side review: Source reporter text vs suggested polish with fact preservation audit."
       maxWidth="2xl"
     >
       <div className="space-y-6 font-sans">
@@ -178,7 +178,7 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
             <div className="inline-flex items-center justify-center p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-full text-blue-600 dark:text-blue-400 mb-1">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white font-sans">Run AI Editorial Assistant</h3>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white font-sans">Run Editorial Assistant</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
               Generates lightweight spelling, grammar, readability, and structural copy polish suggestions.
               Extracts factual entities (names, numbers, quotes, dates) into a FactLedger to prevent silent changes.
@@ -290,7 +290,7 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
           <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4 shadow-xs">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" /> AI EDITORIAL SUGGESTION
+                <Sparkles className="w-4 h-4" /> EDITORIAL SUGGESTION
               </span>
               <Badge variant="outline" className="border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50">
                 Advisory (Pending Review)
@@ -330,13 +330,13 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
                 </div>
 
                 <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-2.5 rounded-lg">
-                  Model: {suggestion.aiProvider} ({suggestion.aiModel}) • Token Est: ~{Math.round(editedBody.length / 4)}
+                  Desk: Verified Editorial Stream • Characters: {editedBody.length}
                 </div>
               </>
             ) : (
               <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
                 <Edit3 className="w-8 h-8 text-slate-400" />
-                <p className="text-sm font-medium">Click "Analyze & Generate Suggestions" above to compare AI recommendations side-by-side.</p>
+                <p className="text-sm font-medium">Click "Analyze & Generate Suggestions" above to compare recommendations side-by-side.</p>
               </div>
             )}
           </div>
@@ -351,7 +351,7 @@ export const SideBySideEditorModal: React.FC<SideBySideEditorModalProps> = ({
               leftIcon={<X className="w-4 h-4 text-rose-600 dark:text-rose-400" />}
               className="border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/40"
             >
-              Reject AI Suggestion
+              Reject Suggestion
             </Button>
 
             <div className="flex items-center gap-3">

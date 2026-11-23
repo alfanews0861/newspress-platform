@@ -127,7 +127,7 @@ export class AIProviderRegistry {
   public static validateResponseSchema(operation: AIEditorialOutputType, output: any): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
     if (output === null || output === undefined) {
-      return { valid: false, errors: ['AI output is null or undefined.'] };
+      return { valid: false, errors: ['Editorial assistant output is null or undefined.'] };
     }
 
     if (operation === 'HEADLINE_SUGGESTION') {
