@@ -70,15 +70,21 @@ export const AffiliateProgramPage: React.FC = () => {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   const loadData = () => {
-    const prof = AffiliateService.getAffiliateProfile(user?.uid);
-    setPartner(prof);
-    setPayoutUpi(prof.upiId || '');
-    setPayoutPan(prof.panNumber || '');
+    try {
+      const prof = AffiliateService.getAffiliateProfile(user?.uid);
+      if (prof) {
+        setPartner(prof);
+        setPayoutUpi(prof.upiId || '');
+        setPayoutPan(prof.panNumber || '');
 
-    setLeads(AffiliateService.getLeads(prof.affiliateId));
-    setCommissions(AffiliateService.getCommissions(prof.affiliateId));
-    setPayouts(AffiliateService.getPayoutHistory(prof.affiliateId));
-    setAssets(AffiliateService.getMarketingAssets(prof.referralCode));
+        setLeads(AffiliateService.getLeads(prof.affiliateId));
+        setCommissions(AffiliateService.getCommissions(prof.affiliateId));
+        setPayouts(AffiliateService.getPayoutHistory(prof.affiliateId));
+        setAssets(AffiliateService.getMarketingAssets(prof.referralCode));
+      }
+    } catch (err) {
+      console.error('Failed to load affiliate partner data:', err);
+    }
   };
 
   useEffect(() => {

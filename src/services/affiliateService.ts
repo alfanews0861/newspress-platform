@@ -213,10 +213,19 @@ export class AffiliateService {
   }
 
   public static getAffiliateProfile(userId?: string): AffiliatePartner {
-    const defaultId = 'aff-partner-telugu-press';
+    const defaultId = 'aff-partner-national-press';
     if (userId && this.partners.has(userId)) {
       return this.partners.get(userId)!;
     }
+    const defaultPartner = this.partners.get(defaultId);
+    if (defaultPartner) {
+      return defaultPartner;
+    }
+    const firstPartner = this.partners.values().next().value;
+    if (firstPartner) {
+      return firstPartner;
+    }
+    this.seedDefaultAffiliateData();
     return this.partners.get(defaultId)!;
   }
 
