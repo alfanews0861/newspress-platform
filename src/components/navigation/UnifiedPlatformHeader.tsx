@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Newspaper,
   BookOpen,
@@ -18,19 +18,12 @@ import {
   Plus,
   Globe,
   LogOut,
-  ShieldCheck,
   User,
-  Share2,
-  Coins,
-  Youtube,
-  CreditCard,
-  Send,
-  Scale,
+  Settings,
 } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
 import { TenantSwitcherModal } from '../../layouts/TenantSwitcherModal';
-import { PersonaSwitcherModal } from '../../layouts/PersonaSwitcherModal';
 import { QuickStoryModal } from '../editorial/QuickStoryModal';
 import { navigateTo as navigateToUtil } from '../../utils/navigation';
 import { getInitialsAvatarDataUrl } from '../../utils/avatarFallback';
@@ -49,13 +42,13 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
   onQuickNewStory,
 }) => {
   const { currentTenant } = useTenant();
-  const { user, currentMembership, isPlatformAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
-  const [isPersonaModalOpen, setIsPersonaModalOpen] = useState(false);
   const [isQuickStoryOpen, setIsQuickStoryOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
@@ -65,27 +58,24 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     return 'light';
   });
 
-  const [lang, setLang] = useState<'en' | 'hi'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('newspress_lang');
-      if (saved === 'hi') return 'hi';
-    }
-    return 'en';
-  });
-
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('newspress_theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    if (!isProfileMenuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isProfileMenuOpen]);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
-
-  const handleLanguageChange = (newLang: 'en' | 'hi') => {
-    setLang(newLang);
-    localStorage.setItem('newspress_lang', newLang);
-    window.dispatchEvent(new CustomEvent('languagechange', { detail: newLang }));
   };
 
   const navigateTo = (path: string) => {
@@ -98,6 +88,18 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     }
   };
 
+  const scrollToSection = (sectionId: string) => {
+    setIsMobileMenuOpen(false);
+    if (currentPath !== '/' && currentPath !== '/landing') {
+      navigateTo('/');
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const isInsideNewsroom =
     currentPath !== '/' &&
     currentPath !== '/landing' &&
@@ -105,412 +107,349 @@ export const UnifiedPlatformHeader: React.FC<UnifiedPlatformHeaderProps> = ({
     !currentPath.startsWith('/privacy') &&
     !currentPath.startsWith('/terms');
 
-  const roleLabel =
-    currentMembership?.organizationRole || (isPlatformAdmin ? 'Super Admin' : 'Chief Editor');
-
-  const navLinks = [
-    {
-      label: 'Home',
-      path: '/dashboard',
-      matchPrefix: '/dashboard',
-      icon: LayoutDashboard,
-      iconBoxClass: 'bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800',
-    },
-    {
-      label: 'Stories',
-      path: '/newsroom/news',
-      matchPrefix: '/newsroom/news',
-      icon: Newspaper,
-      iconBoxClass: 'bg-purple-50 text-purple-600 border-purple-200 dark:bg-purple-950/60 dark:text-purple-400 dark:border-purple-800',
-    },
-    {
-      label: 'Newspaper',
-      path: '/newspaper/editions',
-      matchPrefix: '/newspaper',
-      icon: BookOpen,
-      iconBoxClass: 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800',
-    },
-    {
-      label: 'Marketplace',
-      path: '/marketplace',
-      matchPrefix: '/marketplace',
-      icon: ShoppingBag,
-      iconBoxClass: 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800',
-    },
+  const workspaceNavLinks = [
+    { label: 'Home', path: '/dashboard', matchPrefix: '/dashboard', icon: LayoutDashboard },
+    { label: 'Stories', path: '/newsroom/news', matchPrefix: '/newsroom/news', icon: Newspaper },
+    { label: 'Editions', path: '/newspaper/editions', matchPrefix: '/newspaper', icon: BookOpen },
+    { label: 'Marketplace', path: '/marketplace', matchPrefix: '/marketplace', icon: ShoppingBag },
   ];
 
-  return (
-    <>
-      <header className="sticky top-0 z-40 w-full h-16 bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043] transition-colors shadow-none select-none">
-        <div className="h-full px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-3">
-          {/* Left: Mobile Toggle, Brand & Workspace */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {isInsideNewsroom && onToggleSidebarMobile ? (
-              <button
-                onClick={onToggleSidebarMobile}
-                className="lg:hidden p-2 -ml-1 rounded-full text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
-                aria-label="Toggle sidebar"
-              >
-                <MenuIcon className="w-5 h-5" />
-              </button>
-            ) : !isInsideNewsroom ? (
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 -ml-1 rounded-full text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
-                aria-label="Toggle navigation menu"
-              >
-                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
-              </button>
-            ) : null}
+  // Public Website Top Bar (Strict 3-Zone Contract)
+  if (!isInsideNewsroom) {
+    return (
+      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#1a1c1e]/95 backdrop-blur-md border-b border-[#e0e3e7] dark:border-[#3c4043] transition-colors select-none">
+        <div className="h-[2px] w-full google-spectrum-bar" />
+        <div className="max-w-7xl mx-auto h-14 sm:h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-6">
+          {/* Zone 1: Brand Wordmark */}
+          <button
+            type="button"
+            onClick={() => navigateTo('/')}
+            className="flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a73e8] rounded-lg"
+            aria-label="NewsPress Home"
+          >
+            <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect x="2.5" y="3.5" width="19" height="17" rx="4" stroke="#4285f4" strokeWidth="2.2" />
+              <line x1="6.5" y1="8.5" x2="12.5" y2="8.5" stroke="#ea4335" strokeWidth="2.2" strokeLinecap="round" />
+              <line x1="6.5" y1="12.5" x2="17.5" y2="12.5" stroke="#fbbc04" strokeWidth="2.2" strokeLinecap="round" />
+              <line x1="6.5" y1="16.5" x2="14.5" y2="16.5" stroke="#34a853" strokeWidth="2.2" strokeLinecap="round" />
+              <circle cx="16.2" cy="8.5" r="1.6" fill="#4285f4" />
+            </svg>
+            <span className="font-bold text-lg sm:text-xl tracking-tight whitespace-nowrap shrink-0">
+              <span className="text-[#4285f4]">N</span>
+              <span className="text-[#ea4335]">e</span>
+              <span className="text-[#fbbc04]">w</span>
+              <span className="text-[#4285f4]">s</span>
+              <span className="text-[#34a853]">P</span>
+              <span className="text-[#ea4335]">r</span>
+              <span className="text-[#202124] dark:text-[#f8f9fa]">ess</span>
+            </span>
+          </button>
 
-            {/* Google-Style 4-Color Brand Logo */}
-            <div
-              className="flex items-center gap-2 cursor-pointer group select-none shrink-0"
-              onClick={() => navigateTo(isInsideNewsroom ? '/dashboard' : '/')}
-              title="NewsPress Home"
-            >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] flex items-center justify-center shadow-xs group-hover:border-[#1a73e8] transition-all shrink-0">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="16" rx="3" stroke="#1a73e8" strokeWidth="2" />
-                  <line x1="7" y1="8" x2="12" y2="8" stroke="#ea4335" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="7" y1="12" x2="17" y2="12" stroke="#fbbc04" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="7" y1="16" x2="15" y2="16" stroke="#34a853" strokeWidth="2" strokeLinecap="round" />
-                  <circle cx="15.5" cy="8.5" r="1.5" fill="#1a73e8" />
-                </svg>
-              </div>
-              <div className="hidden xs:flex items-center gap-1.5 sm:gap-2">
-                <span className="font-bold text-base sm:text-lg tracking-tight">
-                  <span className="text-[#1a73e8]">N</span>
-                  <span className="text-[#ea4335]">e</span>
-                  <span className="text-[#fbbc04]">w</span>
-                  <span className="text-[#1a73e8]">s</span>
-                  <span className="text-[#34a853]">P</span>
-                  <span className="text-[#202124] dark:text-[#f2f2f2]">ress</span>
-                </span>
-                <span className="hidden sm:inline-block text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
-                  Workspace
-                </span>
-              </div>
-            </div>
-
-            {/* Workspace Selector (Google Workspace Style) */}
-            {isInsideNewsroom && (
-              <button
-                onClick={() => setIsTenantModalOpen(true)}
-                className="hidden md:flex flex-row items-center gap-2 ml-1 px-3 py-1.5 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] hover:bg-[#e8eaed] dark:hover:bg-[#333537] border border-[#dadce0] dark:border-[#444746] transition-all text-xs font-medium text-[#3c4043] dark:text-[#e3e3e3] cursor-pointer whitespace-nowrap shrink-0"
-                title="Switch Workspace"
-              >
-                <span className="w-5 h-5 rounded-md bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-[#d2e3fc] dark:border-[#1a73e8]">
-                  <Building2 className="w-3 h-3" />
-                </span>
-                <span className="truncate max-w-[150px] font-medium">{currentTenant.organizationName}</span>
-                <ChevronDown className="w-3 h-3 text-[#5f6368] shrink-0" />
-              </button>
-            )}
-          </div>
-
-          {/* Center: Clean Google-style Pill Nav (Only inside newsroom) */}
-          {isInsideNewsroom && (
-            <nav className="hidden lg:flex flex-row items-center gap-1.5 bg-[#f1f3f4] dark:bg-[#28292a] p-1 rounded-full border border-[#dadce0]/70 dark:border-[#444746]/70">
-              {navLinks.map((item) => {
-                const Icon = item.icon;
-                const isActive =
-                  item.path === '/dashboard'
-                    ? currentPath === '/dashboard' || currentPath === '/overview'
-                    : currentPath.startsWith(item.matchPrefix);
-
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigateTo(item.path)}
-                    className={`flex flex-row items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
-                        : 'text-[#3c4043] dark:text-[#c4c7c5] hover:text-[#202124] dark:hover:text-white hover:bg-white/70 dark:hover:bg-[#333537]'
-                    }`}
-                  >
-                    <span
-                      className={`w-5 h-5 rounded-md flex flex-row items-center justify-center shrink-0 border ${
-                        isActive
-                          ? 'bg-[#1a73e8] text-white border-[#1a73e8] dark:bg-white dark:text-[#1a73e8]'
-                          : item.iconBoxClass
-                      }`}
-                    >
-                      <Icon className="w-3 h-3" />
-                    </span>
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
-          )}
-
-          {/* Right: Quick Write Action + Language + Theme + User */}
-          <div className="flex flex-row items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Quick Write Story Button (Google Primary Pill) */}
-            {isInsideNewsroom && (
-              <button
-                onClick={() => (onQuickNewStory ? onQuickNewStory() : setIsQuickStoryOpen(true))}
-                className="flex flex-row items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer whitespace-nowrap shrink-0"
-                title="Create a new story"
-              >
-                <Plus className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline whitespace-nowrap">
-                  Write Story
-                </span>
-              </button>
-            )}
-
-            {/* Language Switcher */}
-            <div className="flex items-center rounded-full bg-[#f1f3f4] dark:bg-[#28292a] p-0.5 border border-[#dadce0] dark:border-[#444746] text-[10px] sm:text-[11px] font-semibold shrink-0">
-              <button
-                onClick={() => handleLanguageChange('en')}
-                className={`px-1.5 sm:px-2 py-0.5 rounded-full transition-all cursor-pointer ${
-                  lang === 'en'
-                    ? 'bg-white dark:bg-[#1a73e8] text-[#1a73e8] dark:text-white shadow-xs'
-                    : 'text-[#5f6368] dark:text-[#8e918f] hover:text-[#202124]'
-                }`}
-              >
-                EN
-              </button>
-            </div>
-
-            {/* Theme Toggle */}
+          {/* Zone 2: 4 Concise Nav Links */}
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[#5f6368] dark:text-[#bdc1c6]">
             <button
-              onClick={toggleTheme}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[#5f6368] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer shrink-0"
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              type="button"
+              onClick={() => scrollToSection('suite')}
+              className="hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer whitespace-nowrap shrink-0"
             >
-              {theme === 'light' ? <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />}
+              Products
             </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('pricing')}
+              className="hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Pricing
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('/marketplace')}
+              className="hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Marketplace
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo('/legal')}
+              className="hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Legal
+            </button>
+          </nav>
 
-            {/* User Profile / Menu */}
-            {isInsideNewsroom ? (
-              <div className="relative shrink-0">
-                <button
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center gap-1 p-0.5 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] transition-colors cursor-pointer"
-                >
-                  <img
-                    src={user?.avatarUrl || getInitialsAvatarDataUrl(user?.displayName)}
-                    alt={user?.displayName || 'User'}
-                    className="w-7 h-7 rounded-full object-cover border border-[#dadce0] dark:border-[#444746]"
-                  />
-                  <ChevronDown className="w-3 h-3 text-[#5f6368] hidden xs:block" />
-                </button>
-
-                {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xl py-1.5 z-50 text-xs">
-                    <div className="px-3 py-2 border-b border-[#dadce0] dark:border-[#444746]">
-                      <div className="font-semibold text-[#202124] dark:text-[#f2f2f2] truncate">
-                        {user?.displayName || 'Sofia Chen'}
-                      </div>
-                      <div className="text-[11px] text-[#5f6368] dark:text-[#a8aaad] capitalize flex items-center gap-1 mt-0.5">
-                        <ShieldCheck className="w-3 h-3 text-[#1a73e8]" />
-                        <span>{roleLabel.replace(/_/g, ' ')}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => navigateTo('/user/portal')}
-                      className="w-full px-3 py-2 text-left text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-between cursor-pointer font-bold text-xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-blue-600" />
-                        <span>User Portal & KYC</span>
-                      </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                        Alfa Hub
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/user/portal?tab=plan')}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
-                    >
-                      <CreditCard className="w-4 h-4 text-purple-600" />
-                      <span>User Plan & Billing</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/user/portal?tab=credits')}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
-                    >
-                      <Coins className="w-4 h-4 text-amber-600" />
-                      <span>Balance Credits & Wallet</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/user/portal?tab=paper')}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
-                    >
-                      <BookOpen className="w-4 h-4 text-emerald-600" />
-                      <span>My ePaper Editions</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/user/portal?tab=reporter')}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
-                    >
-                      <Send className="w-4 h-4 text-indigo-600" />
-                      <span>Reporter Desk & Royalties</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/user/portal?tab=youtube')}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
-                    >
-                      <Youtube className="w-4 h-4 text-red-600" />
-                      <span>YouTube Channel Settings</span>
-                    </button>
-
-                    <div className="my-1 border-t border-[#dadce0] dark:border-[#444746]" />
-
-                    <button
-                      onClick={() => navigateTo('/legal')}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs"
-                    >
-                      <Scale className="w-4 h-4 text-slate-500" />
-                      <span>Legal Center & Policies</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        setIsTenantModalOpen(true);
-                      }}
-                      className="w-full px-3 py-1.5 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium text-xs md:hidden"
-                    >
-                      <Building2 className="w-4 h-4 text-[#5f6368]" />
-                      <span>Switch Organization</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        setIsPersonaModalOpen(true);
-                      }}
-                      className="w-full px-3 py-2 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium"
-                    >
-                      <User className="w-4 h-4 text-[#5f6368]" />
-                      <span>Switch Role Persona</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/affiliate')}
-                      className="w-full px-3 py-2 text-left text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center justify-between cursor-pointer font-medium"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Share2 className="w-4 h-4 text-emerald-600" />
-                        <span>Affiliate & Earn</span>
-                      </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 font-bold">
-                        25% Cut
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('/')}
-                      className="w-full px-3 py-2 text-left text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] flex items-center gap-2 cursor-pointer font-medium"
-                    >
-                      <Globe className="w-4 h-4 text-[#5f6368]" />
-                      <span>View Public Website</span>
-                    </button>
-
-                    <div className="my-1 border-t border-[#dadce0] dark:border-[#444746]" />
-
-                    <button
-                      onClick={() => {
-                        setIsProfileMenuOpen(false);
-                        logout();
-                      }}
-                      className="w-full px-3 py-2 text-left text-[#d93025] hover:bg-[#fce8e6] dark:hover:bg-[#3c1410] flex items-center gap-2 cursor-pointer font-medium"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => navigateTo('/login')}
-                className="px-3 sm:px-4 py-1.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all shadow-none hover:shadow-xs cursor-pointer shrink-0"
-              >
-                Sign In
-              </button>
-            )}
+          {/* Zone 3: Primary Action + Mobile Menu */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => navigateTo('/dashboard')}
+              className="min-h-[40px] px-4 sm:px-5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0"
+            >
+              Open App
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden min-h-[44px] min-w-[44px] -mr-2 flex items-center justify-center rounded-full text-[#5f6368] dark:text-[#bdc1c6] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] transition-colors cursor-pointer"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+            </button>
           </div>
         </div>
 
-        {/* Public Mobile Drawer Menu (When not in newsroom) */}
-        {!isInsideNewsroom && isMobileMenuOpen && (
-          <div className="lg:hidden bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-4 space-y-2 shadow-xl animate-in slide-in-from-top-2 duration-200">
+        {/* Public Mobile Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-white dark:bg-[#1a1c1e] border-t border-[#e0e3e7] dark:border-[#3c4043] px-4 py-3 space-y-1 shadow-lg">
             <button
-              onClick={() => navigateTo('/dashboard')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] bg-[#e8f0fe] dark:bg-[#004a77] cursor-pointer"
+              type="button"
+              onClick={() => scrollToSection('suite')}
+              className="w-full min-h-[44px] text-left px-3 rounded-xl text-sm font-medium text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Open Newsroom Console</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+              Products
             </button>
-
             <button
-              onClick={() => navigateTo('/newspaper/page-designer')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] cursor-pointer"
+              type="button"
+              onClick={() => scrollToSection('pricing')}
+              className="w-full min-h-[44px] text-left px-3 rounded-xl text-sm font-medium text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <BookOpen className="w-4 h-4 text-emerald-600" />
-                <span>Read Newspaper Edition</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+              Pricing
             </button>
-
             <button
+              type="button"
               onClick={() => navigateTo('/marketplace')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] cursor-pointer"
+              className="w-full min-h-[44px] text-left px-3 rounded-xl text-sm font-medium text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <ShoppingBag className="w-4 h-4 text-amber-600" />
-                <span>News Marketplace</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+              Marketplace
             </button>
-
             <button
+              type="button"
               onClick={() => navigateTo('/legal')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl text-left text-xs font-semibold text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#f1f3f4] dark:hover:bg-[#28292a] cursor-pointer"
+              className="w-full min-h-[44px] text-left px-3 rounded-xl text-sm font-medium text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-purple-600" />
-                <span>Legal & Compliance Center</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+              Legal
             </button>
+            <div className="pt-2 mt-1 border-t border-[#e0e3e7] dark:border-[#3c4043] flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => navigateTo('/login')}
+                className="min-h-[44px] text-sm font-semibold text-[#1a73e8] dark:text-[#8ab4f8] px-3 cursor-pointer"
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[#5f6368] dark:text-[#bdc1c6] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] cursor-pointer"
+                aria-label="Toggle theme"
+              >
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-[#fbbc04]" />}
+              </button>
+            </div>
           </div>
         )}
       </header>
+    );
+  }
 
-      {/* Tenant Switcher Modal */}
+  // Workspace Console Header (Compact 56px mobile / 60px desktop)
+  return (
+    <>
+      <header className="sticky top-0 z-40 w-full bg-white dark:bg-[#1a1c1e] border-b border-[#e0e3e7] dark:border-[#3c4043] transition-colors select-none">
+        <div className="h-[2px] w-full google-spectrum-bar" />
+        <div className="h-[54px] sm:h-[58px] px-3 sm:px-5 flex items-center justify-between gap-2">
+          {/* Left: Mobile Menu + Brand + Organization */}
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            {onToggleSidebarMobile && (
+              <button
+                type="button"
+                onClick={onToggleSidebarMobile}
+                className="lg:hidden min-h-[44px] min-w-[44px] -ml-1.5 flex items-center justify-center rounded-full text-[#5f6368] dark:text-[#bdc1c6] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] transition-colors cursor-pointer shrink-0"
+                aria-label="Open menu"
+              >
+                <MenuIcon className="w-5 h-5" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="flex items-center gap-2 cursor-pointer shrink-0"
+              onClick={() => navigateTo('/dashboard')}
+              title="NewsPress Home"
+            >
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="2.5" y="3.5" width="19" height="17" rx="4" stroke="#4285f4" strokeWidth="2.2" />
+                <line x1="6.5" y1="8.5" x2="12.5" y2="8.5" stroke="#ea4335" strokeWidth="2.2" strokeLinecap="round" />
+                <line x1="6.5" y1="12.5" x2="17.5" y2="12.5" stroke="#fbbc04" strokeWidth="2.2" strokeLinecap="round" />
+                <line x1="6.5" y1="16.5" x2="14.5" y2="16.5" stroke="#34a853" strokeWidth="2.2" strokeLinecap="round" />
+                <circle cx="16.2" cy="8.5" r="1.6" fill="#4285f4" />
+              </svg>
+              <span className="font-bold text-base sm:text-lg tracking-tight whitespace-nowrap">
+                <span className="text-[#4285f4]">N</span>
+                <span className="text-[#ea4335]">e</span>
+                <span className="text-[#fbbc04]">w</span>
+                <span className="text-[#4285f4]">s</span>
+                <span className="text-[#34a853]">P</span>
+                <span className="text-[#ea4335]">r</span>
+                <span className="text-[#202124] dark:text-[#f8f9fa]">ess</span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsTenantModalOpen(true)}
+              className="hidden md:flex items-center gap-1.5 ml-1 px-3 py-1.5 rounded-full bg-[#f8fafd] dark:bg-[#242629] hover:bg-[#eef4ff] dark:hover:bg-[#2e3135] border border-[#e0e3e7] dark:border-[#3c4043] text-xs font-medium text-[#3c4043] dark:text-[#e8eaed] cursor-pointer whitespace-nowrap shrink-0"
+              title="Switch Organization"
+            >
+              <Building2 className="w-3.5 h-3.5 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" />
+              <span className="truncate max-w-[140px]">{currentTenant.organizationName}</span>
+              <ChevronDown className="w-3 h-3 text-[#5f6368] shrink-0" />
+            </button>
+          </div>
+
+          {/* Center: Clean Desktop Quick Tabs */}
+          <nav className="hidden lg:flex items-center gap-1 bg-[#f8fafd] dark:bg-[#242629] p-1 rounded-full border border-[#e0e3e7] dark:border-[#3c4043]">
+            {workspaceNavLinks.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                item.path === '/dashboard'
+                  ? currentPath === '/dashboard' || currentPath === '/overview'
+                  : currentPath.startsWith(item.matchPrefix);
+
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => navigateTo(item.path)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                    isActive
+                      ? 'bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#173054] dark:text-[#8ab4f8]'
+                      : 'text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Right: Write + Theme + Account */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => (onQuickNewStory ? onQuickNewStory() : setIsQuickStoryOpen(true))}
+              className="min-h-[38px] px-3 sm:px-4 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold transition-colors inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              title="Write a new story"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Write</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="min-h-[40px] min-w-[40px] rounded-full flex items-center justify-center text-[#5f6368] dark:text-[#bdc1c6] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] transition-colors cursor-pointer shrink-0"
+              title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-[#fbbc04]" />}
+            </button>
+
+            {/* Streamlined Account Menu */}
+            <div className="relative shrink-0" ref={profileRef}>
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] transition-colors cursor-pointer"
+                aria-label="Account menu"
+              >
+                <img
+                  src={user?.avatarUrl || getInitialsAvatarDataUrl(user?.displayName)}
+                  alt={user?.displayName || 'Account'}
+                  referrerPolicy="no-referrer"
+                  className="w-8 h-8 rounded-full object-cover border border-[#dadce0] dark:border-[#5f6368]"
+                />
+              </button>
+
+              {isProfileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043] shadow-xl py-1.5 z-50 text-xs overflow-hidden">
+                  <div className="px-4 py-2.5 border-b border-[#e0e3e7] dark:border-[#3c4043]">
+                    <div className="font-semibold text-sm text-[#202124] dark:text-[#f8f9fa] truncate">
+                      {user?.displayName || 'Editor'}
+                    </div>
+                    <div className="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] truncate mt-0.5">
+                      {currentTenant.organizationName}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/user/portal')}
+                    className="w-full min-h-[40px] px-4 text-left text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] flex items-center gap-2.5 cursor-pointer font-medium"
+                  >
+                    <User className="w-4 h-4 text-[#1a73e8]" />
+                    <span>Account &amp; Wallet</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      setIsTenantModalOpen(true);
+                    }}
+                    className="w-full min-h-[40px] px-4 text-left text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] flex items-center gap-2.5 cursor-pointer font-medium md:hidden"
+                  >
+                    <Building2 className="w-4 h-4 text-[#5f6368]" />
+                    <span>Switch Organization</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/settings')}
+                    className="w-full min-h-[40px] px-4 text-left text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] flex items-center gap-2.5 cursor-pointer font-medium"
+                  >
+                    <Settings className="w-4 h-4 text-[#5f6368]" />
+                    <span>Settings</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigateTo('/')}
+                    className="w-full min-h-[40px] px-4 text-left text-[#202124] dark:text-[#f8f9fa] hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] flex items-center gap-2.5 cursor-pointer font-medium"
+                  >
+                    <Globe className="w-4 h-4 text-[#5f6368]" />
+                    <span>Public Site</span>
+                  </button>
+
+                  <div className="my-1 border-t border-[#e0e3e7] dark:border-[#3c4043]" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full min-h-[40px] px-4 text-left text-[#d93025] dark:text-[#f28b82] hover:bg-[#fce8e6] dark:hover:bg-[#3c1816] flex items-center gap-2.5 cursor-pointer font-medium"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
       <TenantSwitcherModal
         isOpen={isTenantModalOpen}
         onClose={() => setIsTenantModalOpen(false)}
       />
 
-      {/* Persona Switcher Modal */}
-      <PersonaSwitcherModal
-        isOpen={isPersonaModalOpen}
-        onClose={() => setIsPersonaModalOpen(false)}
-      />
-
-      {/* Quick Story Composer Modal */}
       <QuickStoryModal
         isOpen={isQuickStoryOpen}
         onClose={() => setIsQuickStoryOpen(false)}
         onStoryCreated={() => {
-          // Notify any listeners
           window.dispatchEvent(new CustomEvent('story_created'));
         }}
       />

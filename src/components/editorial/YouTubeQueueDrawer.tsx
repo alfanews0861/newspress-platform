@@ -1,9 +1,10 @@
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
- * 
- * NewsPress YouTube News Studio — Live Task Queue & Priority Management Drawer
- * Real-time monitoring of asynchronous video mastering, queue positions, ETAs, and priority promotions.
+ *
+ * NewsPress YouTube News Studio — Live Broadcast Queue & Priority Manager Drawer
+ * Real-time monitoring of asynchronous video mastering, queue positions, ETAs,
+ * worker pause/resume controls, priority promotions, and footage re-attachment recovery.
  */
 
 import React, { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ import {
   Layers,
   X,
   Play,
+  Pause,
   RotateCw,
   Trash2,
   AlertCircle,
@@ -20,15 +22,12 @@ import {
   Clock,
   FileText,
   Zap,
-  Sliders,
-  Sparkles,
-  ChevronRight,
   ShieldCheck,
-  Video,
+  Upload,
+  MapPin,
 } from 'lucide-react';
 import {
   YouTubeVideoJob,
-  YouTubeVideoPriority,
   QueueSystemStats,
   PRIORITY_CONFIG,
 } from '../../types/youtubeQueue';
@@ -47,15 +46,21 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
   tenantId,
 }) => {
   const [jobs, setJobs] = useState<YouTubeVideoJob[]>([]);
-  const [stats, setStats] = useState<QueueSystemStats>(() => YouTubeQueueService.getQueueStats(tenantId));
+  const [stats, setStats] = useState<QueueSystemStats>(() =>
+    YouTubeQueueService.getQueueStats(tenantId)
+  );
+  const [isPaused, setIsPaused] = useState<boolean>(() => YouTubeQueueService.isWorkerPaused());
   const [filterTab, setFilterTab] = useState<'all' | 'queued' | 'processing' | 'published' | 'failed'>('all');
+  const [reattachingJobId, setReattachingJobId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Subscribe to live queue updates
     const unsubscribe = YouTubeQueueService.subscribe((updatedJobs) => {
-      const filtered = tenantId ? updatedJobs.filter((j) => j.tenantId === tenantId) : updatedJobs;
+      const filtered = tenantId
+        ? updatedJobs.filter((j) => j.tenantId === tenantId)
+        : updatedJobs;
       setJobs(filtered);
       setStats(YouTubeQueueService.getQueueStats(tenantId));
+      setIsPaused(YouTubeQueueService.isWorkerPaused());
     });
 
     return () => {
@@ -64,6 +69,16 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
   }, [tenantId]);
 
   if (!isOpen) return null;
+
+  const handleToggleWorker = () => {
+    if (isPaused) {
+      YouTubeQueueService.resumeWorker();
+      setIsPaused(false);
+    } else {
+      YouTubeQueueService.pauseWorker();
+      setIsPaused(true);
+    }
+  };
 
   const handlePromoteToP1 = async (jobId: string) => {
     await YouTubeQueueService.setJobPriority(jobId, 'P1_FLASH_BREAKING');
@@ -77,11 +92,26 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
     await YouTubeQueueService.retryJob(jobId);
   };
 
+  const handleReattachFootage = async (
+    jobId: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    setReattachingJobId(jobId);
+    try {
+      await YouTubeQueueService.reattachFootageAndRetry(jobId, files);
+    } finally {
+      setReattachingJobId(null);
+    }
+  };
+
   const handleClearCompleted = async () => {
     await YouTubeQueueService.clearCompleted();
   };
 
-  // Filter jobs based on selected tab
   const displayedJobs = jobs.filter((job) => {
     if (filterTab === 'all') return true;
     if (filterTab === 'queued') return job.status === 'QUEUED';
@@ -92,76 +122,108 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200">
-      <div className="w-full max-w-2xl bg-white dark:bg-[#1e1f20] h-full shadow-2xl flex flex-col border-l border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 font-sans">
+    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end bg-black/60 backdrop-blur-xs">
+      <div className="w-full max-w-2xl bg-white dark:bg-[#16171a] h-full shadow-2xl flex flex-col border-l border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 font-sans">
         {/* Drawer Header */}
-        <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-[#18191a]">
+        <div className="p-4 sm:p-5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-[#111214]">
           <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-600/30">
+            <span className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0">
               <Layers className="w-5 h-5" />
             </span>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-bold tracking-tight">
-                  YouTube Task Queue
+                  Broadcast Queue Monitor
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
-                  Live Engine
+                <span
+                  className={`px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                    isPaused
+                      ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                      : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                  }`}
+                >
+                  {isPaused ? 'Paused' : 'Running'}
                 </span>
               </div>
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                Autonomous background video mastering, rate-limiting &amp; priority scheduling.
+                Priority-ordered background mastering and Direct Public YouTube dispatch.
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 cursor-pointer transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleToggleWorker}
+              className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            >
+              {isPaused ? (
+                <>
+                  <Play className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Resume Queue</span>
+                </>
+              ) : (
+                <>
+                  <Pause className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Pause Queue</span>
+                </>
+              )}
+            </Button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close Broadcast Queue Monitor"
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 cursor-pointer transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Operational Concurrency & Statistics Banner */}
-        <div className="p-4 bg-neutral-100/70 dark:bg-[#252728] border-b border-neutral-200 dark:border-neutral-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-          <div className="p-2.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-neutral-200 dark:border-neutral-700 shadow-2xs">
+        <div className="p-4 bg-neutral-100/70 dark:bg-[#1c1d21] border-b border-neutral-200 dark:border-neutral-800 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-[#16171a] border border-neutral-200 dark:border-neutral-800">
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-semibold tracking-wider block">
               Active Workers
             </span>
-            <div className="flex items-center gap-1.5 mt-1 font-bold text-sm text-blue-600 dark:text-blue-400">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              <span>{stats.activeWorkers} / {stats.maxConcurrentWorkers} Active</span>
+            <div className="mt-1 font-bold text-sm text-blue-600 dark:text-blue-400 tabular-nums">
+              {stats.activeWorkers} / {stats.maxConcurrentWorkers} Active
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-neutral-200 dark:border-neutral-700 shadow-2xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-[#16171a] border border-neutral-200 dark:border-neutral-800">
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-semibold tracking-wider block">
               Waiting in Queue
             </span>
-            <div className="flex items-center gap-1.5 mt-1 font-bold text-sm text-amber-600 dark:text-amber-400">
+            <div className="flex items-center gap-1.5 mt-1 font-bold text-sm text-amber-600 dark:text-amber-400 tabular-nums">
               <Clock className="w-3.5 h-3.5" />
               <span>{stats.queuedCount} Jobs</span>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-neutral-200 dark:border-neutral-700 shadow-2xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-[#16171a] border border-neutral-200 dark:border-neutral-800">
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-semibold tracking-wider block">
-              Published Live
+              Published Public
             </span>
-            <div className="flex items-center gap-1.5 mt-1 font-bold text-sm text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-1.5 mt-1 font-bold text-sm text-emerald-600 dark:text-emerald-400 tabular-nums">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{stats.publishedCount} Videos</span>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-white dark:bg-[#1e1f20] border border-neutral-200 dark:border-neutral-700 shadow-2xs flex flex-col justify-between">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-[#16171a] border border-neutral-200 dark:border-neutral-800">
             <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase font-semibold tracking-wider block">
-              System Status
+              Failed / Attention
             </span>
-            <div className="flex items-center gap-1.5 mt-1 font-bold text-xs text-emerald-600 dark:text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>Autonomous Broadcast Engine</span>
+            <div className="flex items-center gap-1.5 mt-1 font-bold text-sm text-neutral-800 dark:text-neutral-200 tabular-nums">
+              <AlertCircle
+                className={`w-3.5 h-3.5 ${
+                  stats.failedCount > 0 ? 'text-red-500' : 'text-neutral-400'
+                }`}
+              />
+              <span>{stats.failedCount} Jobs</span>
             </div>
           </div>
         </div>
@@ -171,27 +233,29 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
           <div className="flex items-center gap-1.5">
             {[
               { id: 'all', label: 'All Jobs', count: stats.totalJobs },
-              { id: 'processing', label: 'Processing', count: stats.processingCount },
+              { id: 'processing', label: 'Mastering', count: stats.processingCount },
               { id: 'queued', label: 'Waiting', count: stats.queuedCount },
               { id: 'published', label: 'Published', count: stats.publishedCount },
-              { id: 'failed', label: 'Failed / Cancelled', count: stats.failedCount },
+              { id: 'failed', label: 'Attention', count: stats.failedCount },
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setFilterTab(tab.id as any)}
-                className={`px-3 py-1.5 rounded-full font-semibold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   filterTab === tab.id
-                    ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 shadow-xs'
+                    ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900'
                     : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
               >
                 <span>{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                  filterTab === tab.id
-                    ? 'bg-white/20 dark:bg-black/20 text-white dark:text-neutral-900'
-                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                }`}>
+                <span
+                  className={`px-1.5 py-0.5 rounded text-[10px] tabular-nums ${
+                    filterTab === tab.id
+                      ? 'bg-white/20 dark:bg-black/15 text-white dark:text-neutral-900'
+                      : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+                  }`}
+                >
                   {tab.count}
                 </span>
               </button>
@@ -211,18 +275,21 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
         </div>
 
         {/* Jobs List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {displayedJobs.length === 0 ? (
             <div className="p-12 text-center text-neutral-400 dark:text-neutral-500 space-y-2">
               <Layers className="w-8 h-8 mx-auto stroke-1 opacity-40" />
-              <p className="text-sm font-semibold">No video jobs in this category</p>
-              <p className="text-xs">
-                When you click "Queue for Broadcast", video packages enter this autonomous pipeline.
+              <p className="text-sm font-semibold text-neutral-600 dark:text-neutral-300">
+                No broadcast jobs in this view
+              </p>
+              <p className="text-xs max-w-sm mx-auto">
+                Add reviewed packages from the Pre-Broadcast Review Desk using &quot;Add to Queue&quot; to schedule background mastering.
               </p>
             </div>
           ) : (
             displayedJobs.map((job) => {
-              const priorityInfo = PRIORITY_CONFIG[job.priority] || PRIORITY_CONFIG.P3_ROUTINE_FIELD_REPORT;
+              const priorityInfo =
+                PRIORITY_CONFIG[job.priority] || PRIORITY_CONFIG.P3_ROUTINE_FIELD_REPORT;
               const isProcessing = job.status === 'PROCESSING';
               const isQueued = job.status === 'QUEUED';
               const isPublished = job.status === 'PUBLISHED';
@@ -231,73 +298,78 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
               return (
                 <div
                   key={job.jobId}
-                  className={`rounded-2xl border p-4 transition-all space-y-3 ${
+                  className={`rounded-xl border p-4 transition-colors space-y-3 ${
                     isProcessing
-                      ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-500/50 shadow-md ring-1 ring-blue-500/20'
+                      ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-400/60'
                       : isPublished
-                      ? 'bg-white dark:bg-[#202122] border-emerald-500/30 shadow-xs'
+                      ? 'bg-white dark:bg-[#1c1d21] border-emerald-500/30'
                       : isFailed
-                      ? 'bg-red-50/30 dark:bg-red-950/20 border-red-500/30'
-                      : 'bg-white dark:bg-[#202122] border-neutral-200 dark:border-neutral-800 shadow-xs hover:border-neutral-300'
+                      ? 'bg-red-50/30 dark:bg-red-950/20 border-red-400/40'
+                      : 'bg-white dark:bg-[#1c1d21] border-neutral-200 dark:border-neutral-800'
                   }`}
                 >
-                  {/* Job Header: Priority Badge, Queue Position & Actions */}
+                  {/* Job Header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      {/* Priority Badge */}
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${priorityInfo.badgeColor}`}>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold border ${priorityInfo.badgeColor}`}
+                      >
                         {job.priority === 'P1_FLASH_BREAKING' ? (
-                          <Flame className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+                          <Flame className="w-3.5 h-3.5 text-red-500" />
                         ) : job.priority === 'P2_PRIMETIME_BULLETIN' ? (
                           <Clock className="w-3.5 h-3.5 text-amber-500" />
                         ) : (
                           <FileText className="w-3.5 h-3.5 text-emerald-500" />
                         )}
                         <span>{priorityInfo.labelEnglish}</span>
-                        <span className="text-[10px] opacity-75 font-normal font-sans">({priorityInfo.labelTelugu})</span>
                       </span>
 
-                      {/* Status / Position Badge */}
                       {isQueued && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300">
-                          #{job.queuePosition} in line &bull; ETA: ~{job.estimatedWaitSec}s
+                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 tabular-nums">
+                          #{job.queuePosition || 1} in line &bull; ETA ~{job.estimatedWaitSec || 45}s
                         </span>
                       )}
 
                       {isProcessing && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white flex items-center gap-1.5 animate-pulse">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-600 text-white flex items-center gap-1.5 tabular-nums">
                           <RotateCw className="w-3 h-3 animate-spin" />
-                          <span>Active Mastering ({job.progress}%)</span>
+                          <span>Mastering ({job.progress}%)</span>
                         </span>
                       )}
 
                       {isPublished && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-600 text-white flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-600 text-white flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Live on YouTube</span>
+                          <span>Public on YouTube</span>
                         </span>
                       )}
 
                       {isFailed && (
-                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white flex items-center gap-1">
+                        <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-red-600 text-white flex items-center gap-1">
                           <AlertCircle className="w-3.5 h-3.5" />
-                          <span>{job.status === 'CANCELLED' ? 'Cancelled' : 'Failed'}</span>
+                          <span>
+                            {job.needsFootageReattach
+                              ? 'Footage Required'
+                              : job.status === 'CANCELLED'
+                              ? 'Cancelled'
+                              : 'Failed'}
+                          </span>
                         </span>
                       )}
                     </div>
 
-                    {/* Quick Priority Upgrade / Cancel Controls */}
+                    {/* Controls */}
                     <div className="flex items-center gap-1.5 shrink-0">
                       {isQueued && job.priority !== 'P1_FLASH_BREAKING' && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handlePromoteToP1(job.jobId)}
-                          className="h-7 px-2 text-[11px] font-bold text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer flex items-center gap-1"
-                          title="Promote to Flash Breaking News (Jumps to Front of Queue)"
+                          className="h-7 px-2 text-[11px] font-semibold text-red-600 border-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer flex items-center gap-1"
+                          title="Promote to Flash Breaking News (Moves to Front of Queue)"
                         >
-                          <Zap className="w-3 h-3 text-red-500 fill-current" />
-                          <span>Promote to P1</span>
+                          <Zap className="w-3 h-3 text-red-500" />
+                          <span>Promote P1</span>
                         </Button>
                       )}
 
@@ -312,7 +384,7 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
                         </button>
                       )}
 
-                      {isFailed && (
+                      {isFailed && !job.needsFootageReattach && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -326,57 +398,96 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
                     </div>
                   </div>
 
-                  {/* Title and Metadata */}
+                  {/* Title & Metadata */}
                   <div>
                     <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100 leading-snug line-clamp-2">
                       {job.title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400 mt-1">
                       {job.newsLocation && (
-                        <span className="font-semibold text-neutral-700 dark:text-neutral-300">
-                          📍 {job.newsLocation}
+                        <span className="font-semibold text-neutral-700 dark:text-neutral-300 inline-flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-red-500" />
+                          {job.newsLocation}
                         </span>
                       )}
-                      <span>Reporter: {job.userName}</span>
-                      <span>Lang: {job.language?.toUpperCase()}</span>
-                      <span>Created: {new Date(job.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span>Desk: {job.userName}</span>
+                      <span>Language: {job.language?.toUpperCase()}</span>
+                      <span className="tabular-nums">
+                        Queued:{' '}
+                        {new Date(job.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Live Progress Bar and Stage Feedback */}
+                  {/* Live Progress Bar */}
                   {(isProcessing || isQueued) && (
                     <div className="space-y-1.5 pt-1">
                       <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-neutral-600 dark:text-neutral-300 font-medium truncate max-w-[80%] flex items-center gap-1.5">
-                          {isProcessing && <RotateCw className="w-3 h-3 animate-spin text-blue-500 shrink-0" />}
+                        <span className="text-neutral-600 dark:text-neutral-300 font-medium truncate max-w-[82%] flex items-center gap-1.5">
+                          {isProcessing && (
+                            <RotateCw className="w-3 h-3 animate-spin text-blue-500 shrink-0" />
+                          )}
                           <span>{job.stageMessage}</span>
                         </span>
-                        <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200">
+                        <span className="font-mono font-bold text-neutral-800 dark:text-neutral-200 tabular-nums">
                           {job.progress}%
                         </span>
                       </div>
 
                       <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
                         <div
-                          className={`h-full transition-all duration-500 ${
+                          className={`h-full transition-all duration-300 ${
                             isProcessing ? 'bg-blue-600' : 'bg-amber-400'
                           }`}
-                          style={{ width: `${Math.max(5, job.progress)}%` }}
+                          style={{ width: `${Math.max(4, job.progress)}%` }}
                         />
                       </div>
                     </div>
                   )}
 
-                  {/* Failure Message */}
-                  {isFailed && job.error && (
-                    <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-300 text-xs">
-                      <p className="font-semibold">Reason: {job.error}</p>
+                  {/* Footage Re-Attachment Recovery after Reload */}
+                  {isFailed && job.needsFootageReattach && (
+                    <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 space-y-2 text-xs">
+                      <p className="text-amber-900 dark:text-amber-200 font-medium">
+                        {job.error ||
+                          'Browser session reloaded before broadcast started. Re-select the video footage file(s) to resume immediately.'}
+                      </p>
+                      <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs cursor-pointer transition">
+                        {reattachingJobId === job.jobId ? (
+                          <>
+                            <RotateCw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Resuming...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Re-attach Footage &amp; Resume</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          multiple
+                          accept="video/*"
+                          onChange={(e) => handleReattachFootage(job.jobId, e)}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
                   )}
 
-                  {/* Published Success & YouTube Live Link */}
+                  {/* Standard Failure Message */}
+                  {isFailed && !job.needsFootageReattach && job.error && (
+                    <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-700 dark:text-red-300 text-xs">
+                      <p className="font-medium">{job.error}</p>
+                    </div>
+                  )}
+
+                  {/* Published Success & YouTube Link */}
                   {isPublished && job.youtubeUrl && (
-                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between gap-3">
+                    <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-3">
                       <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                         {job.stageMessage}
                       </span>
@@ -398,12 +509,12 @@ export const YouTubeQueueDrawer: React.FC<YouTubeQueueDrawerProps> = ({
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#18191a] flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-[#111214] flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Autonomous Cloud Run Rate-Limiting Engine</span>
+            <span>Direct Public Broadcast Dispatcher</span>
           </div>
-          <Button size="sm" variant="outline" onClick={onClose} className="text-xs">
+          <Button size="sm" variant="outline" onClick={onClose} className="text-xs cursor-pointer">
             Close Monitor
           </Button>
         </div>

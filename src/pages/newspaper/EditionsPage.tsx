@@ -1,10 +1,8 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  *
- * Newspaper Editions & Auto-Assembly Desk
- * Combines reporter-submitted newsroom stories + purchased marketplace stories
- * into a complete readable newspaper according to the organization's remembered Brand Settings.
+ * Newspaper Editions & Assembly Desk
  */
 
 import React, { useState, useMemo } from 'react';
@@ -14,7 +12,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ShoppingBag,
-  Sparkles,
   Newspaper,
   ArrowRight,
   Settings,
@@ -55,7 +52,6 @@ export const EditionsPage: React.FC = () => {
     [currentTenant?.tenantId, refreshTick]
   );
 
-  // Gather own approved / published stories + purchased marketplace stories for this tenant
   const { ownApprovedStories, licensedStories, combinedStories, targetStoryCount } = useMemo(() => {
     const tenantId = currentTenant?.tenantId || 'tenant-metro-chronicle';
     const isTelugu = activeBrand.language === 'te' || activeBrand.name?.includes('తెలుగు');
@@ -124,13 +120,12 @@ export const EditionsPage: React.FC = () => {
 
   const shortfallCount = Math.max(0, targetStoryCount - combinedStories.length);
 
-  // Active marketplace listings available to buy & fill gaps
   const marketplaceFillCandidates: MarketplaceListing[] = useMemo(() => {
     const ownedNewsIds = new Set(combinedStories.map((s) => s.articleId.replace(/^syndicated_/, '')));
     return marketplaceService
       .getListings({ status: 'ACTIVE' })
       .filter((l) => !ownedNewsIds.has(l.newsId))
-      .slice(0, 6);
+      .slice(0, 3);
   }, [combinedStories, refreshTick]);
 
   const handleBuyAndAddToPaper = async (listing: MarketplaceListing) => {
@@ -155,7 +150,7 @@ export const EditionsPage: React.FC = () => {
 
       setAssemblyFeedback({
         type: 'success',
-        message: `Purchased "${listing.title}" and added it to your edition story pool.`,
+        message: `Added "${listing.title}" to your edition pool.`,
       });
       setRefreshTick((t) => t + 1);
     } catch (err: any) {
@@ -182,7 +177,6 @@ export const EditionsPage: React.FC = () => {
         : now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       const editionId = `ed-${activeBrand.brandId}-${todayIso}`;
 
-      // Surface newly added reporter dispatches and purchased marketplace stories at the top of the assembly queue
       const orderedStories = [...combinedStories].sort((a, b) => {
         const aBoost = a.authorType === 'syndicated' || !a.articleId.startsWith('art-te-') ? 1 : 0;
         const bBoost = b.authorType === 'syndicated' || !b.articleId.startsWith('art-te-') ? 1 : 0;
@@ -226,7 +220,7 @@ export const EditionsPage: React.FC = () => {
         newEdition,
         planned.pages,
         user.uid,
-        `Assembled ${planned.pages.length}-page readable edition (${planned.summary.placedCount} stories)`
+        `Assembled ${planned.pages.length}-page edition (${planned.summary.placedCount} stories)`
       );
       writeLocalString('newspress_active_edition_id_v1', newEdition.editionId);
       setRefreshTick((t) => t + 1);
@@ -248,31 +242,29 @@ export const EditionsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
-        title="Newspaper Builder & Editions"
-        subtitle={`Combine reporter dispatches and marketplace stories into a printable newspaper for ${activeBrand.name}.`}
-        breadcrumbs={[
-          { label: 'Newspaper', href: '/newspaper/editions' },
-          { label: 'Builder & Editions' },
-        ]}
+        title="Editions"
+        subtitle={`${activeBrand.name} · ${activeBrand.pageCount || 4} pages`}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
               variant="secondary"
               size="sm"
+              className="flex-1 sm:flex-none"
+              leftIcon={<Settings className="w-4 h-4" />}
               onClick={() => navigateTo('/newspaper/brands')}
             >
-              <Settings className="w-4 h-4 mr-1.5" /> Paper Setup
+              Paper Setup
             </Button>
             <Button
               variant="primary"
               size="sm"
+              className="flex-1 sm:flex-none"
               onClick={handleAssembleNewspaper}
               disabled={isAssembling || combinedStories.length === 0}
             >
-              <Sparkles className="w-4 h-4 mr-1.5" />
-              {isAssembling ? 'Assembling...' : 'Assemble & Open Newspaper'}
+              {isAssembling ? 'Building...' : 'Build Paper'}
             </Button>
           </div>
         }
@@ -280,197 +272,242 @@ export const EditionsPage: React.FC = () => {
 
       {assemblyFeedback && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center justify-between gap-3 ${
+          className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 ${
             assemblyFeedback.type === 'success'
               ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
               : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
           }`}
         >
-          <div className="flex items-center gap-2">
-            {assemblyFeedback.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0" />
-            ) : (
-              <AlertCircle className="w-4 h-4 shrink-0" />
-            )}
-            <span>{assemblyFeedback.message}</span>
-          </div>
+          {assemblyFeedback.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span>{assemblyFeedback.message}</span>
         </div>
       )}
 
-      {/* Today's Newspaper Story Readiness & One-Click Assembly */}
-      <Card variant="editorial" className="p-5 space-y-4">
+      {/* Today's Edition Readiness */}
+      <Card className="p-4 sm:p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Newspaper className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                {activeBrand.name} — {activeBrand.pageCount || 4} Pages ({activeBrand.paperSize?.toUpperCase() || 'BROADSHEET'})
+              <Newspaper className="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" />
+              <h2 className="text-base font-semibold text-[#202124] dark:text-white">
+                {activeBrand.name}
               </h2>
+              <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6] capitalize">
+                · {activeBrand.paperSize || 'broadsheet'}
+              </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Own Approved Stories: <strong className="text-slate-800 dark:text-slate-200">{ownApprovedStories.length}</strong> • Purchased Marketplace Stories:{' '}
-              <strong className="text-blue-600 dark:text-blue-400">{licensedStories.length}</strong> • Target for Full Edition:{' '}
-              <strong className="text-slate-800 dark:text-slate-200">{targetStoryCount}</strong>
-            </p>
+
+            <div className="flex items-center gap-2 text-xs text-[#5f6368] dark:text-[#9aa0a6] flex-wrap tabular-nums">
+              <span>
+                Own: <strong className="text-[#202124] dark:text-white">{ownApprovedStories.length}</strong>
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                Purchased: <strong className="text-[#1a73e8] dark:text-[#8ab4f8]">{licensedStories.length}</strong>
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                Target: <strong className="text-[#202124] dark:text-white">{targetStoryCount}</strong>
+              </span>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             {shortfallCount > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-1.5 rounded-full">
-                <AlertCircle className="w-3.5 h-3.5" /> Need {shortfallCount} more stories
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#b06000] dark:text-[#fdd663]">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Need {shortfallCount} more
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Ready to Print ({combinedStories.length} stories)
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#137333] dark:text-[#81c995]">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Ready ({combinedStories.length} stories)
               </span>
             )}
             <Button
               variant="primary"
               size="sm"
+              rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
               onClick={handleAssembleNewspaper}
               disabled={isAssembling || combinedStories.length === 0}
             >
-              Build Readable Paper <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              Open Page Designer
             </Button>
           </div>
         </div>
 
-        {/* Fill Missing Stories Directly from Marketplace */}
-        {(shortfallCount > 0 || marketplaceFillCandidates.length > 0) && (
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
-                  {shortfallCount > 0
-                    ? `Short on news? Pick stories from Marketplace (${shortfallCount} needed)`
-                    : 'Optional: Add Extra Marketplace Stories to Edition'}
-                </span>
+        {/* Quick Marketplace Fill */}
+        {marketplaceFillCandidates.length > 0 && (
+          <div className="pt-4 border-t border-[#eceff1] dark:border-[#3c4043] space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#202124] dark:text-white">
+                <ShoppingBag className="w-3.5 h-3.5 text-[#1a73e8] dark:text-[#8ab4f8]" />
+                <span>Add Marketplace Stories</span>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigateTo('/marketplace')}>
-                Browse All Marketplace Stories &rarr;
-              </Button>
+              <button
+                type="button"
+                onClick={() => navigateTo('/marketplace')}
+                className="text-xs font-medium text-[#1a73e8] dark:text-[#8ab4f8] hover:underline whitespace-nowrap cursor-pointer"
+              >
+                Browse all
+              </button>
             </div>
 
-            {marketplaceFillCandidates.length === 0 ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                All available marketplace dispatches have already been acquired by your organization.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {marketplaceFillCandidates.map((listing) => (
-                  <div
-                    key={listing.listingId}
-                    className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/40 flex flex-col justify-between gap-2.5"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-                        <span className="font-medium text-blue-600 dark:text-blue-400 truncate">{listing.category}</span>
-                        <span className="font-bold text-slate-900 dark:text-white shrink-0">{formatINR(listing.price)}</span>
-                      </div>
-                      <h4 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2 leading-snug">
-                        {listing.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                        By {listing.reporterByline || listing.reporterName}
-                      </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {marketplaceFillCandidates.map((listing) => (
+                <div
+                  key={listing.listingId}
+                  className="p-3.5 rounded-xl border border-[#e0e3e7] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#1b1c1f] flex flex-col justify-between gap-3"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-medium text-[#1a73e8] dark:text-[#8ab4f8] truncate">
+                        {listing.category}
+                      </span>
+                      <span className="font-bold text-[#202124] dark:text-white shrink-0 tabular-nums">
+                        {formatINR(listing.price)}
+                      </span>
                     </div>
-
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => handleBuyAndAddToPaper(listing)}
-                      disabled={buyingListingId === listing.listingId}
-                      className="w-full"
-                    >
-                      <Plus className="w-3.5 h-3.5 mr-1" />
-                      {buyingListingId === listing.listingId ? 'Adding...' : 'Buy & Add to Paper'}
-                    </Button>
+                    <h4 className="text-xs font-semibold text-[#202124] dark:text-white line-clamp-2 leading-snug">
+                      {listing.title}
+                    </h4>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Plus className="w-3.5 h-3.5" />}
+                    onClick={() => handleBuyAndAddToPaper(listing)}
+                    disabled={buyingListingId === listing.listingId}
+                    className="w-full"
+                  >
+                    {buyingListingId === listing.listingId ? 'Adding...' : 'Add to Paper'}
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </Card>
 
-      {/* Persisted Editions Table */}
-      <Card
-        variant="default"
-        title="Saved & Active Newspaper Editions"
-        subtitle="Open any assembled edition in the readable newspaper viewer and export exact print PDF."
-      >
-        <DataTable
-          data={editions}
-          keyExtractor={(row) => row.editionId}
-          columns={[
-            {
-              key: 'edition',
-              header: 'Newspaper & Issue',
-              render: (row) => (
-                <div>
-                  <div className="font-medium text-slate-900 dark:text-white font-sans text-sm">
-                    {row.brandName}
+      {/* Saved Editions — Mobile List + Desktop Table */}
+      <Card title="Saved Editions">
+        {/* Mobile stacked list */}
+        <div className="md:hidden px-4 py-3 divide-y divide-[#eceff1] dark:divide-[#3c4043]">
+          {editions.length === 0 ? (
+            <p className="py-6 text-center text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+              No saved editions yet.
+            </p>
+          ) : (
+            editions.map((ed) => (
+              <div key={ed.editionId} className="py-3.5 first:pt-0 last:pb-0 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-[#202124] dark:text-white truncate">
+                      {ed.brandName}
+                    </div>
+                    <div className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-0.5 tabular-nums">
+                      Issue #{ed.issueNumber} · {ed.totalPages} pages · {ed.placedArticlesCount} stories
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-0.5">
-                    {row.editionCode} • Issue #{row.issueNumber} ({row.publicationDate})
+                  <StatusBadge status={ed.status} />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                    {ed.publicationDate}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Layers className="w-3.5 h-3.5" />}
+                    onClick={() => handleOpenEdition(ed)}
+                  >
+                    Open
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block">
+          <DataTable
+            data={editions}
+            keyExtractor={(row) => row.editionId}
+            columns={[
+              {
+                key: 'edition',
+                header: 'Edition',
+                render: (row) => (
+                  <div>
+                    <div className="font-medium text-[#202124] dark:text-white text-sm">
+                      {row.brandName}
+                    </div>
+                    <div className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-0.5">
+                      Issue #{row.issueNumber} · {row.publicationDate}
+                    </div>
                   </div>
-                </div>
-              ),
-            },
-            {
-              key: 'format',
-              header: 'Paper Size',
-              width: '130px',
-              render: (row) => (
-                <span className="font-sans text-xs capitalize text-slate-500 dark:text-slate-400">
-                  {row.pressSpecs?.format || 'broadsheet'}
-                </span>
-              ),
-            },
-            {
-              key: 'pages',
-              header: 'Pages / Stories',
-              width: '140px',
-              render: (row) => (
-                <div className="text-xs font-sans text-slate-600 dark:text-slate-300">
-                  {row.totalPages} Pages • {row.placedArticlesCount} Stories
-                </div>
-              ),
-            },
-            {
-              key: 'status',
-              header: 'Status',
-              width: '130px',
-              render: (row) => <StatusBadge status={row.status} />,
-            },
-            {
-              key: 'deadline',
-              header: 'Deadline',
-              width: '140px',
-              render: (row) => (
-                <span className="text-xs font-sans text-slate-500 dark:text-slate-400">
-                  {formatTimeLeft(row.printDeadline)}
-                </span>
-              ),
-            },
-            {
-              key: 'actions',
-              header: 'Open',
-              width: '140px',
-              render: (row) => (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleOpenEdition(row)}
-                >
-                  <Layers className="w-3.5 h-3.5 mr-1.5 text-blue-600 dark:text-blue-400" />
-                  Read / Print
-                </Button>
-              ),
-            },
-          ]}
-        />
+                ),
+              },
+              {
+                key: 'format',
+                header: 'Format',
+                width: '120px',
+                render: (row) => (
+                  <span className="text-xs capitalize text-[#5f6368] dark:text-[#9aa0a6]">
+                    {row.pressSpecs?.format || 'broadsheet'}
+                  </span>
+                ),
+              },
+              {
+                key: 'pages',
+                header: 'Content',
+                width: '140px',
+                render: (row) => (
+                  <span className="text-xs text-[#3c4043] dark:text-[#e8eaed] tabular-nums">
+                    {row.totalPages} pages · {row.placedArticlesCount} stories
+                  </span>
+                ),
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                width: '130px',
+                render: (row) => <StatusBadge status={row.status} />,
+              },
+              {
+                key: 'deadline',
+                header: 'Deadline',
+                width: '130px',
+                render: (row) => (
+                  <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6] tabular-nums">
+                    {formatTimeLeft(row.printDeadline)}
+                  </span>
+                ),
+              },
+              {
+                key: 'actions',
+                header: 'Action',
+                width: '120px',
+                render: (row) => (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Layers className="w-3.5 h-3.5" />}
+                    onClick={() => handleOpenEdition(row)}
+                  >
+                    Open
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </div>
       </Card>
     </div>
   );

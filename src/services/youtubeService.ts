@@ -84,13 +84,22 @@ export class YouTubeService {
    * Saves branding and production settings.
    */
   static saveSettings(settings: Partial<YouTubeChannelBrandingSettings>): YouTubeChannelBrandingSettings {
-    const updated = { ...this.getSettings(), ...settings };
+    const merged = { ...this.getSettings(), ...settings };
+    // Never serialize raw Blob objects into localStorage (animated logo blob is persisted in IndexedDB)
+    const storable: YouTubeChannelBrandingSettings = {
+      ...merged,
+      privacyStatus: 'public',
+      watermark: {
+        ...merged.watermark,
+        logoVideoBlob: undefined,
+      },
+    };
     try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(storable));
     } catch (e) {
       console.error('Failed to save YouTube settings:', e);
     }
-    return updated;
+    return merged;
   }
 
   /**
@@ -132,14 +141,21 @@ export class YouTubeService {
    */
   static saveConnectedAccount(account: YouTubeConnectedAccount): void {
     try {
-      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(account));
-      if (account.isConnected && account.channelId) {
-        const list = this.getConnectedAccountsList();
-        const existingIdx = list.findIndex((c) => c.channelId === account.channelId);
+      // Strip any accidental clientSecret before browser persistence
+      const sanitized: YouTubeConnectedAccount = { ...account };
+      delete (sanitized as any).clientSecret;
+      localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(sanitized));
+      if (sanitized.isConnected && sanitized.channelId) {
+        const list = this.getConnectedAccountsList().map((c) => {
+          const copy = { ...c };
+          delete (copy as any).clientSecret;
+          return copy;
+        });
+        const existingIdx = list.findIndex((c) => c.channelId === sanitized.channelId);
         if (existingIdx >= 0) {
-          list[existingIdx] = account;
+          list[existingIdx] = sanitized;
         } else {
-          list.push(account);
+          list.push(sanitized);
         }
         localStorage.setItem(ACCOUNTS_LIST_STORAGE_KEY, JSON.stringify(list));
       }
@@ -175,6 +191,9 @@ export class YouTubeService {
     // 1. Try Google Identity Services (GIS) Code Flow to get a Permanent Refresh Token
     const tryGisCodeFlow = (): Promise<YouTubeConnectedAccount | null> => {
       return new Promise((resolve) => {
+        if (!clientId) {
+          return resolve(null);
+        }
         const gis = (window as any).google?.accounts?.oauth2;
         if (!gis || typeof gis.initCodeClient !== 'function') {
           return resolve(null);
@@ -202,15 +221,13 @@ export class YouTubeService {
               }
 
               try {
-                console.log('[YouTube Auth] Exchanging authorization code via Cloud Run backend...');
-                const clientSecret = import.meta.env.VITE_YOUTUBE_CLIENT_SECRET || '';
+                console.log('[YouTube Auth] Exchanging authorization code via backend...');
                 const exResp = await fetch(cloudRunExchangeUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     code: response.code,
                     clientId,
-                    clientSecret,
                     redirectUri: 'postmessage',
                   }),
                 });
@@ -220,7 +237,6 @@ export class YouTubeService {
                   if (accountData.isConnected) {
                     console.log('[YouTube Auth] Permanent YouTube connection established successfully!');
                     accountData.clientId = clientId;
-                    accountData.clientSecret = clientSecret;
                     this.saveConnectedAccount(accountData);
                     return resolve(accountData);
                   }
@@ -408,16 +424,11 @@ export class YouTubeService {
    */
   static async refreshAccessToken(
     refreshToken: string,
-    clientId?: string,
-    clientSecret?: string
+    clientId?: string
   ): Promise<{ accessToken: string; expiresIn: number }> {
     const effectiveClientId =
       clientId?.trim() ||
       import.meta.env.VITE_YOUTUBE_CLIENT_ID ||
-      '';
-    const effectiveClientSecret =
-      clientSecret?.trim() ||
-      import.meta.env.VITE_YOUTUBE_CLIENT_SECRET ||
       '';
 
     const endpoint = 'https://composevideo-vz346mffwa-uc.a.run.app?action=refresh_token';
@@ -427,7 +438,6 @@ export class YouTubeService {
       body: JSON.stringify({
         refreshToken,
         clientId: effectiveClientId,
-        clientSecret: effectiveClientSecret,
       }),
     });
     if (resp.ok) {
@@ -448,15 +458,13 @@ export class YouTubeService {
   static async connectWithRefreshToken(
     refreshToken: string,
     channelName?: string,
-    clientId?: string,
-    clientSecret?: string
+    clientId?: string
   ): Promise<YouTubeConnectedAccount> {
     if (!refreshToken.trim()) {
       throw new Error('Refresh token cannot be empty.');
     }
 
-    // 1. Exchange refresh token for fresh access token immediately
-    const refreshed = await this.refreshAccessToken(refreshToken.trim(), clientId?.trim(), clientSecret?.trim());
+    const refreshed = await this.refreshAccessToken(refreshToken.trim(), clientId?.trim());
     const accessToken = refreshed.accessToken;
 
     let channelTitle = channelName || 'Official News Channel';
@@ -464,7 +472,6 @@ export class YouTubeService {
     let subscribers = 0;
     let channelAvatar = '';
 
-    // 2. Query channel details from YouTube Data API v3
     try {
       const resp = await fetch(
         'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',
@@ -496,7 +503,6 @@ export class YouTubeService {
       refreshToken: refreshToken.trim(),
       tokenExpiresAt: Date.now() + (refreshed.expiresIn || 3500) * 1000,
       clientId: clientId?.trim(),
-      clientSecret: clientSecret?.trim(),
       connectedAt: new Date().toISOString(),
     };
 
@@ -519,11 +525,10 @@ export class YouTubeService {
     const now = Date.now();
     const isExpired = !account.accessToken || (account.tokenExpiresAt ? now >= account.tokenExpiresAt - 300000 : false);
 
-    // If permanent refresh token exists and token is expired or expiring in < 5 minutes, silently refresh!
     if (account.refreshToken && (isExpired || !account.accessToken)) {
       try {
         console.log('[YouTube Auth] Silently refreshing access token using permanent refresh token...');
-        const refreshed = await this.refreshAccessToken(account.refreshToken, account.clientId, account.clientSecret);
+        const refreshed = await this.refreshAccessToken(account.refreshToken, account.clientId);
         if (refreshed.accessToken) {
           account.accessToken = refreshed.accessToken;
           account.tokenExpiresAt = Date.now() + (refreshed.expiresIn || 3500) * 1000;
@@ -756,18 +761,27 @@ export class YouTubeService {
    */
   static async saveBroadcastRecord(record: YouTubeBroadcastRecord): Promise<void> {
     try {
+      const enriched: YouTubeBroadcastRecord = {
+        ...record,
+        privacyStatus: 'public',
+        tenantId: record.tenantId || 'tenant_default',
+        createdBy: record.createdBy || auth?.currentUser?.uid || 'studio_user',
+      };
       const existing = this.getStoredBroadcastRecords();
-      const filtered = existing.filter((r) => r.videoId !== record.videoId);
-      const updated = [record, ...filtered].slice(0, 60);
+      const filtered = existing.filter((r) => r.videoId !== enriched.videoId);
+      const updated = [enriched, ...filtered].slice(0, 60);
       localStorage.setItem(BROADCAST_HISTORY_STORAGE_KEY, JSON.stringify(updated));
 
-      // Persist to Firestore if live db is available
-      if (isFirebaseConfigured && db) {
+      if (isFirebaseConfigured && db && auth?.currentUser) {
         try {
-          await setDoc(doc(db, 'youtube_broadcasts', record.videoId), sanitizeFirestore({
-            ...record,
-            savedAt: new Date().toISOString(),
-          }), { merge: true });
+          await setDoc(
+            doc(db, 'youtube_broadcasts', enriched.videoId),
+            sanitizeFirestore({
+              ...enriched,
+              savedAt: new Date().toISOString(),
+            }),
+            { merge: true }
+          );
         } catch (fsErr) {
           console.warn('Could not persist broadcast record to Firestore:', fsErr);
         }
@@ -780,10 +794,12 @@ export class YouTubeService {
   /**
    * Returns locally cached broadcast records instantly.
    */
-  static getStoredBroadcastRecords(): YouTubeBroadcastRecord[] {
+  static getStoredBroadcastRecords(tenantId?: string): YouTubeBroadcastRecord[] {
     try {
       const data = localStorage.getItem(BROADCAST_HISTORY_STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      const list: YouTubeBroadcastRecord[] = data ? JSON.parse(data) : [];
+      if (!tenantId) return list;
+      return list.filter((r) => !r.tenantId || r.tenantId === tenantId || r.tenantId === 'tenant_default');
     } catch {
       return [];
     }
@@ -792,9 +808,9 @@ export class YouTubeService {
   /**
    * Retrieves all processed broadcast records across Firestore and local storage.
    */
-  static async getAllBroadcastRecords(): Promise<YouTubeBroadcastRecord[]> {
-    const local = this.getStoredBroadcastRecords();
-    if (!isFirebaseConfigured || !db) {
+  static async getAllBroadcastRecords(tenantId?: string): Promise<YouTubeBroadcastRecord[]> {
+    const local = this.getStoredBroadcastRecords(tenantId);
+    if (!isFirebaseConfigured || !db || !auth?.currentUser) {
       return local;
     }
     try {
@@ -803,7 +819,11 @@ export class YouTubeService {
       const remoteRecords: YouTubeBroadcastRecord[] = [];
       snap.forEach((d) => {
         const item = d.data() as YouTubeBroadcastRecord;
-        if (item.videoId) remoteRecords.push(item);
+        if (item.videoId) {
+          if (!tenantId || !item.tenantId || item.tenantId === tenantId || item.tenantId === 'tenant_default') {
+            remoteRecords.push(item);
+          }
+        }
       });
       if (remoteRecords.length > 0) {
         const idMap = new Map<string, YouTubeBroadcastRecord>();
@@ -822,20 +842,23 @@ export class YouTubeService {
   }
 
   /**
-   * Rehydrates persisted intro & outro video blobs from IndexedDB
-   * so user bumpers work seamlessly after browser refreshes.
+   * Rehydrates persisted intro, outro, and animated logo blobs from IndexedDB
+   * so user branding bumpers and animated channel bugs work seamlessly after browser reloads.
    */
   static async getHydratedIntroOutroBlobs(): Promise<{
     introVideoBlob?: Blob;
     outroVideoBlob?: Blob;
+    animatedLogoBlob?: Blob;
   }> {
-    const [introBlob, outroBlob] = await Promise.all([
+    const [introBlob, outroBlob, logoBlob] = await Promise.all([
       loadMediaBlob('youtube_intro_video_blob'),
       loadMediaBlob('youtube_outro_video_blob'),
+      loadMediaBlob('youtube_animated_logo_blob'),
     ]);
     return {
       introVideoBlob: introBlob || undefined,
       outroVideoBlob: outroBlob || undefined,
+      animatedLogoBlob: logoBlob || undefined,
     };
   }
 }

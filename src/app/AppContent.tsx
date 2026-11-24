@@ -72,6 +72,7 @@ import { PlatformSuperAdminPage } from '../pages/admin/PlatformSuperAdminPage';
 import { SupportOperationsPage } from '../pages/admin/SupportOperationsPage';
 import { LaunchReadinessDashboardPage } from '../pages/admin/LaunchReadinessDashboardPage';
 import { CustomerHandoverDocumentationPage } from '../pages/admin/CustomerHandoverDocumentationPage';
+import { WireFeedsAdminPage } from '../pages/admin/WireFeedsAdminPage';
 import { LandingPage } from '../pages/public/LandingPage';
 import { LegalCenterPage, LegalTabKey } from '../pages/public/LegalCenterPage';
 import { AccountDeletionPage } from '../pages/public/AccountDeletionPage';
@@ -335,6 +336,9 @@ export const AppContent: React.FC = () => {
         return <LaunchReadinessDashboardPage />;
       case '/admin/docs':
         return <CustomerHandoverDocumentationPage />;
+      case '/admin/wire-feeds':
+      case '/marketplace/wire-feeds':
+        return <WireFeedsAdminPage />;
       default:
         if (basePath.startsWith('/developer/apps/')) {
           return <DeveloperAppsPage />;

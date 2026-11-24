@@ -1,22 +1,16 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
- * 
+ *
  * NewsPress YouTube News Video Studio
- * National Standard Edition (Professional English UI).
- * Zero-friction autonomous studio:
- * Upload field footage + Enter news manuscript -> Click "Publish to YouTube".
- * 
- * Production Pipeline:
- * 1. Editorial & Guidelines Verification
- * 2. News Manuscript & Broadcast Headlines Formatting
- * 3. Studio Anchor Narration Audio Recording
- * 4. Footage Keyframe Visual Extraction & Broadcast Graphics (Dynamic Thumbnail)
- * 5. High-Definition Broadcast Composition (Footage + Watermark + Narration)
- * 6. Direct Transmission to Official YouTube Channel
+ * Two-step editorial broadcast production suite:
+ *   Step 1: Story & Footage Setup (3-clip sequencing, WYSIWYG overlay monitor, anchor & cover controls)
+ *   Step 2: Pre-Broadcast Review & Publish Desk (editable 60–70w script, 24kHz audio audition + re-record,
+ *           YouTube metadata editor, cover preview, Direct Public Publish OR Broadcast Queue P1/P2/P3)
+ * Plus integrated Broadcast Queue Monitor Drawer & Persistent Broadcast History Archive.
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Youtube,
   Upload,
@@ -32,45 +26,66 @@ import {
   Settings,
   Clock,
   Trash2,
-  Plus,
   ArrowUp,
   ArrowDown,
   Layers,
   Film,
   MapPin,
   Tv,
-  Sparkles,
   Zap,
   Download,
   Loader2,
-  Info,
   Image as ImageIcon,
+  Mic,
+  Volume2,
+  ArrowLeft,
+  ArrowRight,
+  Copy,
+  Check,
+  History,
+  BookOpen,
+  Flame,
+  Sliders,
 } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { YouTubeQueueDrawer } from '../../components/editorial/YouTubeQueueDrawer';
+import { BroadcastHistoryPanel } from '../../components/editorial/BroadcastHistoryPanel';
 import { YouTubeService } from '../../services/youtubeService';
-import { AIVideoEditorialService, PolicyComplianceResult } from '../../services/aiVideoEditorialService';
+import {
+  AIVideoEditorialService,
+  PolicyComplianceResult,
+} from '../../services/aiVideoEditorialService';
 import { ThumbnailGeneratorService } from '../../services/thumbnailGeneratorService';
 import { VideoCompositorService } from '../../services/videoCompositorService';
+import { YouTubeQueueService } from '../../services/youtubeQueueService';
 import { newsSubmissionService } from '../../services/newsSubmissionService';
 import { marketplaceService } from '../../services/marketplaceService';
+import { loadMediaBlob } from '../../utils/mediaBlobStore';
 import { useTenant } from '../../hooks/useTenant';
+import { useAuth } from '../../hooks/useAuth';
 import {
   YouTubeConnectedAccount,
   YouTubeChannelBrandingSettings,
   SUPPORTED_INDIAN_LANGUAGES,
   SupportedIndianLanguage,
   YouTubePublishResult,
+  YouTubeBroadcastRecord,
   NewsVideoClipItem,
+  VOICE_ACTORS,
+  EmotionalNewsStyle,
 } from '../../types/youtube';
+import { YouTubeVideoPriority, PRIORITY_CONFIG } from '../../types/youtubeQueue';
 import { navigateTo } from '../../utils/navigation';
 
 /**
  * Authentic Broadcast Navigation Map Pointer Icon:
- * Circular top with hollow center hole and sharp bottom pointer
+ * Circular top with hollow center hole and sharp bottom pointer.
  */
-export const MapLocationPointerIcon: React.FC<{ className?: string; size?: number }> = ({ className = 'w-4 h-4', size = 20 }) => (
+export const MapLocationPointerIcon: React.FC<{ className?: string; size?: number }> = ({
+  className = 'w-4 h-4',
+  size = 20,
+}) => (
   <svg
     viewBox="0 0 24 24"
     width={size}
@@ -88,18 +103,7 @@ export const MapLocationPointerIcon: React.FC<{ className?: string; size?: numbe
 );
 
 /**
- * Resolves the ideal broadcast display font style for news ticker crawls:
- * - Telugu: Ramabhadra (the gold standard for bold Telugu broadcast tickers)
- * - Other languages: Ramabhadra-like bold, impactful broadcast display fonts:
- *   - Hindi/Marathi/Devanagari: Khand / Mukta (exact broadcast equivalent to Ramabhadra)
- *   - Tamil: Catamaran / Pavanam
- *   - Kannada: Noto Sans Kannada
- *   - Malayalam: Manjari
- *   - Bengali: Hind Siliguri
- *   - Gujarati: Mukta Vaani
- *   - Punjabi: Mukta Mahee
- *   - Odia: Noto Sans Oriya
- *   - English/Universal: Khand / Cinzel / Roboto
+ * Resolves the ideal broadcast display font style for news ticker crawls across Indian scripts.
  */
 export const getBroadcastTickerFont = (
   text: string,
@@ -188,7 +192,6 @@ export const getBroadcastTickerFont = (
     };
   }
 
-  // English / Universal: Khand is a high-impact broadcast display font matching Ramabhadra's boldness
   return {
     fontFamily: '"Khand", "Cinzel", "Roboto", "Segoe UI", sans-serif',
     fontWeight: 600,
@@ -197,1814 +200,2421 @@ export const getBroadcastTickerFont = (
   };
 };
 
+interface PreparedBroadcastPackage {
+  compliance: PolicyComplianceResult;
+  overrideCompliance: boolean;
+  voiceOverScript: string;
+  youtubeTitle: string;
+  youtubeDescription: string;
+  youtubeTagsText: string;
+  audioBlob: Blob;
+  audioUrl: string;
+  audioDurationSec: number;
+  thumbnailBlob: Blob;
+  thumbnailDataUrl: string;
+}
+
+interface NewsroomQuickStory {
+  id: string;
+  headline: string;
+  body: string;
+  location?: string;
+}
+
+const PAN_INDIA_LOCATIONS = [
+  'New Delhi',
+  'Mumbai',
+  'Bengaluru',
+  'Hyderabad',
+  'Chennai',
+  'Kolkata',
+  'Pune',
+  'Ahmedabad',
+  'Jaipur',
+  'Lucknow',
+];
+
+const BADGE_PRESETS = [
+  'BREAKING!',
+  'EXCLUSIVE',
+  'TOP STORY',
+  'SPECIAL REPORT',
+  'HIGH ALERT',
+  'LIVE UPDATE',
+];
+
+const THEME_OPTIONS: Array<{
+  id: 'fire_red' | 'electric_yellow' | 'shock_blue' | 'crimson_dark';
+  label: string;
+  swatch: string;
+}> = [
+  { id: 'fire_red', label: 'Breaking Red', swatch: 'bg-red-600' },
+  { id: 'electric_yellow', label: 'Headline Gold', swatch: 'bg-amber-400' },
+  { id: 'shock_blue', label: 'Broadcast Blue', swatch: 'bg-blue-600' },
+  { id: 'crimson_dark', label: 'Prime Crimson', swatch: 'bg-rose-900' },
+];
+
 export const YouTubeNewsStudioPage: React.FC = () => {
   const { currentTenant } = useTenant();
-  const [settings, setSettings] = useState<YouTubeChannelBrandingSettings>(() => YouTubeService.getSettings());
-  const [account, setAccount] = useState<YouTubeConnectedAccount>(() => YouTubeService.getConnectedAccount());
+  const { user } = useAuth();
 
-  // Form Inputs: 3 Dedicated Sequential Clip Slots (Opening, Main Speech, Conclusion)
+  // Studio top-level navigation & queue drawer
+  const [activeView, setActiveView] = useState<'studio' | 'history'>('studio');
+  const [studioStep, setStudioStep] = useState<1 | 2>(1);
+  const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState<boolean>(false);
+  const [queuePendingCount, setQueuePendingCount] = useState<number>(0);
+  const [historyCount, setHistoryCount] = useState<number>(0);
+  const [historyRefreshSignal, setHistoryRefreshSignal] = useState<number>(0);
+
+  // Synced settings & connected channel
+  const [settings, setSettings] = useState<YouTubeChannelBrandingSettings>(() =>
+    YouTubeService.getSettings()
+  );
+  const [account, setAccount] = useState<YouTubeConnectedAccount>(() =>
+    YouTubeService.getConnectedAccount()
+  );
+  const [hydratedAnimatedLogoUrl, setHydratedAnimatedLogoUrl] = useState<string | null>(null);
+  const animatedLogoUrlRef = useRef<string | null>(null);
+
+  // Quick Studio Overrides (initialized from Channel Settings)
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedIndianLanguage>(
+    settings.defaultLanguage || 'en'
+  );
+  const [voiceActorId, setVoiceActorId] = useState<string>(
+    settings.voiceActorId || 'ravi_shankar'
+  );
+  const [speechRate, setSpeechRate] = useState<number>(settings.speechRate || 1.3);
+  const [emotionalStyle, setEmotionalStyle] = useState<EmotionalNewsStyle>(
+    settings.emotionalStyle || 'emotional_breaking'
+  );
+  const [clipDurationMode, setClipDurationMode] = useState<
+    'bulletin' | '60s' | '120s' | '300s' | 'full'
+  >('full');
+
+  // Step 1 Inputs: 3 Sequential Clip Slots + Manuscript + Location + Ticker
+  const [clips, setClips] = useState<(NewsVideoClipItem | null)[]>([null, null, null]);
+  const clipsRef = useRef<(NewsVideoClipItem | null)[]>([null, null, null]);
+  clipsRef.current = clips;
+
   const [newsText, setNewsText] = useState<string>('');
   const [newsLocation, setNewsLocation] = useState<string>('');
   const [tickerText, setTickerText] = useState<string>('');
-  const [selectedLanguage, setSelectedLanguage] = useState<SupportedIndianLanguage>(settings.defaultLanguage || 'te');
-  const [clips, setClips] = useState<(NewsVideoClipItem | null)[]>([null, null, null]);
-  const [clipDurationMode, setClipDurationMode] = useState<'bulletin' | '60s' | '120s' | '300s' | 'full'>('full');
-
-  // Publishing Pipeline State
-  const [isPublishing, setIsPublishing] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<string>('');
-  const [progressPercent, setProgressPercent] = useState<number>(0);
-  const [complianceWarning, setComplianceWarning] = useState<string | null>(null);
-  const [publishedResult, setPublishedResult] = useState<YouTubePublishResult | null>(null);
-  const [publishedThumbnailUrl, setPublishedThumbnailUrl] = useState<string>('');
-  const [copiedUrl, setCopiedUrl] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [youtubeProcessingState, setYoutubeProcessingState] = useState<'idle' | 'checking' | 'processing' | 'processed' | 'background'>('idle');
   const [isExtractingStory, setIsExtractingStory] = useState<boolean>(false);
+  const [isGeneratingDemoVideo, setIsGeneratingDemoVideo] = useState<boolean>(false);
 
-  // YouTube Thumbnail Studio States
+  // Newsroom Story Loader
+  const [newsroomStories, setNewsroomStories] = useState<NewsroomQuickStory[]>([]);
+  const [showStoryPicker, setShowStoryPicker] = useState<boolean>(false);
+
+  // Cover Thumbnail Studio State
   const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string>('');
-  const [thumbnailCustomBlob, setThumbnailCustomBlob] = useState<Blob | null>(null);
+  const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const [isCustomThumbnailUploaded, setIsCustomThumbnailUploaded] = useState<boolean>(false);
   const [customThumbnailFileName, setCustomThumbnailFileName] = useState<string>('');
   const [thumbnailHeadline, setThumbnailHeadline] = useState<string>('');
   const [thumbnailBadge, setThumbnailBadge] = useState<string>('BREAKING!');
-  const [thumbnailCuriosity, setThumbnailCuriosity] = useState<string>('What Just Happened?');
-  const [thumbnailThemeColor, setThumbnailThemeColor] = useState<'fire_red' | 'electric_yellow' | 'shock_blue' | 'crimson_dark'>('fire_red');
+  const [thumbnailCuriosity, setThumbnailCuriosity] = useState<string>('Full Ground Report');
+  const [thumbnailThemeColor, setThumbnailThemeColor] = useState<
+    'fire_red' | 'electric_yellow' | 'shock_blue' | 'crimson_dark'
+  >('fire_red');
   const [thumbnailKeyframeTimeSec, setThumbnailKeyframeTimeSec] = useState<number>(2.0);
-  const [thumbnailKeyframeBase64, setThumbnailKeyframeBase64] = useState<string>('');
   const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState<boolean>(false);
-  const [thumbnailModelUsed, setThumbnailModelUsed] = useState<string>('');
-  const [thumbnailSource, setThumbnailSource] = useState<'gemini-image-model' | 'broadcast-canvas' | 'custom-upload' | ''>('');
 
-  const LANGUAGE_BADGE_PRESETS: Record<string, string[]> = {
-    te: ['BREAKING!', 'MAJOR UPDATE!', 'SPECIAL REPORT!', 'WHAT HAPPENED?', 'HIGH ALERT!'],
-    hi: ['BREAKING!', 'BIG REVELATION!', 'SPECIAL REPORT!', 'WHAT HAPPENED?'],
-    ta: ['BREAKING!', 'TOP STORY!', 'SPECIAL REPORT!'],
-    kn: ['BREAKING!', 'TOP STORY!', 'SPECIAL REPORT!'],
-    ml: ['BREAKING!', 'SPECIAL REPORT!'],
-    bn: ['BREAKING!', 'SPECIAL REPORT!'],
-    mr: ['BREAKING!', 'SPECIAL REPORT!'],
-    gu: ['BREAKING!', 'SPECIAL REPORT!'],
-    pa: ['BREAKING!', 'SPECIAL REPORT!'],
-    or: ['BREAKING!', 'SPECIAL REPORT!'],
-    en: ['SHOCKING REVELATION!', 'BREAKING REPORT!', 'UNEXPECTED TWIST!', 'WHAT HAPPENED?'],
-  };
+  // Step 1 -> Step 2 Preparation State
+  const [isPreparingPreview, setIsPreparingPreview] = useState<boolean>(false);
+  const [prepareStageMessage, setPrepareStageMessage] = useState<string>('');
+  const [prepareProgress, setPrepareProgress] = useState<number>(0);
+  const [preparedPackage, setPreparedPackage] = useState<PreparedBroadcastPackage | null>(null);
+  const preparedAudioUrlRef = useRef<string | null>(null);
+  const [isRerecordingVoice, setIsRerecordingVoice] = useState<boolean>(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const thumbnailFileInputRef = useRef<HTMLInputElement>(null);
+  // Step 2 Publish / Queue State
+  const [selectedQueuePriority, setSelectedQueuePriority] =
+    useState<YouTubeVideoPriority>('P2_PRIMETIME_BULLETIN');
+  const [isEnqueueing, setIsEnqueueing] = useState<boolean>(false);
+  const [queueSuccessNotice, setQueueSuccessNotice] = useState<string | null>(null);
 
-  useEffect(() => {
-    setSettings(YouTubeService.getSettings());
-    const acc = YouTubeService.getConnectedAccount();
-    setAccount(acc);
+  const [isPublishing, setIsPublishing] = useState<boolean>(false);
+  const [publishStage, setPublishStage] = useState<string>('');
+  const [publishProgress, setPublishProgress] = useState<number>(0);
+  const [publishedResult, setPublishedResult] = useState<YouTubePublishResult | null>(null);
+  const [youtubeProcessingState, setYoutubeProcessingState] = useState<
+    'idle' | 'checking' | 'processing' | 'processed' | 'background'
+  >('idle');
+  const [copiedUrl, setCopiedUrl] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Sync Channel Settings & Connected Account on mount and window focus
+  const syncChannelSettings = useCallback(async () => {
+    const latestSettings = YouTubeService.getSettings();
+    const latestAccount = YouTubeService.getConnectedAccount();
+    setSettings(latestSettings);
+    setAccount(latestAccount);
+
+    try {
+      const animatedBlob = await loadMediaBlob('youtube_animated_logo_blob');
+      if (animatedLogoUrlRef.current) {
+        URL.revokeObjectURL(animatedLogoUrlRef.current);
+        animatedLogoUrlRef.current = null;
+      }
+      if (animatedBlob) {
+        const url = URL.createObjectURL(animatedBlob);
+        animatedLogoUrlRef.current = url;
+        setHydratedAnimatedLogoUrl(url);
+      } else {
+        setHydratedAnimatedLogoUrl(null);
+      }
+    } catch {
+      // Ignore IndexedDB unavailability
+    }
   }, []);
 
-  // Newsroom + Purchased Marketplace stories for zero-friction script loading
-  const newsroomStories = React.useMemo(() => {
-    const tenantId = currentTenant?.tenantId;
-    const own = newsSubmissionService
-      .getArticles(tenantId)
-      .filter((a) => ['approved', 'published', 'marketplace_listed', 'submitted'].includes(a.editorialStatus));
-    const purchased = tenantId
-      ? marketplaceService
-          .getPurchasedNewsForTenant(tenantId)
-          .map((p) => p.article)
-          .filter((a): a is NonNullable<typeof a> => Boolean(a))
-      : [];
-    const seen = new Set<string>();
-    return [...own, ...purchased].filter((a) => {
-      if (seen.has(a.articleId)) return false;
-      seen.add(a.articleId);
-      return true;
-    }).slice(0, 30);
+  useEffect(() => {
+    syncChannelSettings();
+    const handleFocus = () => {
+      syncChannelSettings();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [syncChannelSettings]);
+
+  // Subscribe to Broadcast Queue counts & fetch Broadcast History count
+  useEffect(() => {
+    const unsubscribe = YouTubeQueueService.subscribe(() => {
+      const stats = YouTubeQueueService.getQueueStats(currentTenant?.tenantId);
+      setQueuePendingCount(stats.queuedCount + stats.processingCount);
+      if (stats.publishedCount > 0) {
+        setHistoryRefreshSignal((n) => n + 1);
+      }
+    });
+    return () => unsubscribe();
   }, [currentTenant?.tenantId]);
 
-  // Live state-level news ticker headlines from the newsroom feed (fallback when ticker field is blank)
-  const defaultStateTicker = React.useMemo(() => {
-    return newsSubmissionService.getStateTickerString(currentTenant?.tenantId);
-  }, [currentTenant?.tenantId]);
+  useEffect(() => {
+    YouTubeService.getAllBroadcastRecords(currentTenant?.tenantId)
+      .then((list) => setHistoryCount(list.length))
+      .catch(() => {});
+  }, [currentTenant?.tenantId, historyRefreshSignal]);
 
-  // Active ticker text and typography (Ramabhadra for Telugu, broadcast display for other languages)
-  const activeTickerText = tickerText.trim() || defaultStateTicker;
-  const tickerFont = React.useMemo(() => {
-    return getBroadcastTickerFont(activeTickerText, selectedLanguage);
-  }, [activeTickerText, selectedLanguage]);
-
-  const handleLoadStoryManuscript = (articleId: string) => {
-    if (!articleId) return;
-    const art = newsroomStories.find((a) => a.articleId === articleId);
-    if (!art) return;
-    const combined = [art.headline, art.leadParagraph, art.bodyContent].filter(Boolean).join('\n\n');
-    setNewsText(combined);
-    if (/[\u0C00-\u0C7F]/.test(combined)) {
-      setSelectedLanguage('te');
-    } else if (/[\u0900-\u097F]/.test(combined)) {
-      setSelectedLanguage('hi');
+  // Load recent newsroom / marketplace stories for quick pick
+  useEffect(() => {
+    let active = true;
+    const gathered: NewsroomQuickStory[] = [];
+    try {
+      const subs = newsSubmissionService.getAllArticles(currentTenant?.tenantId || 'tenant_default');
+      for (const item of (subs || []).slice(0, 8)) {
+        gathered.push({
+          id: item.articleId,
+          headline: item.headline,
+          body: [item.headline, item.leadParagraph, item.bodyContent]
+            .filter(Boolean)
+            .join('\n\n'),
+          location: item.district || item.state || '',
+        });
+      }
+    } catch {
+      // Optional story feed
     }
-
-    // Auto-populate reporting location from story metadata or dateline prefix
-    if ((art as any).location) {
-      setNewsLocation((art as any).location);
-    } else {
-      const match = combined.match(/^([^\n:,\-–—]{2,25})\s*[:\-–—]/);
-      if (match && match[1] && !match[1].includes(' ')) {
-        setNewsLocation(match[1].trim());
+    if (gathered.length < 4) {
+      try {
+        const listings = marketplaceService.getListings();
+        for (const listing of (listings || []).slice(0, 6)) {
+          if (!gathered.some((g) => g.headline === listing.title)) {
+            gathered.push({
+              id: listing.listingId,
+              headline: listing.title,
+              body: `${listing.title}\n\n${listing.shortDescription || ''}`,
+              location: listing.district || listing.state || '',
+            });
+          }
+        }
+      } catch {
+        // Optional marketplace feed
       }
     }
-  };
+    if (active) setNewsroomStories(gathered);
+    return () => {
+      active = false;
+    };
+  }, [currentTenant?.tenantId]);
 
-  const activeClips = clips.filter((c): c is NewsVideoClipItem => Boolean(c));
-  const totalFootageDuration = activeClips.reduce((acc, c) => acc + c.durationSec, 0);
+  // Cleanup all created object URLs on unmount
+  useEffect(() => {
+    return () => {
+      clipsRef.current.forEach((c) => {
+        if (c?.previewUrl) URL.revokeObjectURL(c.previewUrl);
+      });
+      if (preparedAudioUrlRef.current) {
+        URL.revokeObjectURL(preparedAudioUrlRef.current);
+      }
+      if (animatedLogoUrlRef.current) {
+        URL.revokeObjectURL(animatedLogoUrlRef.current);
+      }
+    };
+  }, []);
 
-  const formatDuration = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = Math.round(sec % 60);
-    return `${m}m ${s < 10 ? '0' : ''}${s}s`;
-  };
+  const activeClips = clips.filter((c): c is NewsVideoClipItem => c !== null);
+  const totalFootageDuration = activeClips.reduce((acc, c) => acc + (c.durationSec || 0), 0);
+  const activeVoiceActor =
+    VOICE_ACTORS.find((a) => a.id === voiceActorId) || VOICE_ACTORS[0];
 
-  const probeVideoDuration = (file: File): Promise<number> => {
+  const displayTickerText =
+    tickerText.trim() ||
+    newsText
+      .split(/[\n.!?।]+/)
+      .map((s) => s.trim())
+      .find((s) => s.length > 6) ||
+    'BREAKING NEWS BULLETIN // LIVE GROUND REPORT';
+
+  const tickerFont = getBroadcastTickerFont(displayTickerText, selectedLanguage);
+
+  // Measure video duration cleanly with temporary metadata element
+  const measureVideoDuration = (objectUrl: string): Promise<number> => {
     return new Promise((resolve) => {
-      const tempVideo = document.createElement('video');
-      tempVideo.preload = 'metadata';
-      const tempUrl = URL.createObjectURL(file);
-      tempVideo.src = tempUrl;
-      tempVideo.onloadedmetadata = () => {
-        URL.revokeObjectURL(tempUrl);
-        resolve(tempVideo.duration || 15);
+      const v = document.createElement('video');
+      v.preload = 'metadata';
+      v.muted = true;
+      v.onloadedmetadata = () => {
+        const dur = Number.isFinite(v.duration) && v.duration > 0 ? Math.round(v.duration) : 30;
+        v.src = '';
+        resolve(dur);
       };
-      tempVideo.onerror = () => {
-        URL.revokeObjectURL(tempUrl);
-        resolve(15);
-      };
+      v.onerror = () => resolve(30);
+      v.src = objectUrl;
     });
   };
 
-  const handleExtractStoryFromVideo = async (videoFile?: File | Blob) => {
-    const targetFile = videoFile || clips[0]?.file;
-    if (!targetFile) return;
+  // Generate 1280x720 Broadcast Cover cleanly (no stale closure reads)
+  const renderBroadcastCover = useCallback(
+    async (opts?: {
+      clipFile?: File | null;
+      headlineOverride?: string;
+      badgeOverride?: string;
+      curiosityOverride?: string;
+      themeOverride?: 'fire_red' | 'electric_yellow' | 'shock_blue' | 'crimson_dark';
+      keyframeSecOverride?: number;
+      languageOverride?: SupportedIndianLanguage;
+    }): Promise<{ blob: Blob; dataUrl: string } | null> => {
+      const targetClipFile =
+        opts?.clipFile !== undefined ? opts.clipFile : clipsRef.current[0]?.file || activeClips[0]?.file || null;
+      const lang = opts?.languageOverride || selectedLanguage;
+      const defaults = AIVideoEditorialService.getLocalizedDefaultHooks(lang);
+
+      const resolvedHeadline =
+        (opts?.headlineOverride ?? thumbnailHeadline).trim() ||
+        newsText
+          .split(/[\n.!?।]+/)
+          .map((s) => s.trim())
+          .find((s) => s.length > 5)
+          ?.slice(0, 68) ||
+        defaults.headline;
+
+      const resolvedBadge = (opts?.badgeOverride ?? thumbnailBadge).trim() || defaults.badge;
+      const resolvedCuriosity =
+        (opts?.curiosityOverride ?? thumbnailCuriosity).trim() || defaults.curiosity;
+      const resolvedTheme = opts?.themeOverride || thumbnailThemeColor;
+      const resolvedTime = opts?.keyframeSecOverride ?? thumbnailKeyframeTimeSec;
+
+      setIsGeneratingThumbnail(true);
+      try {
+        let keyframeImageUrl: string | undefined;
+        if (targetClipFile) {
+          const tempUrl = URL.createObjectURL(targetClipFile);
+          try {
+            const videoEl = document.createElement('video');
+            videoEl.muted = true;
+            videoEl.playsInline = true;
+            videoEl.preload = 'auto';
+            await new Promise<void>((resolve, reject) => {
+              videoEl.onloadeddata = () => resolve();
+              videoEl.onerror = () => reject(new Error('Could not decode video keyframe'));
+              videoEl.src = tempUrl;
+            });
+            keyframeImageUrl = await ThumbnailGeneratorService.extractFrameAtTimestamp(
+              videoEl,
+              resolvedTime
+            );
+            videoEl.src = '';
+          } catch {
+            // Fall back to studio backdrop gradient
+          } finally {
+            URL.revokeObjectURL(tempUrl);
+          }
+        }
+
+        const result = await ThumbnailGeneratorService.renderThumbnail({
+          keyframeImageUrl,
+          headlineText: resolvedHeadline,
+          badgeText: resolvedBadge,
+          curiosityLine: resolvedCuriosity,
+          themeColor: resolvedTheme,
+          logoDataUrl: settings.watermark.logoDataUrl,
+          channelName: account.channelTitle || settings.watermark.text || 'NEWS 24X7',
+          language: lang,
+        });
+
+        setThumbnailPreviewUrl(result.dataUrl);
+        setThumbnailBlob(result.blob);
+        setIsCustomThumbnailUploaded(false);
+        setCustomThumbnailFileName('');
+        return result;
+      } catch (err: any) {
+        console.error('[Studio] Cover render error:', err);
+        setErrorMessage(err?.message || 'Could not render broadcast cover image.');
+        return null;
+      } finally {
+        setIsGeneratingThumbnail(false);
+      }
+    },
+    [
+      activeClips,
+      account.channelTitle,
+      newsText,
+      selectedLanguage,
+      settings.watermark.logoDataUrl,
+      settings.watermark.text,
+      thumbnailBadge,
+      thumbnailCuriosity,
+      thumbnailHeadline,
+      thumbnailKeyframeTimeSec,
+      thumbnailThemeColor,
+    ]
+  );
+
+  // Upload footage into Slot 0, 1, or 2
+  const handleClipUpload = async (
+    slotIndex: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setErrorMessage(null);
+    const previewUrl = URL.createObjectURL(file);
+    const durationSec = await measureVideoDuration(previewUrl);
+
+    setClips((prev) => {
+      const next = [...prev];
+      const existing = next[slotIndex];
+      if (existing?.previewUrl) {
+        URL.revokeObjectURL(existing.previewUrl);
+      }
+      next[slotIndex] = {
+        id: `clip_${Date.now()}_${slotIndex}`,
+        file,
+        previewUrl,
+        durationSec,
+        sizeBytes: file.size,
+        name: file.name,
+      };
+      return next;
+    });
+
+    // Automatically render a crisp cover preview from Slot 1 if no custom cover uploaded
+    if (slotIndex === 0 && !isCustomThumbnailUploaded) {
+      await renderBroadcastCover({ clipFile: file });
+    }
+  };
+
+  const handleRemoveClip = (slotIndex: number) => {
+    setClips((prev) => {
+      const next = [...prev];
+      const existing = next[slotIndex];
+      if (existing?.previewUrl) {
+        URL.revokeObjectURL(existing.previewUrl);
+      }
+      next[slotIndex] = null;
+      return next;
+    });
+  };
+
+  const handleMoveClip = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex > 2) return;
+    setClips((prev) => {
+      const next = [...prev];
+      const temp = next[fromIndex];
+      next[fromIndex] = next[toIndex];
+      next[toIndex] = temp;
+      return next;
+    });
+  };
+
+  const handleGenerateDemoFootage = async () => {
+    setIsGeneratingDemoVideo(true);
+    setErrorMessage(null);
+    try {
+      const demo = await VideoCompositorService.createSampleLeaderboardVideo('channel', {
+        title: account.channelTitle || settings.watermark.text || 'NewsPress 24x7',
+      });
+      const demoFile = new File([demo.blob], demo.fileName, {
+        type: demo.blob.type || 'video/webm',
+      });
+      const demoDuration = await measureVideoDuration(demo.url);
+      setClips((prev) => {
+        const next = [...prev];
+        if (next[0]?.previewUrl) URL.revokeObjectURL(next[0].previewUrl);
+        next[0] = {
+          id: `clip_demo_${Date.now()}`,
+          file: demoFile,
+          previewUrl: demo.url,
+          durationSec: demoDuration,
+          sizeBytes: demoFile.size,
+          name: demo.fileName,
+        };
+        return next;
+      });
+      if (!isCustomThumbnailUploaded) {
+        await renderBroadcastCover({ clipFile: demoFile });
+      }
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Could not generate sample studio footage.');
+    } finally {
+      setIsGeneratingDemoVideo(false);
+    }
+  };
+
+  // Draft story directly from uploaded video clip
+  const handleDraftStoryFromFootage = async () => {
+    const primaryClip = clips[0] || activeClips[0];
+    if (!primaryClip) {
+      setErrorMessage('Upload at least one video clip before drafting a story from footage.');
+      return;
+    }
+
     setIsExtractingStory(true);
     setErrorMessage(null);
     try {
-      const result = await AIVideoEditorialService.draftStoryFromVideo(targetFile, selectedLanguage);
+      const result = await AIVideoEditorialService.draftStoryFromVideo(
+        primaryClip.file,
+        selectedLanguage
+      );
       if (result.story) {
         setNewsText(result.story);
       }
-      if (result.headline) {
-        setThumbnailHeadline(result.headline);
-      }
-      if (result.location && !newsLocation) {
+      if (result.location && !newsLocation.trim()) {
         setNewsLocation(result.location);
       }
-    } catch (e: any) {
-      console.warn('AI story extraction notice:', e);
+      if (result.headline) {
+        if (!tickerText.trim()) setTickerText(result.headline);
+        if (!thumbnailHeadline.trim()) setThumbnailHeadline(result.headline);
+      }
+    } catch (err: any) {
+      setErrorMessage(
+        err?.message || 'Could not analyze the uploaded footage. You can type the news story directly.'
+      );
     } finally {
       setIsExtractingStory(false);
     }
   };
 
-  const handleSlotUpload = async (slotIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    VideoCompositorService.clearVideoUploadCache();
-    setPublishedResult(null);
-    setErrorMessage(null);
-
-    const next = [...clips];
-    for (let fIdx = 0; fIdx < files.length; fIdx++) {
-      const targetSlot = slotIdx + fIdx;
-      if (targetSlot < 3) {
-        const file = files[fIdx];
-        const dur = await probeVideoDuration(file);
-        next[targetSlot] = {
-          id: `${Date.now()}_slot${targetSlot}`,
-          file,
-          previewUrl: URL.createObjectURL(file),
-          durationSec: dur,
-          sizeBytes: file.size,
-          name: file.name,
-        };
-      }
-    }
-
-    setClips(next);
-    e.target.value = '';
-
-    // Automatically extract news story manuscript from footage if manuscript is empty
-    if (!newsText.trim() && files[0] && slotIdx === 0) {
-      handleExtractStoryFromVideo(files[0]);
-    }
-
-    // Automatically generate thumbnail from footage only if user has not uploaded a custom thumbnail
-    if (!isCustomThumbnailUploaded) {
-      setTimeout(() => {
-        handleGenerateAIThumbnail();
-      }, 600);
-    }
-  };
-
-  const handleRemoveSlot = (slotIdx: number) => {
-    setClips((prev) => {
-      const next = [...prev];
-      next[slotIdx] = null;
-      return next;
-    });
-  };
-
-  const handleReset = () => {
-    VideoCompositorService.clearVideoUploadCache();
-    setClips([null, null, null]);
-    setTickerText('');
-    setPublishedResult(null);
-    setErrorMessage(null);
-    setComplianceWarning(null);
-    setProgressPercent(0);
-    setCurrentStep('');
-    setIsCustomThumbnailUploaded(false);
-    setCustomThumbnailFileName('');
-    setThumbnailCustomBlob(null);
-    setThumbnailPreviewUrl('');
-    setThumbnailSource('');
-  };
-
   const handleCustomThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('Please upload a valid image file (PNG, JPG, WEBP).');
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
       setThumbnailPreviewUrl(dataUrl);
-      setThumbnailCustomBlob(file);
+      setThumbnailBlob(file);
       setIsCustomThumbnailUploaded(true);
       setCustomThumbnailFileName(file.name);
-      setThumbnailSource('custom-upload');
+      if (preparedPackage) {
+        setPreparedPackage({
+          ...preparedPackage,
+          thumbnailBlob: file,
+          thumbnailDataUrl: dataUrl,
+        });
+      }
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
-  };
-
-  const handleRemoveCustomThumbnail = () => {
-    setIsCustomThumbnailUploaded(false);
-    setCustomThumbnailFileName('');
-    setThumbnailCustomBlob(null);
-    setThumbnailPreviewUrl('');
-    setThumbnailSource('');
-    // If video footage is already uploaded, auto-generate thumbnail from footage
-    if (activeClips.some((c) => Boolean(c))) {
-      setTimeout(() => {
-        handleGenerateAIThumbnail();
-      }, 200);
-    }
-  };
-
-  const handleReconnectChannel = async () => {
-    try {
-      setIsPublishing(false);
-      setErrorMessage(null);
-      const acc = await YouTubeService.connectGoogleYouTubeChannel();
-      setAccount(acc);
-    } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to reconnect YouTube channel.');
-    }
-  };
-
-  // 100% Autonomous AI YouTube Thumbnail Generation with Gemini Image Model
-  const handleGenerateAIThumbnail = async () => {
-    // If user uploaded their own custom thumbnail, strictly do not generate AI thumbnail
-    if (isCustomThumbnailUploaded) {
-      return;
-    }
-    try {
-      setIsGeneratingThumbnail(true);
-      setErrorMessage(null);
-
-      let keyframe = thumbnailKeyframeBase64;
-      if (videoRef.current && videoRef.current.videoWidth > 0) {
-        keyframe = await ThumbnailGeneratorService.extractBestFaceKeyframe(videoRef.current, [1.0, 2.5, 4.0]);
-        if (keyframe) {
-          setThumbnailKeyframeBase64(keyframe);
-        }
-      }
-
-      // Auto-extract headline from manuscript if not pre-set
-      let activeHeadline = thumbnailHeadline.trim();
-      if (!activeHeadline && newsText.trim()) {
-        const firstLine = newsText.trim().split('\n')[0].replace(/^([^\n:,\-–—]{2,25})\s*[:\-–—]/, '').trim();
-        if (firstLine) {
-          activeHeadline = firstLine.slice(0, 42);
-        }
-      }
-      if (!activeHeadline) {
-        activeHeadline = 'BREAKING NEWS REPORT';
-      }
-
-      const activeBadge = thumbnailBadge.trim() || 'BREAKING!';
-      const activeCuriosity = thumbnailCuriosity.trim() || 'What Just Happened?';
-
-      setThumbnailHeadline(activeHeadline);
-      setThumbnailBadge(activeBadge);
-      setThumbnailCuriosity(activeCuriosity);
-
-      const result = await ThumbnailGeneratorService.generateAIThumbnail({
-        videoElement: videoRef.current || undefined,
-        keyframeImageUrl: keyframe,
-        headlineText: activeHeadline,
-        badgeText: activeBadge,
-        curiosityLine: activeCuriosity,
-        themeColor: thumbnailThemeColor,
-        logoDataUrl: settings.watermark.logoDataUrl,
-        channelName: account.channelTitle || 'NEWSPRESS 24x7',
-        language: selectedLanguage,
-        preferGeminiImageModel: true,
-      });
-
-      setThumbnailPreviewUrl(result.dataUrl);
-      setThumbnailCustomBlob(result.blob);
-      setThumbnailModelUsed(result.modelUsed);
-      setThumbnailSource(result.source);
-    } catch (err: any) {
-      console.warn('AI Thumbnail Generation error:', err);
-    } finally {
-      setIsGeneratingThumbnail(false);
-    }
   };
 
   const handleDownloadThumbnail = () => {
-    const url = thumbnailPreviewUrl || publishedThumbnailUrl;
+    const url = preparedPackage?.thumbnailDataUrl || thumbnailPreviewUrl;
     if (!url) return;
     const a = document.createElement('a');
     a.href = url;
-    a.download = `youtube_thumbnail_${selectedLanguage}_${Date.now()}.jpg`;
-    document.body.appendChild(a);
+    a.download = `broadcast_cover_${Date.now()}.jpg`;
     a.click();
-    document.body.removeChild(a);
   };
 
-  // Complete Newsroom Broadcast Pipeline
-  const handlePublish = async (forceOverride: boolean | React.MouseEvent = false) => {
-    const isOverride = typeof forceOverride === 'boolean' ? forceOverride : false;
-    if (!account.isConnected) {
-      setErrorMessage(
-        'Your YouTube channel is not connected. Please go to Settings to link your channel before broadcasting.'
-      );
+  // STEP 1 -> STEP 2: Generate Script, Real 24kHz Anchor Narration Audio, Metadata, and Cover
+  const handlePrepareBroadcastPreview = async () => {
+    if (activeClips.length === 0) {
+      setErrorMessage('Please upload at least one field footage clip in Slot 1.');
+      return;
+    }
+    if (!newsText.trim() || newsText.trim().length < 15) {
+      setErrorMessage('Please enter a news story manuscript (at least 15 characters).');
       return;
     }
 
-    if (activeClips.length === 0 || !newsText.trim()) {
-      setErrorMessage('Please upload at least Clip 1 (Opening) and enter the news story manuscript.');
-      return;
-    }
-
-    setIsPublishing(true);
     setErrorMessage(null);
-    setComplianceWarning(null);
+    setQueueSuccessNotice(null);
     setPublishedResult(null);
+    setIsPreparingPreview(true);
+    setPrepareProgress(10);
+    setPrepareStageMessage('Verifying broadcast editorial standards...');
 
-    // Pre-Flight OAuth verification
-    let activeAccessToken = '';
     try {
-      activeAccessToken = await YouTubeService.getValidAccessToken();
-    } catch (authErr: any) {
-      console.warn('YouTube token expired or missing, prompting re-authentication:', authErr.message);
-      setIsPublishing(false);
-      setErrorMessage(
-        'Your YouTube channel session has expired. Please click "Reconnect" below to refresh your broadcast link.'
+      // 1. Editorial compliance check
+      const compliance = await AIVideoEditorialService.verifyEditorialCompliance(newsText);
+
+      setPrepareProgress(32);
+      setPrepareStageMessage('Writing 60–70 word anchor script and YouTube broadcast metadata...');
+
+      // 2. Generate anchor script & metadata
+      const broadcastPkg = await AIVideoEditorialService.generateBroadcastPackage({
+        newsText,
+        language: selectedLanguage,
+        channelName: account.channelTitle || settings.watermark.text || 'NewsPress 24x7',
+        videoClips: activeClips.map((c) => c.file),
+      });
+
+      // Keep cover inputs synchronized with generated hooks if user didn't customize them
+      const coverHeadline = thumbnailHeadline.trim() || broadcastPkg.thumbnailHeadline;
+      const coverBadge = thumbnailBadge.trim() || broadcastPkg.thumbnailBadge;
+      const coverCuriosity = thumbnailCuriosity.trim() || broadcastPkg.thumbnailCuriosityLine;
+      setThumbnailHeadline(coverHeadline);
+      setThumbnailBadge(coverBadge);
+      setThumbnailCuriosity(coverCuriosity);
+
+      setPrepareProgress(60);
+      setPrepareStageMessage(
+        `Recording 24kHz studio narration with ${activeVoiceActor.englishName || activeVoiceActor.name}...`
       );
+
+      // 3. Synthesize real 24kHz anchor WAV narration
+      const voiceOver = await AIVideoEditorialService.synthesizeVoiceOver({
+        scriptText: broadcastPkg.scriptText,
+        language: selectedLanguage,
+        rate: speechRate,
+        gender: activeVoiceActor.gender,
+        voiceActorId: activeVoiceActor.id,
+        emotionalStyle,
+      });
+
+      // 4. Prepare or reuse 1280x720 cover thumbnail
+      setPrepareProgress(84);
+      setPrepareStageMessage('Rendering 1280×720 HD Broadcast Cover...');
+      let finalThumbBlob = thumbnailBlob;
+      let finalThumbUrl = thumbnailPreviewUrl;
+
+      if (!isCustomThumbnailUploaded || !finalThumbBlob || !finalThumbUrl) {
+        const rendered = await renderBroadcastCover({
+          clipFile: activeClips[0].file,
+          headlineOverride: coverHeadline,
+          badgeOverride: coverBadge,
+          curiosityOverride: coverCuriosity,
+          themeOverride: broadcastPkg.thumbnailColorTheme || thumbnailThemeColor,
+          languageOverride: selectedLanguage,
+        });
+        if (rendered) {
+          finalThumbBlob = rendered.blob;
+          finalThumbUrl = rendered.dataUrl;
+        }
+      }
+
+      if (!finalThumbBlob || !finalThumbUrl) {
+        throw new Error('Could not prepare the 1280×720 broadcast cover thumbnail.');
+      }
+
+      // Revoke any previous prepared audio URL
+      if (preparedAudioUrlRef.current) {
+        URL.revokeObjectURL(preparedAudioUrlRef.current);
+      }
+      const audioUrl = URL.createObjectURL(voiceOver.audioBlob);
+      preparedAudioUrlRef.current = audioUrl;
+
+      setPreparedPackage({
+        compliance,
+        overrideCompliance: compliance.isCompliant,
+        voiceOverScript: broadcastPkg.scriptText,
+        youtubeTitle: broadcastPkg.headlineTitle,
+        youtubeDescription: broadcastPkg.youtubeDescription,
+        youtubeTagsText: (broadcastPkg.tags || []).join(', '),
+        audioBlob: voiceOver.audioBlob,
+        audioUrl,
+        audioDurationSec: voiceOver.durationEstimateSec,
+        thumbnailBlob: finalThumbBlob,
+        thumbnailDataUrl: finalThumbUrl,
+      });
+
+      setPrepareProgress(100);
+      setPrepareStageMessage('Broadcast package ready for review.');
+      setStudioStep(2);
+    } catch (err: any) {
+      setErrorMessage(
+        err?.message || 'Failed to prepare broadcast preview. Please check your connection and try again.'
+      );
+    } finally {
+      setIsPreparingPreview(false);
+    }
+  };
+
+  // Re-record only the anchor audio in Step 2 after editing script/voice/rate
+  const handleRerecordVoice = async () => {
+    if (!preparedPackage || !preparedPackage.voiceOverScript.trim()) return;
+    setErrorMessage(null);
+    setIsRerecordingVoice(true);
+    try {
+      const voiceOver = await AIVideoEditorialService.synthesizeVoiceOver({
+        scriptText: preparedPackage.voiceOverScript.trim(),
+        language: selectedLanguage,
+        rate: speechRate,
+        gender: activeVoiceActor.gender,
+        voiceActorId: activeVoiceActor.id,
+        emotionalStyle,
+      });
+
+      if (preparedAudioUrlRef.current) {
+        URL.revokeObjectURL(preparedAudioUrlRef.current);
+      }
+      const nextUrl = URL.createObjectURL(voiceOver.audioBlob);
+      preparedAudioUrlRef.current = nextUrl;
+
+      setPreparedPackage((prev) =>
+        prev
+          ? {
+              ...prev,
+              audioBlob: voiceOver.audioBlob,
+              audioUrl: nextUrl,
+              audioDurationSec: voiceOver.durationEstimateSec,
+            }
+          : null
+      );
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Could not re-record anchor voice narration.');
+    } finally {
+      setIsRerecordingVoice(false);
+    }
+  };
+
+  // Regenerate cover inside Step 2 Review Desk
+  const handleRegenerateReviewCover = async () => {
+    const rendered = await renderBroadcastCover({
+      clipFile: activeClips[0]?.file || null,
+    });
+    if (rendered && preparedPackage) {
+      setPreparedPackage({
+        ...preparedPackage,
+        thumbnailBlob: rendered.blob,
+        thumbnailDataUrl: rendered.dataUrl,
+      });
+    }
+  };
+
+  const parseTagsArray = (tagsText: string): string[] =>
+    tagsText
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+      .slice(0, 20);
+
+  // STEP 2 ACTION A: Add Reviewed Broadcast to Background Queue
+  const handleAddToQueue = async () => {
+    if (!preparedPackage || activeClips.length === 0) return;
+    if (!account.isConnected) {
+      setErrorMessage('Please connect your YouTube Channel in Channel Settings before queueing broadcasts.');
+      return;
+    }
+    if (!preparedPackage.compliance.isCompliant && !preparedPackage.overrideCompliance) {
+      setErrorMessage('Please review and confirm the Editorial Advisory before queueing.');
       return;
     }
 
-    // Pacing Manager for Cloud Studio Mastering
-    const estimatedMasteringSec = Math.max(
-      30,
-      Math.min(180, Math.round((totalFootageDuration || 60) * 0.35) + 15)
-    );
+    setErrorMessage(null);
+    setIsEnqueueing(true);
+    try {
+      const tags = parseTagsArray(preparedPackage.youtubeTagsText);
+      const job = await YouTubeQueueService.enqueueJob({
+        tenantId: currentTenant?.tenantId || 'tenant_default',
+        userId: user?.uid || 'studio_editor',
+        userName: user?.displayName || account.channelTitle || 'Broadcast Desk',
+        title: preparedPackage.youtubeTitle.trim() || 'Breaking News Broadcast',
+        priority: selectedQueuePriority,
+        payload: {
+          newsText,
+          newsLocation: newsLocation.trim(),
+          tickerText: tickerText.trim(),
+          language: selectedLanguage,
+          clipDurationMode,
+          selectedVoiceActorId: activeVoiceActor.id,
+          speechRate,
+          emotionalStyle,
+          activeClipsMeta: activeClips.map((c) => ({ name: c.name, size: c.sizeBytes })),
+          thumbnailTheme: thumbnailThemeColor,
+          reviewedPackage: {
+            headlineTitle: preparedPackage.youtubeTitle.trim(),
+            scriptText: preparedPackage.voiceOverScript.trim(),
+            youtubeDescription: preparedPackage.youtubeDescription.trim(),
+            tags,
+            thumbnailHeadline,
+            thumbnailBadge,
+            thumbnailCuriosityLine: thumbnailCuriosity,
+            thumbnailDataUrl: preparedPackage.thumbnailDataUrl,
+          },
+        },
+        activeClipsFiles: activeClips.map((c) => c.file),
+        thumbnailBlob: preparedPackage.thumbnailBlob,
+        voiceOverBlob: preparedPackage.audioBlob,
+      });
 
-    let masteringInterval: NodeJS.Timeout | null = null;
-    setYoutubeProcessingState('idle');
+      setQueueSuccessNotice(
+        `"${job.title}" added to the Broadcast Queue (${PRIORITY_CONFIG[selectedQueuePriority].labelEnglish}).`
+      );
+      setIsQueueDrawerOpen(true);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to add broadcast to the queue.');
+    } finally {
+      setIsEnqueueing(false);
+    }
+  };
 
-    setProgressPercent(6);
-    setCurrentStep('Reviewing news manuscript against editorial standards...');
+  // STEP 2 ACTION B: Direct Public Publish to YouTube Now
+  const handlePublishPublicNow = async () => {
+    if (!preparedPackage || activeClips.length === 0) return;
+    if (!account.isConnected) {
+      setErrorMessage('Please connect your YouTube Channel in Channel Settings before publishing.');
+      return;
+    }
+    if (!preparedPackage.compliance.isCompliant && !preparedPackage.overrideCompliance) {
+      setErrorMessage('Please review and confirm the Editorial Advisory before publishing.');
+      return;
+    }
+
+    setErrorMessage(null);
+    setQueueSuccessNotice(null);
+    setIsPublishing(true);
+    setPublishProgress(8);
+    setPublishStage('Validating YouTube broadcast authorization...');
 
     try {
-      // Step 1: Legal & Compliance Verification
-      if (!isOverride) {
-        const compliance = await AIVideoEditorialService.verifyEditorialCompliance(newsText);
-        if (!compliance.isCompliant) {
-          setComplianceWarning(compliance.statusMessage || 'The news content flagged an editorial compliance advisory.');
-          setIsPublishing(false);
-          return;
-        }
+      const activeAccessToken = await YouTubeService.getValidAccessToken();
+      if (!activeAccessToken) {
+        throw new Error(
+          'Your YouTube authorization session expired. Please reconnect your channel in Channel Settings.'
+        );
       }
-      setProgressPercent(16);
 
-      // Step 2: News Manuscript & Broadcast Headlines Formatting
-      setCurrentStep('Formatting broadcast news script and headlines from story and video footage...');
-      const editorialPkg = await AIVideoEditorialService.generateBroadcastPackage({
-        newsText: newsText.trim() || 'Latest Breaking News Update',
-        language: selectedLanguage,
-        channelName: account.channelTitle || 'NewsPress Network',
+      setPublishProgress(18);
+      setPublishStage('Loading channel intro, outro, and animated logo assets...');
+      const { introVideoBlob, outroVideoBlob, animatedLogoBlob } =
+        await YouTubeService.getHydratedIntroOutroBlobs();
+
+      const hydratedWatermark = {
+        ...settings.watermark,
+        ...(animatedLogoBlob ? { logoVideoBlob: animatedLogoBlob } : {}),
+      };
+
+      const tags = parseTagsArray(preparedPackage.youtubeTagsText);
+      const clientId = (import.meta as any).env?.VITE_YOUTUBE_CLIENT_ID || '';
+
+      const result = await VideoCompositorService.composeAndPublishDirectToYouTube({
+        tenantId: currentTenant?.tenantId || 'tenant_default',
         videoClips: activeClips.map((c) => c.file),
-      });
-      setProgressPercent(28);
-
-      // Step 3: Studio Anchor Narration Audio Recording
-      const langObj = SUPPORTED_INDIAN_LANGUAGES.find((l) => l.code === selectedLanguage);
-      setCurrentStep(`Recording studio news narration in ${langObj?.name || 'regional language'}...`);
-      const voiceResult = await AIVideoEditorialService.synthesizeVoiceOver({
-        scriptText: editorialPkg.scriptText,
-        language: selectedLanguage,
-        rate: settings.speechRate,
-        gender: settings.voiceGender,
-      });
-      setProgressPercent(40);
-
-      // Step 4: Video Thumbnail (Custom Uploaded or Auto Generated)
-      let finalThumbBlob: Blob;
-      let finalThumbDataUrl: string;
-
-      if (isCustomThumbnailUploaded && thumbnailCustomBlob && thumbnailPreviewUrl) {
-        setCurrentStep('Attaching your custom uploaded thumbnail...');
-        finalThumbBlob = thumbnailCustomBlob;
-        finalThumbDataUrl = thumbnailPreviewUrl;
-      } else {
-        setCurrentStep('Designing broadcast thumbnail from video footage...');
-        let keyframeUrl = thumbnailKeyframeBase64;
-        if (!keyframeUrl && videoRef.current && videoRef.current.videoWidth > 0) {
-          keyframeUrl = await ThumbnailGeneratorService.extractBestFaceKeyframe(videoRef.current, [1, 2.5, 4]);
-        }
-        const thumb = await ThumbnailGeneratorService.generateAIThumbnail({
-          videoElement: videoRef.current || undefined,
-          keyframeImageUrl: keyframeUrl,
-          headlineText: thumbnailHeadline || editorialPkg.thumbnailHeadline,
-          badgeText: thumbnailBadge || editorialPkg.thumbnailBadge,
-          curiosityLine: thumbnailCuriosity || editorialPkg.thumbnailCuriosityLine,
-          themeColor: thumbnailThemeColor || editorialPkg.thumbnailColorTheme || 'fire_red',
-          logoDataUrl: settings.watermark.logoDataUrl,
-          channelName: account.channelTitle || 'NEWSPRESS 24x7',
-          language: selectedLanguage,
-          preferGeminiImageModel: true,
-        });
-        finalThumbBlob = thumb.blob;
-        finalThumbDataUrl = thumb.dataUrl;
-        setThumbnailPreviewUrl(thumb.dataUrl);
-        setThumbnailCustomBlob(thumb.blob);
-      }
-      setPublishedThumbnailUrl(finalThumbDataUrl);
-      setProgressPercent(46);
-
-      // Step 5: Studio Composition & Mastering on Cloud Run
-      setCurrentStep(`Mastering broadcast package (${activeClips.length} sequential clips + bumpers) with 2-tier tickers & watermark...`);
-
-      // Start smooth pacing interval for mastering stage: smoothly climbs from 46% up to 82%
-      masteringInterval = setInterval(() => {
-        setProgressPercent((prev) => {
-          if (prev >= 82) return 82;
-          const step = Math.max(0.4, (82 - prev) / (estimatedMasteringSec * 0.7));
-          return Math.min(82, Math.round(prev + step));
-        });
-      }, 1000);
-
-      const { introVideoBlob, outroVideoBlob } = await YouTubeService.getHydratedIntroOutroBlobs();
-      const broadcastResult = await VideoCompositorService.composeAndPublishDirectToYouTube({
-        mainVideoBlob: activeClips[0]?.file,
-        videoClips: activeClips.map((c) => c.file),
-        voiceOverAudioBlob: voiceResult.audioBlob,
-        voiceScriptText: editorialPkg.scriptText,
-        language: selectedLanguage,
+        mainVideoBlob: activeClips[0].file,
         introVideoBlob,
         outroVideoBlob,
-        introVideoUrl: settings.introVideoUrl,
-        outroVideoUrl: settings.outroVideoUrl,
-        watermarkSettings: settings.watermark,
+        voiceOverAudioBlob: preparedPackage.audioBlob,
+        voiceScriptText: preparedPackage.voiceOverScript.trim(),
+        language: selectedLanguage,
+        watermarkSettings: hydratedWatermark,
         newsLocation: newsLocation.trim(),
-        tickerText: tickerText.trim() || defaultStateTicker,
+        tickerText: displayTickerText,
         clipDurationMode,
-        sourceDuration: totalFootageDuration,
-        thumbnailBlob: finalThumbBlob,
-        channelTitle: account.channelTitle || 'NewsPress 24x7',
-        youtubeTitle: editorialPkg.headlineTitle,
-        youtubeDescription: editorialPkg.youtubeDescription,
-        youtubeTags: editorialPkg.tags,
+        sourceDuration: totalFootageDuration || 30,
+        speechRate,
+        voiceActorId: activeVoiceActor.id,
+        voiceActorGoogleVoice: activeVoiceActor.googleOriginalVoice,
+        emotionalStyle,
+        thumbnailBlob: preparedPackage.thumbnailBlob,
+        youtubeTitle: preparedPackage.youtubeTitle.trim(),
+        youtubeDescription: preparedPackage.youtubeDescription.trim(),
+        youtubeTags: tags,
         youtubePrivacyStatus: 'public',
         youtubeAccessToken: activeAccessToken,
         youtubeRefreshToken: account.refreshToken,
-        youtubeClientId: account.clientId,
-        youtubeClientSecret: account.clientSecret,
-        onProgress: (_p, msg) => {
-          let cleanMsg = msg;
-          if (cleanMsg.includes('Cloud Run') || cleanMsg.includes('FFmpeg') || cleanMsg.includes('Storage')) {
-            cleanMsg = 'Mastering multi-clip broadcast package and finalizing transmission...';
-          }
-          setCurrentStep(cleanMsg);
+        youtubeClientId: clientId,
+        channelTitle: account.channelTitle || settings.watermark.text || 'NewsPress 24x7',
+        onProgress: (pct, msg) => {
+          setPublishProgress(Math.min(92, Math.max(20, pct)));
+          if (msg) setPublishStage(msg);
         },
       });
 
-      if (masteringInterval) {
-        clearInterval(masteringInterval);
-        masteringInterval = null;
-      }
+      // Persist Broadcast History Record immediately
+      setPublishProgress(94);
+      setPublishStage('Saving broadcast record to archive...');
+      const watchUrl = result.youtubeUrl || `https://www.youtube.com/watch?v=${result.videoId}`;
+      const record: YouTubeBroadcastRecord = {
+        videoId: result.videoId,
+        tenantId: currentTenant?.tenantId || 'tenant_default',
+        createdBy: user?.uid || 'studio_editor',
+        youtubeUrl: watchUrl,
+        embedUrl: `https://www.youtube.com/embed/${result.videoId}`,
+        title: preparedPackage.youtubeTitle.trim(),
+        publishedAt: result.publishedAt || new Date().toISOString(),
+        privacyStatus: 'public',
+        thumbnailUrl: preparedPackage.thumbnailDataUrl,
+        newsLocation: newsLocation.trim() || undefined,
+        durationMode: clipDurationMode,
+        language: selectedLanguage,
+        voiceActorId: activeVoiceActor.id,
+        voiceActorName: activeVoiceActor.englishName || activeVoiceActor.name,
+        channelTitle: account.channelTitle || 'Connected Channel',
+        tags,
+        status: 'published',
+        isSdReady: false,
+      };
+      await YouTubeService.saveBroadcastRecord(record);
+      setHistoryRefreshSignal((n) => n + 1);
 
-      // Step 6: Direct Transmission to YouTube Succeeded
-      setProgressPercent(86);
-      setCurrentStep('Delivered to YouTube! Verifying live SD/HD stream processing...');
+      setPublishedResult({
+        videoId: result.videoId,
+        youtubeUrl: watchUrl,
+        embedUrl: `https://www.youtube.com/embed/${result.videoId}`,
+        title: preparedPackage.youtubeTitle.trim(),
+        publishedAt: record.publishedAt,
+        privacyStatus: 'public',
+        thumbnailUploaded: true,
+      });
+
+      setPublishProgress(100);
+      setPublishStage('Published Public on YouTube! Verifying stream readiness...');
       setYoutubeProcessingState('checking');
 
-      // Step 7: Poll YouTube Data API for live processing status (SD transcode ready)
-      const pollStart = Date.now();
-      const maxPollMs = 35000;
-      let isVerifiedSdReady = false;
-
-      while (Date.now() - pollStart < maxPollMs) {
+      // Lightweight non-blocking YouTube SD verification poll (up to 4 checks)
+      let ready = false;
+      for (let i = 0; i < 4; i++) {
+        await new Promise((r) => setTimeout(r, 3500));
         try {
           const ytStatus = await YouTubeService.getVideoProcessingStatus(
-            broadcastResult.videoId,
+            result.videoId,
             activeAccessToken
           );
-          if (ytStatus.isSdReady || ytStatus.uploadStatus === 'processed' || ytStatus.processingStatus === 'succeeded') {
-            isVerifiedSdReady = true;
+          if (ytStatus.isSdReady || ytStatus.isProcessed) {
+            ready = true;
             setYoutubeProcessingState('processed');
             break;
-          } else if (ytStatus.uploadStatus === 'uploaded' || ytStatus.processingStatus === 'processing') {
-            setYoutubeProcessingState('processing');
-            const ytPct = ytStatus.progressPercentage ? ` (${ytStatus.progressPercentage}%)` : '';
-            setCurrentStep(`Processing video on YouTube: preparing SD quality${ytPct}...`);
-            setProgressPercent((prev) => Math.min(98, prev + 2));
           }
-        } catch (pollErr) {
-          console.warn('YouTube processing status poll notice:', pollErr);
+          setYoutubeProcessingState('processing');
+        } catch {
+          break;
         }
-        await new Promise((r) => setTimeout(r, 3000));
       }
-
-      if (!isVerifiedSdReady) {
+      if (!ready) {
         setYoutubeProcessingState('background');
       }
-
-      setProgressPercent(100);
-      setCurrentStep(
-        isVerifiedSdReady
-          ? 'Broadcast Ready! SD video processing completed and ready to watch on YouTube.'
-          : 'Video published successfully to YouTube! Ready to share and watch.'
-      );
-
-      const pubRes: YouTubePublishResult = {
-        videoId: broadcastResult.videoId,
-        youtubeUrl: broadcastResult.youtubeUrl,
-        embedUrl: `https://www.youtube.com/embed/${broadcastResult.videoId}`,
-        title: broadcastResult.title,
-        privacyStatus: 'public',
-        publishedAt: broadcastResult.publishedAt || new Date().toISOString(),
-        thumbnailUploaded: true,
-      };
-      setPublishedResult(pubRes);
     } catch (err: any) {
-      if (masteringInterval) {
-        clearInterval(masteringInterval);
-        masteringInterval = null;
-      }
-      console.error('Publishing failed:', err);
-      setErrorMessage(err?.message || 'An error occurred during video processing or YouTube publishing.');
+      setErrorMessage(
+        err?.message || 'Broadcast upload failed. Verify your YouTube connection and try again.'
+      );
     } finally {
-      if (masteringInterval) {
-        clearInterval(masteringInterval);
-        masteringInterval = null;
-      }
       setIsPublishing(false);
     }
   };
 
+  const handleResetStudio = () => {
+    clipsRef.current.forEach((c) => {
+      if (c?.previewUrl) URL.revokeObjectURL(c.previewUrl);
+    });
+    if (preparedAudioUrlRef.current) {
+      URL.revokeObjectURL(preparedAudioUrlRef.current);
+      preparedAudioUrlRef.current = null;
+    }
+    setClips([null, null, null]);
+    setNewsText('');
+    setNewsLocation('');
+    setTickerText('');
+    setThumbnailPreviewUrl('');
+    setThumbnailBlob(null);
+    setIsCustomThumbnailUploaded(false);
+    setCustomThumbnailFileName('');
+    setThumbnailHeadline('');
+    setPreparedPackage(null);
+    setPublishedResult(null);
+    setYoutubeProcessingState('idle');
+    setQueueSuccessNotice(null);
+    setErrorMessage(null);
+    setStudioStep(1);
+  };
+
+  const handleCopyPublishedUrl = async () => {
+    if (!publishedResult?.youtubeUrl) return;
+    try {
+      await navigator.clipboard.writeText(publishedResult.youtubeUrl);
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch {
+      // Clipboard unavailable
+    }
+  };
+
+  const scriptWordCount = (preparedPackage?.voiceOverScript || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+
+  const estimatedAudioSeconds = Math.max(
+    12,
+    Math.round((scriptWordCount / Math.max(0.8, speechRate)) * 0.48)
+  );
+
+  const activeLogoVideoUrl = hydratedAnimatedLogoUrl || settings.watermark.logoVideoUrl;
+  const hasLogoVisual = Boolean(activeLogoVideoUrl || settings.watermark.logoDataUrl);
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-16 font-sans w-full min-w-0 overflow-x-hidden">
-      {/* Top Header */}
-      <PageHeader
-        title="YouTube News Video Studio"
-        subtitle="Newsroom Broadcast Studio: Submit field footage and news manuscript to produce a complete broadcast package with anchor narration, broadcast graphics, channel watermark, and direct YouTube publication."
-        breadcrumbs={[
-          { label: 'Newsroom', href: '/newsroom/news' },
-          { label: 'YouTube Studio' },
-        ]}
-        actions={
-          <div className="flex items-center gap-2 flex-nowrap shrink-0">
-            {account.isConnected ? (
-              <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-bold shadow-xs">
-                <span className="w-5 h-5 rounded-md bg-red-600 text-white inline-flex items-center justify-center shrink-0 shadow-xs">
-                  <Youtube className="w-3 h-3 text-white" />
-                </span>
-                <span className="truncate max-w-[120px] xs:max-w-[150px] sm:max-w-[200px]">{account.channelTitle || 'Connected Channel'}</span>
-                {account.refreshToken ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-1.5 sm:px-2 py-0.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800 shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Linked
-                  </span>
-                ) : (
-                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 ml-0.5" title="Active session" />
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleReconnectChannel}
-                title="Connect or ReConnect YouTube Channel"
-                className="inline-flex items-center gap-1.5 sm:gap-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 px-3 py-1.5 rounded-full shadow-xs transition cursor-pointer whitespace-nowrap"
-              >
-                <span className="w-5 h-5 rounded-md bg-white/20 text-white inline-flex items-center justify-center shrink-0">
-                  <Youtube className="w-3 h-3" />
-                </span>
-                <span>ReConnect</span>
-              </button>
-            )}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      {/* Top Studio Header Bar */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-start gap-3">
+          <div className="w-11 h-11 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0">
+            <Youtube className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                YouTube News Video Studio
+              </h1>
+              <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                Direct Public Broadcast
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+              Prepare, preview, audition, queue, and publish 1080p news bulletins directly to your connected channel.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Primary View Switcher */}
+          <div className="inline-flex p-1 rounded-xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
             <button
               type="button"
-              onClick={() => navigateTo('/settings?tab=youtube')}
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] hover:bg-[#f1f3f4] dark:hover:bg-[#333537] text-xs font-semibold text-[#3c4043] dark:text-[#e3e3e3] shadow-xs transition cursor-pointer whitespace-nowrap"
+              onClick={() => setActiveView('studio')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                activeView === 'studio'
+                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-2xs'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
             >
-              <span className="w-5 h-5 rounded-md bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#8ab4f8] inline-flex items-center justify-center shrink-0 border border-[#d2e3fc] dark:border-[#1a73e8]">
-                <Settings className="w-3 h-3" />
+              <Tv className="w-3.5 h-3.5 text-red-600" />
+              <span>Production Desk</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveView('history')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                activeView === 'history'
+                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-2xs'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Broadcast History</span>
+              <span className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-[10px] tabular-nums">
+                {historyCount}
               </span>
-              <span>Channel Settings</span>
             </button>
           </div>
-        }
-      />
 
-      {/* Disconnected Notice Banner */}
-      {!account.isConnected && (
-        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
-          <div className="flex flex-row items-start gap-3">
-            <span className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0 border border-amber-300 dark:border-amber-800">
-              <AlertCircle className="w-4 h-4" />
+          {/* Queue Monitor Drawer Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsQueueDrawerOpen(true)}
+            className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Layers className="w-3.5 h-3.5 text-blue-600" />
+            <span>Queue Monitor</span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold tabular-nums ${
+                queuePendingCount > 0
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
+              }`}
+            >
+              {queuePendingCount}
             </span>
-            <div>
-              <p className="font-bold text-sm">YouTube Channel is not connected</p>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
-                Link your official YouTube channel and configure your logo watermark in Settings before broadcasting.
-              </p>
+          </Button>
+
+          {/* Channel Settings Link */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigateTo('/settings')}
+            className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Channel Settings</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Connected Channel Status Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900/60 text-xs">
+        {account.isConnected ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Connected Channel:</span>
+            </span>
+            <span className="font-bold text-neutral-900 dark:text-white">
+              {account.channelTitle}
+            </span>
+            <span className="text-neutral-400">|</span>
+            <span className="text-neutral-600 dark:text-neutral-400">
+              Default Anchor: <strong>{activeVoiceActor.englishName || activeVoiceActor.name}</strong> ({speechRate.toFixed(2)}x)
+            </span>
+            <span className="text-neutral-400">|</span>
+            <span className="text-neutral-600 dark:text-neutral-400">
+              Visibility: <strong className="text-emerald-600 dark:text-emerald-400">Direct Public</strong>
+            </span>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+              <span>
+                No YouTube channel connected yet. You can prepare and preview broadcasts now, then connect your channel to publish.
+              </span>
             </div>
+            <Button
+              size="sm"
+              onClick={() => navigateTo('/settings')}
+              className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer"
+            >
+              Connect Channel
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Global Error / Notice Banners */}
+      {errorMessage && (
+        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-xs text-red-900 dark:text-red-200 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <span className="leading-relaxed font-medium">{errorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorMessage(null)}
+            className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {queueSuccessNotice && (
+        <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-800 text-xs text-blue-900 dark:text-blue-200 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+            <span className="font-semibold">{queueSuccessNotice}</span>
           </div>
           <Button
             size="sm"
-            onClick={() => navigateTo('/settings?tab=youtube')}
-            className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs shrink-0 cursor-pointer"
+            variant="outline"
+            onClick={() => setIsQueueDrawerOpen(true)}
+            className="text-xs cursor-pointer"
           >
-            Configure Channel in Settings &rarr;
+            Open Queue Monitor
           </Button>
         </div>
       )}
 
-      {/* When Video is Published: Show Standardized Showcase Card */}
-      {publishedResult ? (
-        <div className="p-6 sm:p-8 bg-white dark:bg-[#1f1f1f] border border-[#dadce0] dark:border-[#3c4043] shadow-sm rounded-2xl space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#dadce0] dark:border-[#3c4043] pb-5">
-            <div className="flex flex-row items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800 shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                    Live Broadcast Published
-                  </span>
-                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-sans">
-                    Public Broadcast &bull; Official Channel
-                  </span>
-                </div>
-                <h2 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-1 tracking-tight">
-                  Video Published Successfully to YouTube!
-                </h2>
-              </div>
-            </div>
+      {/* MAIN VIEW: BROADCAST HISTORY OR PRODUCTION DESK */}
+      {activeView === 'history' ? (
+        <BroadcastHistoryPanel
+          tenantId={currentTenant?.tenantId}
+          refreshSignal={historyRefreshSignal}
+          onCreateNew={() => {
+            setActiveView('studio');
+            setStudioStep(1);
+          }}
+        />
+      ) : (
+        <div className="space-y-6">
+          {/* Two-Step Production Stepper */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setStudioStep(1)}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                studioStep === 1
+                  ? 'border-red-600 bg-red-50/70 dark:bg-red-950/30 text-red-700 dark:text-red-300'
+                  : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300'
+              }`}
+            >
+              <span
+                className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                  studioStep === 1
+                    ? 'bg-red-600 text-white'
+                    : 'bg-emerald-600 text-white'
+                }`}
+              >
+                {studioStep > 1 ? <Check className="w-3.5 h-3.5" /> : '1'}
+              </span>
+              <span>Step 1: Story &amp; Footage Setup</span>
+            </button>
+
+            <div className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
 
             <button
               type="button"
-              onClick={handleReset}
-              className="bg-[#1a73e8] hover:bg-[#1557b0] text-white font-semibold text-xs px-4 py-2 rounded-full shadow-xs inline-flex flex-row items-center gap-2 cursor-pointer transition whitespace-nowrap"
+              disabled={!preparedPackage}
+              onClick={() => {
+                if (preparedPackage) setStudioStep(2);
+              }}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-bold transition ${
+                studioStep === 2
+                  ? 'border-red-600 bg-red-50/70 dark:bg-red-950/30 text-red-700 dark:text-red-300 cursor-pointer'
+                  : preparedPackage
+                  ? 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 cursor-pointer'
+                  : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/40 text-neutral-400 cursor-not-allowed'
+              }`}
             >
-              <span className="w-4 h-4 rounded-md bg-white/20 text-white inline-flex items-center justify-center shrink-0">
-                <RotateCw className="w-3 h-3" />
+              <span
+                className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                  studioStep === 2
+                    ? 'bg-red-600 text-white'
+                    : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-500'
+                }`}
+              >
+                2
               </span>
-              <span>+ Broadcast Another News Story</span>
+              <span>Step 2: Pre-Broadcast Review &amp; Publish</span>
             </button>
           </div>
 
-          {/* Video Preview & Details Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-7 space-y-3">
-              <div className="bg-black rounded-xl overflow-hidden shadow-sm border border-[#dadce0] dark:border-[#3c4043] aspect-video relative">
-                {publishedResult.embedUrl ? (
-                  <iframe
-                    src={publishedResult.embedUrl}
-                    title={publishedResult.title}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : publishedThumbnailUrl ? (
-                  <img
-                    src={publishedThumbnailUrl}
-                    alt={publishedResult.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : null}
-              </div>
+          {/* ================================================================ */}
+          {/* STEP 1: STORY & FOOTAGE SETUP                                    */}
+          {/* ================================================================ */}
+          {studioStep === 1 && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column (7 cols): Footage Monitor + 3 Clip Slots + Cover Studio */}
+              <div className="lg:col-span-7 space-y-6">
+                {/* 1A. Live 16:9 Broadcast Monitor & 3-Slot Footage Sequence */}
+                <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600">
+                        <Film className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                          Broadcast Monitor &amp; Footage Sequence
+                        </h2>
+                        <p className="text-[11px] text-neutral-500">
+                          Up to 3 sequential clips stitched in 1080p with your Channel Settings watermark &amp; logo.
+                        </p>
+                      </div>
+                    </div>
 
-              {youtubeProcessingState === 'processing' && (
-                <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-800 dark:text-amber-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
-                  <span className="font-medium">
-                    Processing video stream on YouTube (SD/HD). Player will become available for broadcast in a few moments.
-                  </span>
-                </div>
-              )}
-              {youtubeProcessingState === 'processed' && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="font-semibold">
-                    YouTube broadcast verified! Video stream is live and ready for high-definition playback.
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="lg:col-span-5 space-y-4">
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
-                  Broadcast Headline
-                </span>
-                <h3 className="text-base font-bold text-[#202124] dark:text-[#f2f2f2] mt-1 leading-snug">
-                  {publishedResult.title || (newsText.trim() ? newsText.split('\n')[0] : 'BREAKING NEWS • SPECIAL REPORT')}
-                </h3>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#f8fafd] dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] space-y-2.5 text-xs">
-                <div className="flex justify-between items-center text-[#3c4043] dark:text-[#e3e3e3]">
-                  <span className="text-[#5f6368] dark:text-[#8e918f]">Channel</span>
-                  <span className="font-bold text-red-600 dark:text-red-400">{account.channelTitle || 'Alfa News Service'}</span>
-                </div>
-                <div className="flex justify-between items-center text-[#3c4043] dark:text-[#e3e3e3]">
-                  <span className="text-[#5f6368] dark:text-[#8e918f]">Broadcast ID</span>
-                  <span className="font-mono text-[#1a73e8] dark:text-[#8ab4f8] font-bold">{publishedResult.videoId}</span>
-                </div>
-                <div className="flex justify-between items-center text-[#3c4043] dark:text-[#e3e3e3]">
-                  <span className="text-[#5f6368] dark:text-[#8e918f]">Broadcast Audio</span>
-                  <span className="font-semibold text-[#202124] dark:text-[#f2f2f2]">Studio Master Narration &bull; 24kHz HD</span>
-                </div>
-                <div className="flex justify-between items-center text-[#3c4043] dark:text-[#e3e3e3]">
-                  <span className="text-[#5f6368] dark:text-[#8e918f]">Distribution</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase">Public Broadcast</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch gap-2.5 pt-2">
-                <a
-                  href={publishedResult.youtubeUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 inline-flex flex-row items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs py-2.5 px-5 rounded-full shadow-xs transition cursor-pointer"
-                >
-                  <Youtube className="w-4 h-4 text-white" />
-                  <span>Watch on YouTube</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (publishedResult.youtubeUrl) {
-                      navigator.clipboard.writeText(publishedResult.youtubeUrl);
-                      setCopiedUrl(true);
-                      setTimeout(() => setCopiedUrl(false), 2000);
-                    }
-                  }}
-                  className="inline-flex flex-row items-center justify-center gap-1.5 border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] hover:bg-[#f1f3f4] text-[#1a73e8] dark:text-[#8ab4f8] text-xs py-2.5 px-4 font-semibold rounded-full shadow-xs transition cursor-pointer"
-                >
-                  <span>{copiedUrl ? 'Copied Link!' : 'Copy Video Link'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Compliance Advisory */}
-          {complianceWarning && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-900 dark:text-amber-200 text-xs shadow-xs space-y-3">
-              <div className="flex flex-row items-start gap-3">
-                <span className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-600 flex items-center justify-center shrink-0 border border-amber-300 dark:border-amber-800">
-                  <AlertCircle className="w-4 h-4" />
-                </span>
-                <div className="space-y-2 flex-1">
-                  <div>
-                    <p className="font-bold text-sm text-amber-800 dark:text-amber-300">Editorial Review Advisory</p>
-                    <p className="font-medium text-amber-900/90 dark:text-amber-200/90 mt-1 leading-relaxed">{complianceWarning}</p>
-                  </div>
-                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
-                    As a news editor, you may proceed with the broadcast under journalistic reporting standards if this covers legitimate public interest statements.
-                  </p>
-                  <div className="pt-2 flex flex-row items-center gap-3 flex-wrap">
-                    <Button
-                      size="sm"
-                      onClick={() => handlePublish(true)}
-                      className="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs px-4 py-2 rounded-full shadow-xs cursor-pointer flex flex-row items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Proceed with Editorial Approval &rarr;</span>
-                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setComplianceWarning(null)}
-                      className="text-xs text-neutral-700 dark:text-neutral-300 border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100"
+                      onClick={handleGenerateDemoFootage}
+                      disabled={isGeneratingDemoVideo}
+                      className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                     >
-                      Edit Story Manuscript
+                      {isGeneratingDemoVideo ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Video className="w-3.5 h-3.5 text-red-600" />
+                          <span>Load Sample Clip</span>
+                        </>
+                      )}
                     </Button>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* Error Alert Card */}
-          {errorMessage && (
-            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/40 text-red-800 dark:text-red-200 text-xs space-y-3">
-              <div className="flex flex-row items-start gap-3">
-                <span className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-950 text-red-600 flex items-center justify-center shrink-0 border border-red-300 dark:border-red-800">
-                  <AlertCircle className="w-4 h-4" />
-                </span>
-                <div className="space-y-2 flex-1">
-                  <span className="font-medium leading-relaxed block">{errorMessage}</span>
-                  {(errorMessage.includes('expired') || errorMessage.includes('invalid authentication') || errorMessage.includes('OAuth') || errorMessage.includes('401')) && (
-                    <div className="pt-2">
-                      <Button
-                        size="sm"
-                        onClick={handleReconnectChannel}
-                        className="bg-red-600 hover:bg-red-500 text-white font-medium text-xs px-4 py-2 rounded-full shadow-xs cursor-pointer flex flex-row items-center gap-1.5"
+                  {/* Accurate 16:9 WYSIWYG Broadcast Frame */}
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-neutral-950 border border-neutral-800 select-none">
+                    {clips[0] ? (
+                      <video
+                        key={clips[0].previewUrl}
+                        src={clips[0].previewUrl}
+                        controls
+                        muted
+                        playsInline
+                        className="w-full h-full object-contain bg-black"
+                      />
+                    ) : (
+                      <label className="w-full h-full flex flex-col items-center justify-center gap-2 cursor-pointer text-neutral-400 hover:text-white transition p-6 text-center">
+                        <Upload className="w-8 h-8 text-red-500" />
+                        <span className="text-sm font-bold text-neutral-200">
+                          Upload Primary Field Footage (Slot 1)
+                        </span>
+                        <span className="text-xs text-neutral-400">
+                          MP4, MOV, or WebM &bull; Landscape 16:9 recommended
+                        </span>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => handleClipUpload(0, e)}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+
+                    {/* WYSIWYG Watermark Text Overlay (Matches exact Channel Settings X/Y/Scale/Opacity) */}
+                    {settings.watermark.text && (
+                      <div
+                        className="absolute pointer-events-none text-center"
+                        style={{
+                          left: `${settings.watermark.xPercent ?? 50}%`,
+                          top: `${settings.watermark.yPercent ?? 50}%`,
+                          transform: 'translate(-50%, -50%)',
+                          opacity: (settings.watermark.opacityPercent ?? 85) / 100,
+                          maxWidth: '80%',
+                        }}
                       >
-                        <Youtube className="w-4 h-4" />
-                        <span>Reconnect YouTube Channel &rarr;</span>
-                      </Button>
+                        <div
+                          className="font-black tracking-wider text-white uppercase"
+                          style={{
+                            fontSize: `calc(9px + ${(settings.watermark.scalePercent || 18) * 0.55}px)`,
+                            textShadow: '0 2px 6px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.6)',
+                          }}
+                        >
+                          {settings.watermark.text}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* WYSIWYG Channel Logo Overlay (Matches exact Channel Settings logoXPercent/logoYPercent) */}
+                    {hasLogoVisual && (
+                      <div
+                        className="absolute pointer-events-none"
+                        style={{
+                          left: `${settings.watermark.logoXPercent ?? 88}%`,
+                          top: `${settings.watermark.logoYPercent ?? 8}%`,
+                          transform: 'translate(-50%, -50%)',
+                          opacity: (settings.watermark.logoOpacityPercent ?? 90) / 100,
+                          width: `${(settings.watermark.logoScalePercent || 18) * 1.3}%`,
+                          maxWidth: '96px',
+                        }}
+                      >
+                        {settings.watermark.logoFormat === 'video' && activeLogoVideoUrl ? (
+                          <video
+                            src={activeLogoVideoUrl}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="w-full h-auto object-contain drop-shadow-lg"
+                          />
+                        ) : (
+                          <img
+                            src={settings.watermark.logoDataUrl}
+                            alt="Channel Logo"
+                            className="w-full h-auto object-contain drop-shadow-lg"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Reporting Location Badge */}
+                    {newsLocation.trim() && (
+                      <div className="absolute top-3 left-3 pointer-events-none inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-600/95 text-white text-[11px] font-bold shadow-md">
+                        <MapLocationPointerIcon className="w-3.5 h-3.5 text-white" size={14} />
+                        <span className="uppercase tracking-wide">{newsLocation.trim()}</span>
+                      </div>
+                    )}
+
+                    {/* Bottom 2-Tier News Ticker Preview */}
+                    <div className="absolute bottom-0 inset-x-0 pointer-events-none">
+                      <div className="bg-red-700/95 text-white px-3 py-1.5 flex items-center gap-2.5 border-t border-red-400/50">
+                        <span className="px-1.5 py-0.5 rounded bg-white text-red-700 text-[9px] font-black tracking-wider shrink-0">
+                          BREAKING
+                        </span>
+                        <span
+                          className="text-xs sm:text-sm truncate"
+                          style={{
+                            fontFamily: tickerFont.fontFamily,
+                            fontWeight: tickerFont.fontWeight,
+                          }}
+                        >
+                          {displayTickerText}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Main Production Broadcast Card */}
-          <Card className="p-3.5 sm:p-6 lg:p-8 space-y-6 shadow-sm rounded-2xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#1f1f1f]">
-            {/* Input 1: Field Video Footage (3 Dedicated Sequential Slots) */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 border border-red-200 dark:border-red-800 mt-0.5">
-                    <Video className="w-4 h-4" />
-                  </span>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
-                      1. Field News Footage
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
-                      (3 Sequential Clip Slots &bull; Up to 10 Min Max)
-                    </p>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium">
-                    {activeClips.length}/3 Clips Added
-                  </span>
-                  {activeClips.length > 0 && (
-                    <span className={`px-2 py-0.5 rounded-full font-semibold ${
-                      totalFootageDuration > 600
-                        ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300'
-                        : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200'
-                    }`}>
-                      Total: {formatDuration(totalFootageDuration)} {totalFootageDuration > 600 ? '(Trimmed to 10m)' : '(Within 10m Cap)'}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 3 Dedicated Video Upload Slots Grid (Compact Sizing) */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  {
-                    idx: 0,
-                    title: 'Clip 1: Opening Intro',
-                    sub: 'Event Opening / Incident Scene',
-                    required: true,
-                  },
-                  {
-                    idx: 1,
-                    title: 'Clip 2: Main Speech',
-                    sub: 'Key Statement / Public Address',
-                    required: false,
-                  },
-                  {
-                    idx: 2,
-                    title: 'Clip 3: Conclusion',
-                    sub: 'Audience Reaction / Closing',
-                    required: false,
-                  },
-                ].map((slot) => {
-                  const clip = clips[slot.idx];
-                  return (
-                    <div
-                      key={slot.idx}
-                      className={`rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between transition-all ${
-                        clip
-                          ? 'bg-blue-50/40 dark:bg-blue-950/20 border-[#1a73e8]/70 shadow-xs'
-                          : 'bg-[#f8fafd] dark:bg-[#1f1f1f] border-dashed border-[#dadce0] dark:border-[#444746] hover:border-[#1a73e8]'
-                      }`}
-                    >
-                      <div>
-                        {/* Slot Header */}
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="flex items-center gap-1.5 min-w-0">
-                            <span className={`w-4.5 h-4.5 rounded-md font-bold text-[10px] flex items-center justify-center shrink-0 ${
-                              clip ? 'bg-[#1a73e8] text-white' : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                            }`}>
-                              #{slot.idx + 1}
-                            </span>
-                            <span className="font-bold text-xs text-[#202124] dark:text-[#f2f2f2] truncate">
+                  {/* 3 Sequential Footage Clip Slots */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { index: 0, title: 'Slot 1 • Opening Clip', required: true },
+                      { index: 1, title: 'Slot 2 • Main Visuals', required: false },
+                      { index: 2, title: 'Slot 3 • Closing Shot', required: false },
+                    ].map((slot) => {
+                      const clip = clips[slot.index];
+                      return (
+                        <div
+                          key={slot.index}
+                          className={`p-3 rounded-xl border text-xs space-y-2 ${
+                            clip
+                              ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20'
+                              : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/40'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-bold text-neutral-800 dark:text-neutral-200 truncate">
                               {slot.title}
                             </span>
-                          </span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold uppercase ${
-                            slot.required
-                              ? 'bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400 border border-red-200 dark:border-red-800'
-                              : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'
-                          }`}>
-                            {slot.required ? 'Required' : 'Optional'}
-                          </span>
-                        </div>
-
-                        {/* Slot Body: Upload Box or Video Player Preview */}
-                        {clip ? (
-                          <div className="space-y-1.5">
-                            <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-[#dadce0] dark:border-[#3c4043] group">
-                              <video
-                                ref={slot.idx === 0 ? videoRef : undefined}
-                                src={clip.previewUrl}
-                                controls
-                                className="w-full h-full object-contain"
-                              />
-
-                              {/* Live TV Watermark, Location Badge & Two-Tier Ticker Overlay on Slot 1 Player */}
-                              {slot.idx === 0 && (
-                                <>
-                                  {/* Top-Right: Channel Watermark Logo */}
-                                  <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none drop-shadow-md">
-                                    {settings.watermark.logoDataUrl ? (
-                                      <img
-                                        src={settings.watermark.logoDataUrl}
-                                        alt="Channel Logo"
-                                        className="h-7 w-auto object-contain opacity-90"
-                                      />
-                                    ) : (
-                                      <div className="bg-[#1e1b4b]/90 border border-amber-400 text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wider shadow-sm flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                        <span>{(account.channelTitle || 'NEWS 24X7').slice(0, 16)}</span>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* Top-Left: TV News Reporting Location Badge */}
-                                  {newsLocation.trim() && (
-                                    <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none flex items-center gap-1 bg-[#1e293b]/90 border border-amber-400/80 px-2 py-0.5 rounded text-[10px] text-white font-medium shadow-md">
-                                      <MapPin className="w-3 h-3 text-red-400" />
-                                      <span>{newsLocation.trim()}</span>
-                                    </div>
-                                  )}
-
-                                  {/* Bottom Two-Tier TV News Tickers */}
-                                  <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none flex flex-col shadow-lg overflow-hidden">
-                                    {/* Tier 2: Headlines Strap (Upper Bar) */}
-                                    <div className="h-5.5 bg-gradient-to-r from-[#061738] via-[#1e3a8a] to-[#071530] border-t border-amber-400/80 border-b border-[#38bdf8]/60 flex items-center px-2">
-                                      <div className="bg-[#0f172a] px-1.5 py-0.2 rounded text-[8.5px] text-[#38bdf8] mr-2 shrink-0 border-r border-[#38bdf8]/80 uppercase tracking-wider flex items-center gap-1 font-bold">
-                                        <span className="w-1 h-1 rounded-full bg-[#38bdf8] animate-ping" />
-                                        <span>HEADLINES</span>
-                                      </div>
-                                      <div
-                                        className="text-white truncate drop-shadow-md leading-normal text-[10px] font-medium"
-                                        style={{
-                                          fontFamily: tickerFont.fontFamily,
-                                        }}
-                                      >
-                                        {thumbnailHeadline.trim() || activeTickerText.split('✦')[0]?.trim() || 'TODAY BREAKING HEADLINES'}
-                                      </div>
-                                    </div>
-
-                                    {/* Tier 1: Continuous Scrolling Crawler (Lower Bar) */}
-                                    <div className="h-6.5 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] border-t border-amber-400 flex items-center px-2 overflow-hidden shadow-inner">
-                                      <div
-                                        className="bg-[#450a0a] px-1.5 py-0.5 rounded text-[9px] text-amber-300 mr-2 shrink-0 border-r border-amber-400/80 uppercase tracking-wider flex items-center gap-1 font-normal z-20"
-                                        style={{
-                                          fontFamily: tickerFont.isTelugu
-                                            ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
-                                            : '"Khand", "Cinzel", "Roboto", sans-serif',
-                                          fontWeight: tickerFont.isTelugu ? 400 : 700,
-                                        }}
-                                      >
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                                        <span>BREAKING NEWS</span>
-                                      </div>
-                                      <div className="flex-1 overflow-hidden relative flex items-center">
-                                        <div
-                                          className="np-ticker-track text-white drop-shadow-md tracking-wide cursor-default whitespace-nowrap"
-                                          style={{
-                                            fontFamily: tickerFont.fontFamily,
-                                            fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
-                                            fontSize: tickerFont.isTelugu ? '12px' : '10.5px',
-                                          }}
-                                        >
-                                          <span className="pr-12 inline-block">{activeTickerText}</span>
-                                          <span className="pr-12 inline-block">{activeTickerText}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-[#202124] dark:text-[#f2f2f2] truncate font-medium">
-                              {clip.name}
-                            </div>
-                            <div className="flex justify-between items-center text-[10px] text-[#5f6368] dark:text-[#8e918f]">
-                              <span className="font-semibold text-[#1a73e8] dark:text-[#8ab4f8]">
-                                Duration: {formatDuration(clip.durationSec)}
-                              </span>
-                              <span>{(clip.sizeBytes / (1024 * 1024)).toFixed(1)} MB</span>
-                            </div>
+                            {slot.required && (
+                              <span className="text-[10px] font-semibold text-red-600">Required</span>
+                            )}
                           </div>
-                        ) : (
-                          <label className="min-h-[84px] sm:min-h-[92px] rounded-lg border-2 border-dashed border-[#dadce0] dark:border-[#444746] flex flex-col items-center justify-center cursor-pointer hover:border-[#1a73e8] hover:bg-white dark:hover:bg-[#28292a] py-2 px-2 transition group text-center">
-                            <div className="w-7 h-7 rounded-full bg-[#f1f3f4] dark:bg-[#28292a] text-[#5f6368] group-hover:text-[#1a73e8] group-hover:bg-[#e8f0fe] transition flex items-center justify-center mb-1">
-                              <Upload className="w-3.5 h-3.5" />
+
+                          {clip ? (
+                            <div className="space-y-2">
+                              <div className="text-[11px] text-neutral-600 dark:text-neutral-300 font-mono truncate">
+                                {clip.name}
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">
+                                  {clip.durationSec}s
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  {slot.index > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveClip(slot.index, slot.index - 1)}
+                                      className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 cursor-pointer"
+                                      title="Move Earlier"
+                                    >
+                                      <ArrowUp className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  {slot.index < 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMoveClip(slot.index, slot.index + 1)}
+                                      className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 cursor-pointer"
+                                      title="Move Later"
+                                    >
+                                      <ArrowDown className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveClip(slot.index)}
+                                    className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-950/60 text-red-500 cursor-pointer"
+                                    title="Remove Clip"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                            <span className="font-semibold text-xs text-[#202124] dark:text-[#f2f2f2]">
-                              {slot.idx === 0 ? 'Upload Clip 1' : `+ Add Clip ${slot.idx + 1}`}
-                            </span>
-                            <span className="text-[9.5px] text-[#5f6368] dark:text-[#8e918f] mt-0.5 leading-tight">
-                              {slot.sub}
-                            </span>
-                            <input
-                              type="file"
-                              accept="video/mp4,video/webm,video/quicktime"
-                              multiple
-                              onChange={(e) => handleSlotUpload(slot.idx, e)}
-                              className="hidden"
-                            />
-                          </label>
+                          ) : (
+                            <label className="block py-2.5 px-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-red-500 text-center cursor-pointer transition text-[11px] font-semibold text-neutral-600 dark:text-neutral-400">
+                              <Upload className="w-3.5 h-3.5 mx-auto mb-1 text-neutral-400" />
+                              <span>Select Video</span>
+                              <input
+                                type="file"
+                                accept="video/*"
+                                onChange={(e) => handleClipUpload(slot.index, e)}
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                {/* 1B. Broadcast Cover Studio (1280x720 Thumbnail) */}
+                <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600">
+                        <ImageIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                          1280×720 Broadcast Cover Studio
+                        </h2>
+                        <p className="text-[11px] text-neutral-500">
+                          Instant HD keyframe cover with lower-third graphics, or upload your custom artwork.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer inline-flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload Custom</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleCustomThumbnailUpload}
+                          className="hidden"
+                        />
+                      </label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => renderBroadcastCover()}
+                        disabled={isGeneratingThumbnail}
+                        className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <RotateCw
+                          className={`w-3.5 h-3.5 ${isGeneratingThumbnail ? 'animate-spin' : ''}`}
+                        />
+                        <span>Render Cover</span>
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                    {/* Cover Preview */}
+                    <div className="md:col-span-6 space-y-2">
+                      <div className="aspect-video rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-950 flex items-center justify-center relative">
+                        {thumbnailPreviewUrl ? (
+                          <img
+                            src={thumbnailPreviewUrl}
+                            alt="Broadcast Cover Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-center p-4 text-neutral-500 space-y-1">
+                            <ImageIcon className="w-7 h-7 mx-auto opacity-50" />
+                            <p className="text-xs font-medium">
+                              Cover auto-renders from Slot 1 footage or during Preview
+                            </p>
+                          </div>
                         )}
                       </div>
+                      {customThumbnailFileName && (
+                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
+                          Custom Cover Active: {customThumbnailFileName}
+                        </p>
+                      )}
+                    </div>
 
-                      {/* Slot Footer Controls */}
-                      {clip && (
-                        <div className="pt-1.5 border-t border-[#dadce0]/70 dark:border-[#444746]/70 mt-1.5 flex items-center justify-between">
-                          <label className="text-[10.5px] text-[#1a73e8] dark:text-[#8ab4f8] hover:underline cursor-pointer font-semibold">
-                            Change File
-                            <input
-                              type="file"
-                              accept="video/mp4,video/webm,video/quicktime"
-                              onChange={(e) => handleSlotUpload(slot.idx, e)}
-                              className="hidden"
-                            />
+                    {/* Cover Graphics Controls */}
+                    <div className="md:col-span-6 space-y-3 text-xs">
+                      <div>
+                        <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                          Cover Headline
+                        </label>
+                        <input
+                          type="text"
+                          value={thumbnailHeadline}
+                          onChange={(e) => setThumbnailHeadline(e.target.value)}
+                          placeholder="Auto-filled from story if left blank"
+                          className="w-full px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                            Badge Stamp
                           </label>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveSlot(slot.idx)}
-                            className="text-[10.5px] text-red-600 dark:text-red-400 hover:underline cursor-pointer flex items-center gap-1 font-medium"
+                          <select
+                            value={thumbnailBadge}
+                            onChange={(e) => setThumbnailBadge(e.target.value)}
+                            className="w-full px-2.5 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                           >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Remove</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Broadcast Package Duration Selector & Merge Flow */}
-              <div className="p-3.5 bg-[#f8fafd] dark:bg-[#28292a] rounded-xl border border-[#dadce0] dark:border-[#444746] space-y-2.5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                  <span className="text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] flex flex-row items-center gap-2">
-                    <span className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800">
-                      <Clock className="w-3 h-3" />
-                    </span>
-                    <span>Broadcast Target Duration</span>
-                  </span>
-                  <span className="text-[11px] font-medium text-[#5f6368] dark:text-[#8e918f]">
-                    {activeClips.length > 0 ? (
-                      <span>Sequence: {activeClips.map((_, i) => `Clip #${i + 1}`).join(' ➔ ')}</span>
-                    ) : (
-                      <span>No clips uploaded yet</span>
-                    )}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setClipDurationMode('bulletin')}
-                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
-                      clipDurationMode === 'bulletin'
-                        ? 'bg-[#1a73e8] text-white border-[#1a73e8] shadow-xs'
-                        : 'bg-white dark:bg-[#1f1f1f] text-[#3c4043] dark:text-[#e3e3e3] border-[#dadce0] dark:border-[#444746] hover:border-[#1a73e8]'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex flex-row items-center justify-between">
-                      <span>News Bulletin</span>
-                      <span className={`text-[8px] px-1 py-0.5 rounded font-bold uppercase ${
-                        clipDurationMode === 'bulletin' ? 'bg-white text-[#1a73e8]' : 'bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#004a77] dark:text-[#c2e7ff]'
-                      }`}>
-                        Fast
-                      </span>
-                    </div>
-                    <div className={`text-[10px] mt-1 ${clipDurationMode === 'bulletin' ? 'text-blue-100' : 'text-[#5f6368] dark:text-[#8e918f]'}`}>
-                      Story highlights (~35s)
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setClipDurationMode('120s')}
-                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
-                      clipDurationMode === '120s'
-                        ? 'bg-[#1a73e8] text-white border-[#1a73e8] shadow-xs'
-                        : 'bg-white dark:bg-[#1f1f1f] text-[#3c4043] dark:text-[#e3e3e3] border-[#dadce0] dark:border-[#444746] hover:border-[#1a73e8]'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex flex-row items-center justify-between">
-                      <span>2 Min Digest</span>
-                      {clipDurationMode === '120s' && <span className="text-[8px] bg-white/20 px-1 py-0.5 rounded">Active</span>}
-                    </div>
-                    <div className={`text-[10px] mt-1 ${clipDurationMode === '120s' ? 'text-blue-100' : 'text-[#5f6368] dark:text-[#8e918f]'}`}>
-                      Condensed 2 min story
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setClipDurationMode('300s')}
-                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
-                      clipDurationMode === '300s'
-                        ? 'bg-[#1a73e8] text-white border-[#1a73e8] shadow-xs'
-                        : 'bg-white dark:bg-[#1f1f1f] text-[#3c4043] dark:text-[#e3e3e3] border-[#dadce0] dark:border-[#444746] hover:border-[#1a73e8]'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex flex-row items-center justify-between">
-                      <span>5 Min Coverage</span>
-                      {clipDurationMode === '300s' && <span className="text-[8px] bg-white/20 px-1 py-0.5 rounded">Active</span>}
-                    </div>
-                    <div className={`text-[10px] mt-1 ${clipDurationMode === '300s' ? 'text-blue-100' : 'text-[#5f6368] dark:text-[#8e918f]'}`}>
-                      Extended speech report
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setClipDurationMode('full')}
-                    className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer ${
-                      clipDurationMode === 'full'
-                        ? 'bg-[#1a73e8] text-white border-[#1a73e8] shadow-xs'
-                        : 'bg-white dark:bg-[#1f1f1f] text-[#3c4043] dark:text-[#e3e3e3] border-[#dadce0] dark:border-[#444746] hover:border-[#1a73e8]'
-                    }`}
-                  >
-                    <div className="font-bold text-xs flex flex-row items-center justify-between">
-                      <span>Full Speech (10m)</span>
-                      <span className={`text-[8px] px-1 py-0.5 rounded font-bold uppercase ${
-                        clipDurationMode === 'full' ? 'bg-white text-[#1a73e8]' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                      }`}>
-                        Public
-                      </span>
-                    </div>
-                    <div className={`text-[10px] mt-1 ${clipDurationMode === 'full' ? 'text-blue-100' : 'text-[#5f6368] dark:text-[#8e918f]'}`}>
-                      Complete political address
-                    </div>
-                  </button>
-                </div>
-
-                {totalFootageDuration > 600 && clipDurationMode === 'full' && (
-                  <div className="text-[11px] text-[#b06000] dark:text-[#fdd663] bg-[#fef7e0] dark:bg-[#382c00] border border-[#fdd663]/60 p-2.5 rounded-lg flex flex-row items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-[#b06000] dark:text-[#fdd663] shrink-0" />
-                    <span>
-                      Footage duration ({formatDuration(totalFootageDuration)}) exceeds the 10-minute maximum cap. The broadcast engine will safely encode the first 10 minutes (600s) to keep cloud rendering stable and lightning fast.
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Input 2: News Story Manuscript */}
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5 w-full min-w-0">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1a73e8] dark:text-[#8ab4f8] flex items-center justify-center shrink-0 border border-blue-200 dark:border-blue-800 mt-0.5">
-                    <FileText className="w-4 h-4" />
-                  </span>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
-                      2. News Story Manuscript
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
-                      (Source Text &bull; Story Dispatches &amp; Reporting Content)
-                    </p>
-                  </div>
-                </div>
-
-                {/* Quick Newsroom Story Loader + Language Selector */}
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                  {newsroomStories.length > 0 && (
-                    <select
-                      defaultValue=""
-                      onChange={(e) => handleLoadStoryManuscript(e.target.value)}
-                      className="px-2.5 py-1 w-full sm:w-auto max-w-full sm:max-w-[240px] bg-blue-50 dark:bg-[#004a77] border border-[#d2e3fc] dark:border-[#1a73e8] rounded-full text-xs font-semibold text-[#1a73e8] dark:text-[#c2e7ff] cursor-pointer truncate"
-                    >
-                      <option value="">Load Story from Newsroom...</option>
-                      {newsroomStories.map((st) => (
-                        <option key={st.articleId} value={st.articleId}>
-                          {st.headline.slice(0, 55)}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-md bg-[#f1f3f4] dark:bg-[#28292a] text-[#5f6368] flex items-center justify-center shrink-0 border border-[#dadce0] dark:border-[#444746]">
-                      <Languages className="w-3 h-3" />
-                    </span>
-                    <select
-                      value={selectedLanguage}
-                      onChange={(e) => setSelectedLanguage(e.target.value as SupportedIndianLanguage)}
-                      className="px-2.5 py-1 bg-[#f1f3f4] dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] rounded-full text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] cursor-pointer"
-                    >
-                      {SUPPORTED_INDIAN_LANGUAGES.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.name} ({l.nativeName})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Draft Story from Uploaded Footage Button */}
-              {clips[0]?.file && (
-                <div className="flex flex-wrap items-center gap-2 mb-2.5">
-                  <button
-                    type="button"
-                    onClick={() => handleExtractStoryFromVideo()}
-                    disabled={isExtractingStory}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-full text-xs font-semibold shadow-xs transition disabled:opacity-50 cursor-pointer"
-                  >
-                    <Sparkles className={`w-3.5 h-3.5 ${isExtractingStory ? 'animate-spin' : ''}`} />
-                    <span>
-                      {isExtractingStory
-                        ? 'Analyzing video audio & footage...'
-                        : '✨ Draft Story from Video'}
-                    </span>
-                  </button>
-                  <span className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
-                    Extracts dialogue, spoken facts, and narrative from video footage
-                  </span>
-                </div>
-              )}
-
-              <textarea
-                rows={5}
-                value={newsText}
-                onChange={(e) => setNewsText(e.target.value)}
-                placeholder="Paste raw reporter field dispatches, press releases, or news reports here in any language..."
-                className="w-full p-4 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#121212] text-sm text-[#202124] dark:text-[#f2f2f2] placeholder-[#70757a] focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] focus:outline-none leading-relaxed transition-all"
-              />
-              <div className="flex justify-between items-center text-xs text-[#5f6368] dark:text-[#8e918f] mt-1.5">
-                <span>{newsText.trim() ? newsText.trim().split(/\s+/).filter(Boolean).length : 0} words</span>
-                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Verified for Press Standards &amp; Guidelines
-                </span>
-              </div>
-            </div>
-
-            {/* Input 3: Reporting Location (TV Watermark Badge) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] shadow-xs space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-800 mt-0.5">
-                    <MapLocationPointerIcon className="w-4 h-4" size={16} />
-                  </span>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
-                      3. News Reporting Location
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
-                      (TV Watermark Badge &bull; Live On-Screen Location)
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs text-[#5f6368] dark:text-[#8e918f]">
-                  Appears directly under Channel Logo with circular map pointer badge
-                </span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-rose-600 dark:text-rose-400">
-                    <MapLocationPointerIcon className="w-4 h-4" size={18} />
-                  </div>
-                  <input
-                    type="text"
-                    value={newsLocation}
-                    onChange={(e) => setNewsLocation(e.target.value)}
-                    placeholder="Enter reporting location (e.g., New Delhi, Hyderabad, Amaravati, Mumbai, Tirupati)..."
-                    className="w-full pl-10 pr-14 py-2.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#121212] text-sm text-[#202124] dark:text-[#f2f2f2] placeholder-[#70757a] focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] focus:outline-none transition-all"
-                  />
-                  {newsLocation && (
-                    <button
-                      type="button"
-                      onClick={() => setNewsLocation('')}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs font-semibold text-[#70757a] hover:text-[#202124] dark:hover:text-[#f2f2f2] cursor-pointer"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-
-                {/* Live Broadcast Badge Preview */}
-                {newsLocation.trim() && (
-                  <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white shadow-xs">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">TV Badge:</span>
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-r from-red-600 to-red-800 text-white text-xs font-bold shadow-xs">
-                      <MapLocationPointerIcon className="w-3.5 h-3.5 text-white" size={14} />
-                      <span>{newsLocation.trim()}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Quick Suggestion Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <span className="text-[11px] font-medium text-[#5f6368] dark:text-[#8e918f] mr-1">Quick Select:</span>
-                {['New Delhi', 'Hyderabad', 'Amaravati', 'Vijayawada', 'Visakhapatnam', 'Bengaluru', 'Mumbai', 'Tirupati'].map((loc) => (
-                  <button
-                    key={loc}
-                    type="button"
-                    onClick={() => setNewsLocation(loc)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer ${
-                      newsLocation === loc
-                        ? 'bg-rose-50 dark:bg-rose-950/70 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-300 font-bold shadow-xs'
-                        : 'bg-[#f1f3f4] dark:bg-[#28292a] border-[#dadce0] dark:border-[#444746] text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#e8eaed] dark:hover:bg-[#333537]'
-                    }`}
-                  >
-                    <MapLocationPointerIcon className={`w-3 h-3 ${newsLocation === loc ? 'text-rose-600 dark:text-rose-400' : 'text-[#70757a]'}`} size={12} />
-                    <span>{loc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Input 4: Video News Ticker */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] shadow-xs space-y-3.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800 mt-0.5">
-                    <Tv className="w-4 h-4" />
-                  </span>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
-                      4. Video News Ticker
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
-                      (Bottom Breaking News Scrolling Ticker &bull; Broadcast Overlay)
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                      tickerText.trim()
-                        ? 'bg-blue-50 text-[#1a73e8] border-blue-200 dark:bg-blue-950/60 dark:text-[#8ab4f8] dark:border-blue-800'
-                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
-                    }`}
-                  >
-                    {tickerText.trim() ? 'Custom Headlines Active' : 'Auto: State-Level Headlines'}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-xs text-[#5f6368] dark:text-[#8e918f] leading-relaxed">
-                Broadcast ticker displayed continuously at the bottom of the video, matching TV news channels. You can enter custom headlines here; if left blank, live state headlines from your newsroom will scroll automatically.
-              </p>
-
-              <div className="space-y-2">
-                <textarea
-                  rows={2}
-                  value={tickerText}
-                  onChange={(e) => setTickerText(e.target.value)}
-                  placeholder={defaultStateTicker ? `Leave blank for auto newsroom headlines: ${defaultStateTicker.slice(0, 110)}...` : 'Enter custom scrolling headlines for the bottom TV ticker...'}
-                  className="w-full p-3.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8fafd] dark:bg-[#121212] text-sm text-[#202124] dark:text-[#f2f2f2] placeholder-[#70757a] focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] focus:outline-none leading-relaxed transition-all"
-                />
-
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-[11px] font-medium text-[#5f6368] dark:text-[#8e918f]">Quick Actions:</span>
-                    <button
-                      type="button"
-                      onClick={() => setTickerText(defaultStateTicker)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc] dark:bg-[#004a77] dark:text-[#c2e7ff] border border-blue-200 dark:border-blue-800 transition cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3" />
-                      <span>Load State Headlines</span>
-                    </button>
-
-                    {newsText.trim() && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const firstLine = newsText
-                            .trim()
-                            .split('\n')[0]
-                            .replace(/^([^\n:,\-–—]{2,25})\s*[:\-–—]/, '')
-                            .trim();
-                          if (firstLine) {
-                            setTickerText(firstLine);
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-[#f1f3f4] text-[#3c4043] hover:bg-[#e8eaed] dark:bg-[#28292a] dark:text-[#e3e3e3] border border-[#dadce0] dark:border-[#444746] transition cursor-pointer"
-                      >
-                        <FileText className="w-3 h-3" />
-                        <span>Use Story Headline</span>
-                      </button>
-                    )}
-
-                    {tickerText && (
-                      <button
-                        type="button"
-                        onClick={() => setTickerText('')}
-                        className="text-[11px] text-red-600 dark:text-red-400 hover:underline font-medium ml-1 cursor-pointer"
-                      >
-                        Reset to Auto Headlines
-                      </button>
-                    )}
-                  </div>
-
-                  <span className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
-                    {tickerText.trim() ? `${tickerText.trim().length} characters (Custom)` : 'Automatic Default Selected'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Live Animated 2-Tier TV Ticker Preview */}
-              <div className="rounded-xl overflow-hidden border border-red-800/80 bg-red-950 shadow-md">
-                <div className="px-3 py-1 bg-red-950/90 border-b border-red-900/60 flex items-center justify-between text-[10px] text-red-200/80 font-bold uppercase tracking-wider">
-                  <span>
-                    TV Broadcast 2-Tier Ticker Preview ({tickerFont.fontLabel} &bull; Upper Headlines + Lower Crawler)
-                  </span>
-                  <span className="text-amber-300 flex items-center gap-1 font-mono">
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping inline-block" />
-                    LIVE 2-TIER PREVIEW
-                  </span>
-                </div>
-
-                {/* Tier 2: Headlines Strap (Upper Bar) */}
-                <div className="h-9 sm:h-10 bg-gradient-to-r from-[#061738] via-[#1e3a8a] to-[#071530] flex items-stretch border-t-2 border-amber-400 border-b border-[#38bdf8]/60 relative overflow-hidden shadow-inner">
-                  <div
-                    className="z-10 px-3.5 bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#1e3a8a] border-r-2 border-[#38bdf8] text-white text-xs uppercase flex items-center gap-2 shrink-0 shadow-lg tracking-wide font-normal"
-                    style={{
-                      fontFamily: tickerFont.isTelugu
-                        ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
-                        : '"Khand", "Cinzel", "Roboto", sans-serif',
-                      fontWeight: tickerFont.isTelugu ? 400 : 700,
-                    }}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[#38bdf8] animate-ping" />
-                    <span>HEADLINES</span>
-                  </div>
-                  <div className="flex-1 overflow-hidden relative flex items-center px-4 bg-gradient-to-r from-blue-900/40 via-blue-800/20 to-blue-900/40">
-                    <div
-                      className="text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tracking-wide cursor-default truncate font-medium"
-                      style={{
-                        fontFamily: tickerFont.fontFamily,
-                        fontSize: tickerFont.isTelugu ? '17px' : '15px',
-                      }}
-                    >
-                      {thumbnailHeadline.trim() || activeTickerText.split('✦')[0]?.trim() || 'TODAY BREAKING HEADLINES'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tier 1: Continuous Scrolling Crawler (Lower Bar) */}
-                <div className="h-11 sm:h-12 bg-gradient-to-r from-[#7f1d1d] via-[#991b1b] to-[#7f1d1d] flex items-stretch border-t border-amber-400 relative overflow-hidden shadow-inner">
-                  {/* Left Dark Maroon / Red Badge with Gold Border */}
-                  <div
-                    className="z-10 px-3.5 bg-gradient-to-r from-[#450a0a] via-[#5c0e0e] to-[#7f1d1d] border-r-2 border-amber-400 text-white text-xs uppercase flex items-center gap-2 shrink-0 shadow-lg tracking-wide font-normal"
-                    style={{
-                      fontFamily: tickerFont.isTelugu
-                        ? '"Ramabhadra", "Noto Sans Telugu", sans-serif'
-                        : '"Khand", "Cinzel", "Roboto", sans-serif',
-                      fontWeight: tickerFont.isTelugu ? 400 : 700,
-                    }}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-300 animate-pulse" />
-                    <span>BREAKING NEWS</span>
-                  </div>
-
-                  {/* Scrolling Headlines: Increased size, strict 400 normal weight for Ramabhadra */}
-                  <div className="flex-1 overflow-hidden relative flex items-center px-4 bg-gradient-to-r from-red-900/40 via-red-800/20 to-red-900/40">
-                    <div
-                      className="np-ticker-track text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] tracking-wide cursor-default"
-                      style={{
-                        fontFamily: tickerFont.fontFamily,
-                        fontWeight: tickerFont.isTelugu ? 400 : tickerFont.fontWeight,
-                        fontSize: tickerFont.isTelugu ? '20px' : '17px',
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      <span className="pr-16 inline-block">
-                        {activeTickerText}
-                      </span>
-                      <span className="pr-16 inline-block">
-                        {activeTickerText}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Input 5: YouTube Thumbnail Studio (Custom Upload or Studio Frame) */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#dadce0] dark:border-[#3c4043] pb-3">
-                <div className="flex items-start gap-2.5">
-                  <span className="w-8 h-8 rounded-lg bg-red-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0 mt-0.5">
-                    <ImageIcon className="w-4 h-4 text-white" />
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f2f2f2] leading-tight">
-                        5. YouTube Thumbnail (16:9 HD)
-                      </h3>
-                      {isCustomThumbnailUploaded ? (
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                          <span>Custom Thumbnail Uploaded</span>
-                        </span>
-                      ) : (
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>Studio Footage Cover</span>
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-[#5f6368] dark:text-[#8e918f] mt-0.5 font-normal">
-                      Upload your custom 16:9 thumbnail, or render a high-definition frame cover from your video footage.
-                    </p>
-                  </div>
-                </div>
-
-                {(thumbnailPreviewUrl || publishedThumbnailUrl) && (
-                  <button
-                    type="button"
-                    onClick={handleDownloadThumbnail}
-                    className="px-3.5 py-2 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#28292a] text-[#202124] dark:text-[#f2f2f2] text-xs font-semibold hover:bg-neutral-100 dark:hover:bg-[#333] flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
-                  >
-                    <Download className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Download Thumbnail (1280x720)</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Hidden file input for custom thumbnail */}
-              <input
-                ref={thumbnailFileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={handleCustomThumbnailUpload}
-                className="hidden"
-              />
-
-              {/* 2-Column: Upload Control (Left) + 16:9 HD Preview (Right) */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start text-xs">
-                {/* Left Column: Upload Custom Thumbnail Card */}
-                <div className="lg:col-span-5 space-y-3">
-                  {!isCustomThumbnailUploaded ? (
-                    <div className="space-y-3">
-                      <div
-                        onClick={() => thumbnailFileInputRef.current?.click()}
-                        className="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] hover:border-blue-500 dark:hover:border-blue-400 rounded-xl p-5 text-center cursor-pointer transition-colors bg-[#f8fafd] dark:bg-[#181818] hover:bg-blue-50/40 dark:hover:bg-blue-950/20 group flex flex-col items-center justify-center gap-2.5"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
-                          <Upload className="w-5 h-5" />
+                            {BADGE_PRESETS.map((b) => (
+                              <option key={b} value={b}>
+                                {b}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-[#202124] dark:text-[#f2f2f2]">
-                            Upload Custom Thumbnail
-                          </p>
-                          <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f] mt-0.5">
-                            PNG, JPG or WEBP (16:9 recommended)
-                          </p>
+                          <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                            Sub-Tag / Hook
+                          </label>
+                          <input
+                            type="text"
+                            value={thumbnailCuriosity}
+                            onChange={(e) => setThumbnailCuriosity(e.target.value)}
+                            placeholder="Full Ground Report"
+                            className="w-full px-2.5 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                          />
                         </div>
-                        <button
-                          type="button"
-                          className="mt-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs"
-                        >
-                          Choose Image
-                        </button>
                       </div>
 
-                      <div className="p-3 rounded-xl bg-neutral-50 dark:bg-[#202124] border border-[#dadce0] dark:border-[#3c4043] space-y-2">
-                        <div className="flex items-start gap-2">
-                          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f] leading-relaxed">
-                            <strong className="text-[#202124] dark:text-[#f2f2f2]">Automatic Thumbnail: </strong>
-                            If you do not upload a custom image, the system automatically creates a 16:9 thumbnail from your video footage.
-                          </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          {THEME_OPTIONS.map((t) => (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => setThumbnailThemeColor(t.id)}
+                              title={t.label}
+                              className={`w-6 h-6 rounded-md ${t.swatch} transition cursor-pointer ${
+                                thumbnailThemeColor === t.id
+                                  ? 'ring-2 ring-offset-2 ring-neutral-900 dark:ring-white'
+                                  : 'opacity-70 hover:opacity-100'
+                              }`}
+                            />
+                          ))}
                         </div>
-
-                        {activeClips.some((c) => Boolean(c)) && (
-                          <button
-                            type="button"
-                            onClick={handleGenerateAIThumbnail}
-                            disabled={isGeneratingThumbnail}
-                            className="w-full mt-1 px-3 py-1.5 rounded-lg border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#28292a] hover:bg-neutral-100 dark:hover:bg-[#333] text-xs font-medium text-[#202124] dark:text-[#f2f2f2] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                          >
-                            {isGeneratingThumbnail ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
-                                <span>Generating Thumbnail...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                                <span>Regenerate Footage Cover</span>
-                              </>
-                            )}
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 tabular-nums">
+                          <span>Frame @</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={60}
+                            step={0.5}
+                            value={thumbnailKeyframeTimeSec}
+                            onChange={(e) =>
+                              setThumbnailKeyframeTimeSec(Math.max(0, Number(e.target.value) || 0))
+                            }
+                            className="w-14 px-2 py-1 rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 text-center"
+                          />
+                          <span>s</span>
+                        </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 space-y-3">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span className="text-xs font-bold">Custom Thumbnail Attached</span>
-                      </div>
-                      <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f] leading-relaxed">
-                        <span className="font-semibold text-[#202124] dark:text-[#f2f2f2] truncate block">
-                          {customThumbnailFileName || 'Custom Image Uploaded'}
-                        </span>
-                        Custom cover selected. Your uploaded image will be published to YouTube.
-                      </p>
-                      <div className="flex items-center gap-2 pt-1">
+                  </div>
+                </Card>
+              </div>
+
+              {/* Right Column (5 cols): News Story Manuscript + Anchor Quick Controls + Location/Ticker + CTA */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* 1C. News Story Manuscript */}
+                <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-red-600" />
+                      <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                        News Story Manuscript
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {newsroomStories.length > 0 && (
                         <button
                           type="button"
-                          onClick={() => thumbnailFileInputRef.current?.click()}
-                          className="flex-1 px-3 py-1.5 rounded-lg border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#28292a] text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] hover:bg-neutral-100 dark:hover:bg-[#333] flex items-center justify-center gap-1.5"
+                          onClick={() => setShowStoryPicker((s) => !s)}
+                          className="px-2.5 py-1 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[11px] font-semibold text-neutral-700 dark:text-neutral-200 inline-flex items-center gap-1 cursor-pointer"
                         >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Replace</span>
+                          <BookOpen className="w-3 h-3" />
+                          <span>Load Desk Story</span>
                         </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleDraftStoryFromFootage}
+                        disabled={isExtractingStory || activeClips.length === 0}
+                        className="px-2.5 py-1 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer disabled:opacity-40"
+                      >
+                        {isExtractingStory ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>Drafting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Film className="w-3 h-3" />
+                            <span>Draft from Footage</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Newsroom Story Picker */}
+                  {showStoryPicker && newsroomStories.length > 0 && (
+                    <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 max-h-44 overflow-y-auto space-y-1.5">
+                      {newsroomStories.map((story) => (
                         <button
+                          key={story.id}
                           type="button"
-                          onClick={handleRemoveCustomThumbnail}
-                          className="px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center gap-1.5"
+                          onClick={() => {
+                            setNewsText(story.body);
+                            if (story.location) setNewsLocation(story.location);
+                            setTickerText(story.headline);
+                            setShowStoryPicker(false);
+                          }}
+                          className="w-full text-left p-2 rounded-lg hover:bg-white dark:hover:bg-neutral-900 border border-transparent hover:border-neutral-200 dark:hover:border-neutral-700 transition cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Remove</span>
+                          <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1">
+                            {story.headline}
+                          </p>
+                          {story.location && (
+                            <p className="text-[10px] text-neutral-500 mt-0.5">{story.location}</p>
+                          )}
                         </button>
-                      </div>
+                      ))}
                     </div>
                   )}
-                </div>
 
-                {/* Right Column: Live 16:9 Thumbnail Graphic Preview Card */}
-                <div className="lg:col-span-7 space-y-2.5">
-                  <div className="p-2.5 rounded-xl bg-neutral-900 border border-neutral-700 shadow-md">
-                    <div className="flex items-center justify-between px-2 py-1.5 text-xs text-neutral-300 border-b border-neutral-800 mb-2">
-                      <span className="font-bold flex items-center gap-1.5 text-neutral-200">
-                        <ImageIcon className="w-3.5 h-3.5 text-blue-400" />
-                        <span>16:9 HD Thumbnail Live Preview (1280x720)</span>
-                      </span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-mono ${
-                        isCustomThumbnailUploaded
-                          ? 'bg-blue-950 text-blue-300 border border-blue-800'
-                          : thumbnailPreviewUrl
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                          : 'bg-neutral-800 text-neutral-400 border border-neutral-700'
-                      }`}>
-                        {isCustomThumbnailUploaded ? 'Custom Upload' : (thumbnailPreviewUrl ? 'Footage Cover' : 'No Thumbnail')}
-                      </span>
-                    </div>
-
-                    {/* 16:9 Aspect Ratio Frame */}
-                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black flex items-center justify-center border border-neutral-800 shadow-inner group">
-                      {isGeneratingThumbnail ? (
-                        <div className="flex flex-col items-center justify-center text-white space-y-2 p-6 text-center">
-                          <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-                          <span className="text-xs font-semibold">Creating 16:9 thumbnail from footage...</span>
-                        </div>
-                      ) : (thumbnailPreviewUrl || publishedThumbnailUrl) ? (
-                        <img
-                          src={thumbnailPreviewUrl || publishedThumbnailUrl}
-                          alt="Video Thumbnail Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center text-neutral-500 space-y-2 p-6 text-center">
-                          <ImageIcon className="w-10 h-10 stroke-1" />
-                          <span className="text-xs font-medium">
-                            Upload a custom image or add video footage to generate thumbnail.
-                          </span>
-                        </div>
-                      )}
-
-                      {/* YouTube Desktop Preview Emulation (Duration Badge) */}
-                      <div className="absolute bottom-2 right-2 bg-black/85 text-white text-[10px] font-mono px-1.5 py-0.5 rounded font-bold pointer-events-none">
-                        {formatDuration(totalFootageDuration || 65)}
-                      </div>
-                    </div>
-
-                    {/* Status bar */}
-                    <div className="flex items-center justify-between pt-2 px-1 text-[11px] text-neutral-400">
-                      <span>
-                        {isCustomThumbnailUploaded
-                          ? 'Source: Custom Image Upload'
-                          : thumbnailPreviewUrl
-                          ? 'Source: Broadcast Footage Cover'
-                          : 'Status: Waiting for input'}
-                      </span>
-                      {(thumbnailPreviewUrl || publishedThumbnailUrl) && (
-                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Ready for YouTube</span>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Button & Live Pipeline Progress Visualizer */}
-            <div className="pt-4 border-t border-[#dadce0] dark:border-[#3c4043] space-y-4">
-              {/* Live Progress Card */}
-              {isPublishing && (
-                <div className="p-4 rounded-2xl bg-[#202124] border border-[#1a73e8] shadow-lg text-white space-y-3 font-sans">
-                  <div className="flex justify-between items-center text-xs sm:text-sm font-semibold">
-                    <span className="flex flex-row items-center gap-2.5 text-[#a8c7fa]">
-                      <span className="w-5 h-5 rounded-md bg-white/10 flex items-center justify-center shrink-0">
-                        <RotateCw className="w-3 h-3 animate-spin text-[#8ab4f8]" />
-                      </span>
-                      <span>{currentStep}</span>
-                    </span>
-                    <span className="font-mono text-white text-sm sm:text-base font-bold shrink-0">{progressPercent}%</span>
+                  {/* Broadcast Language Selector */}
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 flex items-center gap-1.5">
+                      <Languages className="w-3.5 h-3.5 text-red-600" />
+                      <span>Broadcast Language</span>
+                    </label>
+                    <select
+                      value={selectedLanguage}
+                      onChange={(e) =>
+                        setSelectedLanguage(e.target.value as SupportedIndianLanguage)
+                      }
+                      className="w-full px-3 py-2 text-sm font-medium bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                    >
+                      {SUPPORTED_INDIAN_LANGUAGES.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div className="w-full h-2.5 rounded-full bg-neutral-800 overflow-hidden border border-neutral-700">
-                    <div
-                      className="h-full bg-[#1a73e8] transition-all duration-700 ease-out"
-                      style={{ width: `${progressPercent}%` }}
+                  {/* Story Textarea */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        Report Facts &amp; Story Copy
+                      </label>
+                      <span className="text-[11px] text-neutral-400 tabular-nums">
+                        {newsText.trim().split(/\s+/).filter(Boolean).length} words
+                      </span>
+                    </div>
+                    <textarea
+                      rows={6}
+                      value={newsText}
+                      onChange={(e) => setNewsText(e.target.value)}
+                      placeholder="Paste or type your reporter dispatch in English or any Indian regional language. The editorial desk will format it into a crisp 60–70 word anchor bulletin for your review in Step 2."
+                      className="w-full px-3 py-2.5 text-sm bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/40 resize-y"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-1 text-[9px] sm:text-[10px] text-center text-neutral-400 font-medium">
-                    <span className={progressPercent >= 10 ? 'text-emerald-400 font-bold' : ''}>1. Editorial Review</span>
-                    <span className={progressPercent >= 25 ? 'text-emerald-400 font-bold' : ''}>2. Script Manuscript</span>
-                    <span className={progressPercent >= 45 ? 'text-emerald-400 font-bold' : ''}>3. Anchor Narration</span>
-                    <span className={progressPercent >= 65 ? 'text-emerald-400 font-bold' : ''}>4. News Graphics</span>
-                    <span className={progressPercent >= 80 ? 'text-emerald-400 font-bold' : ''}>5. Studio Mastering</span>
-                    <span className={progressPercent >= 95 ? 'text-emerald-400 font-bold' : ''}>6. YouTube Publish</span>
+                  {/* Reporting Location & Scrolling Ticker */}
+                  <div className="grid grid-cols-1 gap-3 pt-1">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-red-600" />
+                        <span>Reporting Dateline / Location Badge</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={newsLocation}
+                        onChange={(e) => setNewsLocation(e.target.value)}
+                        placeholder="e.g. New Delhi, Mumbai, Hyderabad, Bengaluru..."
+                        className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg"
+                      />
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {PAN_INDIA_LOCATIONS.slice(0, 6).map((city) => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={() => setNewsLocation(city)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium border transition cursor-pointer ${
+                              newsLocation === city
+                                ? 'border-red-600 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300'
+                                : 'border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'
+                            }`}
+                          >
+                            {city}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                        Bottom News Ticker Text (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={tickerText}
+                        onChange={(e) => setTickerText(e.target.value)}
+                        placeholder="Auto-generated from your headline if left empty"
+                        className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg"
+                      />
+                    </div>
                   </div>
-                </div>
+                </Card>
+
+                {/* 1D. Anchor & Broadcast Quick Overrides */}
+                <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sliders className="w-4 h-4 text-red-600" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-800 dark:text-neutral-200">
+                        Anchor &amp; Mastering Overrides
+                      </h3>
+                    </div>
+                    <span className="text-[11px] text-neutral-500">Synced with Settings</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="block font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                        Voice Anchor
+                      </label>
+                      <select
+                        value={voiceActorId}
+                        onChange={(e) => setVoiceActorId(e.target.value)}
+                        className="w-full px-2.5 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                      >
+                        {VOICE_ACTORS.map((actor) => (
+                          <option key={actor.id} value={actor.id}>
+                            {actor.englishName || actor.name} ({actor.gender})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                        Delivery Tone
+                      </label>
+                      <select
+                        value={emotionalStyle}
+                        onChange={(e) => setEmotionalStyle(e.target.value as EmotionalNewsStyle)}
+                        className="w-full px-2.5 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                      >
+                        <option value="emotional_breaking">High-Impact Breaking</option>
+                        <option value="dramatic_primetime">Prime-Time Authoritative</option>
+                        <option value="urgent_investigative">Investigative Pulse</option>
+                        <option value="speed_bulletin">Fast Speed Bulletin</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <label className="font-semibold text-neutral-600 dark:text-neutral-400">
+                          Pacing
+                        </label>
+                        <span className="font-mono font-bold text-red-600 tabular-nums">
+                          {speechRate.toFixed(2)}x
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.85"
+                        max="1.55"
+                        step="0.05"
+                        value={speechRate}
+                        onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                        className="w-full accent-red-600 cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-neutral-600 dark:text-neutral-400 mb-1">
+                        Footage Duration
+                      </label>
+                      <select
+                        value={clipDurationMode}
+                        onChange={(e) => setClipDurationMode(e.target.value as any)}
+                        className="w-full px-2.5 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                      >
+                        <option value="full">Full Footage ({totalFootageDuration || 30}s)</option>
+                        <option value="bulletin">Match Narration (~45s)</option>
+                        <option value="60s">Cap at 60 Seconds</option>
+                        <option value="120s">Cap at 2 Minutes</option>
+                        <option value="300s">Cap at 5 Minutes</option>
+                      </select>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Primary Step 1 CTA */}
+                <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-neutral-50/80 dark:bg-neutral-900 space-y-3">
+                  {isPreparingPreview ? (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between text-xs font-semibold">
+                        <span className="flex items-center gap-2 text-neutral-800 dark:text-neutral-200">
+                          <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                          <span>{prepareStageMessage}</span>
+                        </span>
+                        <span className="font-mono text-red-600 tabular-nums">
+                          {prepareProgress}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                        <div
+                          className="h-full bg-red-600 transition-all duration-300"
+                          style={{ width: `${prepareProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handlePrepareBroadcastPreview}
+                      disabled={activeClips.length === 0 || newsText.trim().length < 15}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-45"
+                    >
+                      <span>Generate Broadcast Preview</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <p className="text-[11px] text-neutral-500 text-center">
+                    Nothing is uploaded to YouTube yet. Step 2 lets you review the script, listen to the 24kHz anchor voice, and approve before publishing.
+                  </p>
+                </Card>
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================ */}
+          {/* STEP 2: PRE-BROADCAST REVIEW & PUBLISH DESK                      */}
+          {/* ================================================================ */}
+          {studioStep === 2 && preparedPackage && (
+            <div className="space-y-6">
+              {/* Post-Publish Success Panel */}
+              {publishedResult && (
+                <Card className="p-6 border border-emerald-400/60 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
+                          Broadcast Published Public on YouTube
+                        </h2>
+                        <p className="text-xs text-neutral-600 dark:text-neutral-300 mt-0.5">
+                          {publishedResult.title} &bull; Channel: {account.channelTitle || 'Connected Channel'}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                          <span className="px-2 py-0.5 rounded bg-emerald-600 text-white font-semibold">
+                            Visibility: Public
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 font-mono text-neutral-700 dark:text-neutral-300">
+                            ID: {publishedResult.videoId}
+                          </span>
+                          <span className="text-neutral-600 dark:text-neutral-300 font-medium">
+                            {youtubeProcessingState === 'processed'
+                              ? 'YouTube SD/HD playback ready'
+                              : youtubeProcessingState === 'checking' ||
+                                youtubeProcessingState === 'processing'
+                              ? 'YouTube encoding in progress...'
+                              : 'Logged to Broadcast History'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCopyPublishedUrl}
+                        className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        {copiedUrl ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Link Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy Link</span>
+                          </>
+                        )}
+                      </Button>
+
+                      <a
+                        href={publishedResult.youtubeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold inline-flex items-center gap-1.5 transition"
+                      >
+                        <span>Watch on YouTube</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setActiveView('history')}
+                        className="text-xs font-semibold cursor-pointer"
+                      >
+                        View History
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={handleResetStudio}
+                        className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-xs font-semibold cursor-pointer"
+                      >
+                        New Broadcast
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
               )}
 
-              <button
-                type="button"
-                onClick={() => handlePublish()}
-                disabled={isPublishing || activeClips.length === 0 || !newsText.trim()}
-                className="w-full inline-flex flex-row items-center justify-center gap-2 sm:gap-3 bg-[#1a73e8] hover:bg-[#1557b0] active:bg-[#174ea6] text-white font-bold text-sm sm:text-base py-3 sm:py-3.5 px-4 sm:px-6 rounded-xl shadow-sm hover:shadow-md transition-all transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
+              {/* Compliance Clearance Banner */}
+              <div
+                className={`p-4 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  preparedPackage.compliance.isCompliant
+                    ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                    : 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200'
+                }`}
               >
-                <span className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-white/20 text-white inline-flex items-center justify-center shrink-0">
-                  <Rocket className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isPublishing ? 'animate-bounce' : ''}`} />
-                </span>
-                <span className="font-bold text-center break-words">
-                  {isPublishing ? `Broadcasting in progress (${progressPercent}%)...` : 'Publish to YouTube (News Broadcast)'}
-                </span>
-              </button>
+                <div className="flex items-start gap-2.5">
+                  {preparedPackage.compliance.isCompliant ? (
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <span className="font-bold block">
+                      {preparedPackage.compliance.isCompliant
+                        ? 'Editorial & Broadcast Standards Cleared'
+                        : `Editorial Advisory (Score: ${preparedPackage.compliance.scorePercent}/100)`}
+                    </span>
+                    <span className="opacity-90">
+                      {preparedPackage.compliance.statusMessage ||
+                        'Script adheres to broadcast journalism standards and community guidelines.'}
+                    </span>
+                    {!preparedPackage.compliance.isCompliant &&
+                      preparedPackage.compliance.violations.length > 0 && (
+                        <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                          {preparedPackage.compliance.violations.map((v, idx) => (
+                            <li key={idx}>{v}</li>
+                          ))}
+                        </ul>
+                      )}
+                  </div>
+                </div>
 
-              <p className="text-center text-xs text-[#5f6368] dark:text-[#8e918f]">
-                Complete broadcast package: Records news narration, creates broadcast graphics from video footage, adds channel watermark, and publishes directly to YouTube.
-              </p>
+                {!preparedPackage.compliance.isCompliant && (
+                  <label className="inline-flex items-center gap-2 font-semibold shrink-0 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={preparedPackage.overrideCompliance}
+                      onChange={(e) =>
+                        setPreparedPackage({
+                          ...preparedPackage,
+                          overrideCompliance: e.target.checked,
+                        })
+                      }
+                      className="accent-red-600 w-4 h-4"
+                    />
+                    <span>Editor Reviewed &amp; Approved</span>
+                  </label>
+                )}
+              </div>
+
+              {/* Step 2 Main Two-Column Review Desk */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column (7 cols): Editable Script + Live 24kHz Audio Player + Metadata */}
+                <div className="lg:col-span-7 space-y-6">
+                  {/* Anchor Script & Audio Audition Card */}
+                  <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Mic className="w-4 h-4 text-red-600" />
+                        <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                          Anchor Script &amp; Studio Voice Audition
+                        </h2>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs tabular-nums">
+                        <span
+                          className={`px-2 py-0.5 rounded font-semibold ${
+                            scriptWordCount >= 45 && scriptWordCount <= 85
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                              : 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+                          }`}
+                        >
+                          {scriptWordCount} words
+                        </span>
+                        <span className="text-neutral-500">~{estimatedAudioSeconds}s runtime</span>
+                      </div>
+                    </div>
+
+                    <textarea
+                      rows={5}
+                      value={preparedPackage.voiceOverScript}
+                      onChange={(e) =>
+                        setPreparedPackage({
+                          ...preparedPackage,
+                          voiceOverScript: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 text-sm leading-relaxed bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                    />
+
+                    {/* Audio Player & Re-Record Controls */}
+                    <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-3">
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
+                          <Volume2 className="w-4 h-4 text-red-600" />
+                          <span>
+                            24kHz Studio Narration &bull;{' '}
+                            {activeVoiceActor.englishName || activeVoiceActor.name}
+                          </span>
+                        </span>
+                        <span className="text-[11px] text-neutral-500 tabular-nums">
+                          {speechRate.toFixed(2)}x pace
+                        </span>
+                      </div>
+
+                      <audio
+                        key={preparedPackage.audioUrl}
+                        controls
+                        src={preparedPackage.audioUrl}
+                        className="w-full h-10"
+                      />
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <select
+                            value={voiceActorId}
+                            onChange={(e) => setVoiceActorId(e.target.value)}
+                            aria-label="Select Voice Anchor"
+                            className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700"
+                          >
+                            {VOICE_ACTORS.map((actor) => (
+                              <option key={actor.id} value={actor.id}>
+                                {actor.englishName || actor.name}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={speechRate}
+                            onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+                            aria-label="Select Speech Pacing"
+                            className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 tabular-nums"
+                          >
+                            <option value={1.0}>1.00x Normal</option>
+                            <option value={1.2}>1.20x Brisk</option>
+                            <option value={1.3}>1.30x Breaking</option>
+                            <option value={1.45}>1.45x Fast</option>
+                          </select>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleRerecordVoice}
+                          disabled={isRerecordingVoice}
+                          className="text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {isRerecordingVoice ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Re-Recording...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RotateCw className="w-3.5 h-3.5" />
+                              <span>Re-Record Voice</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* YouTube Metadata Editor Card */}
+                  <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Youtube className="w-4 h-4 text-red-600" />
+                      <h2 className="text-sm font-bold text-neutral-900 dark:text-white">
+                        YouTube Broadcast Metadata
+                      </h2>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <label className="font-semibold text-neutral-700 dark:text-neutral-300">
+                            Video Title
+                          </label>
+                          <span
+                            className={`font-mono tabular-nums ${
+                              preparedPackage.youtubeTitle.length > 100
+                                ? 'text-red-600 font-bold'
+                                : 'text-neutral-400'
+                            }`}
+                          >
+                            {preparedPackage.youtubeTitle.length} / 100
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          maxLength={100}
+                          value={preparedPackage.youtubeTitle}
+                          onChange={(e) =>
+                            setPreparedPackage({
+                              ...preparedPackage,
+                              youtubeTitle: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 text-sm font-semibold bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                          Video Description
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={preparedPackage.youtubeDescription}
+                          onChange={(e) =>
+                            setPreparedPackage({
+                              ...preparedPackage,
+                              youtubeDescription: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold text-neutral-700 dark:text-neutral-300 mb-1">
+                          Broadcast Tags (comma-separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={preparedPackage.youtubeTagsText}
+                          onChange={(e) =>
+                            setPreparedPackage({
+                              ...preparedPackage,
+                              youtubeTagsText: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 text-xs bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Right Column (5 cols): Cover Preview + Publish / Queue Dispatch */}
+                <div className="lg:col-span-5 space-y-6">
+                  {/* Cover Verification Card */}
+                  <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                        16:9 YouTube Cover Preview
+                      </h3>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleDownloadThumbnail}
+                          className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 cursor-pointer"
+                          title="Download 1280x720 Cover"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="aspect-video rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-950">
+                      <img
+                        src={preparedPackage.thumbnailDataUrl}
+                        alt="Reviewed Cover"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <input
+                        type="text"
+                        value={thumbnailHeadline}
+                        onChange={(e) => setThumbnailHeadline(e.target.value)}
+                        placeholder="Cover headline"
+                        className="col-span-2 px-3 py-1.5 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleRegenerateReviewCover}
+                        disabled={isGeneratingThumbnail}
+                        className="text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <RotateCw
+                          className={`w-3.5 h-3.5 ${isGeneratingThumbnail ? 'animate-spin' : ''}`}
+                        />
+                        <span>Regenerate Cover</span>
+                      </Button>
+                      <label className="px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-200 cursor-pointer flex items-center justify-center gap-1">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Upload Custom</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleCustomThumbnailUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </Card>
+
+                  {/* Dispatch & Publish Card */}
+                  <Card className="p-5 border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4">
+                    <div className="space-y-1.5 text-xs">
+                      <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+                        Final Broadcast Dispatch
+                      </h3>
+                      <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500">Target Channel</span>
+                          <span className="font-bold text-neutral-900 dark:text-white">
+                            {account.isConnected ? account.channelTitle : 'Not Connected'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500">YouTube Visibility</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            Direct Public
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-neutral-500">Footage Clips</span>
+                          <span className="font-semibold tabular-nums">
+                            {activeClips.length} clip{activeClips.length > 1 ? 's' : ''} ({totalFootageDuration}s)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Publish Progress Indicator */}
+                    {isPublishing && (
+                      <div className="p-3.5 rounded-xl bg-red-50/60 dark:bg-red-950/20 border border-red-200 dark:border-red-900 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="flex items-center gap-2 text-red-900 dark:text-red-200">
+                            <Loader2 className="w-4 h-4 animate-spin text-red-600 shrink-0" />
+                            <span>{publishStage}</span>
+                          </span>
+                          <span className="font-mono text-red-600 tabular-nums">
+                            {publishProgress}%
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-red-200/70 dark:bg-red-950 overflow-hidden">
+                          <div
+                            className="h-full bg-red-600 transition-all duration-300"
+                            style={{ width: `${publishProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Direct Publish Now CTA */}
+                    <Button
+                      onClick={handlePublishPublicNow}
+                      disabled={isPublishing || !account.isConnected}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-45"
+                    >
+                      <Rocket className="w-4 h-4" />
+                      <span>
+                        {isPublishing ? 'Publishing Public Broadcast...' : 'Publish Public to YouTube Now'}
+                      </span>
+                    </Button>
+
+                    {/* Background Queue Dispatch Row */}
+                    <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800 space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+                          Or Dispatch via Broadcast Queue
+                        </span>
+                        <span className="text-[11px] text-neutral-500">Background Worker</span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {(
+                          [
+                            {
+                              id: 'P1_FLASH_BREAKING',
+                              label: 'P1 Flash',
+                              icon: Flame,
+                            },
+                            {
+                              id: 'P2_PRIMETIME_BULLETIN',
+                              label: 'P2 Prime',
+                              icon: Clock,
+                            },
+                            {
+                              id: 'P3_ROUTINE_FIELD_REPORT',
+                              label: 'P3 Routine',
+                              icon: Zap,
+                            },
+                          ] as const
+                        ).map((prio) => {
+                          const Icon = prio.icon;
+                          const isSelected = selectedQueuePriority === prio.id;
+                          return (
+                            <button
+                              key={prio.id}
+                              type="button"
+                              onClick={() => setSelectedQueuePriority(prio.id)}
+                              className={`py-2 px-2 rounded-lg border text-[11px] font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+                                isSelected
+                                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
+                                  : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                              }`}
+                            >
+                              <Icon className="w-3 h-3" />
+                              <span>{prio.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        onClick={handleAddToQueue}
+                        disabled={isEnqueueing || isPublishing || !account.isConnected}
+                        className="w-full text-xs font-bold py-2.5 flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{isEnqueueing ? 'Adding to Queue...' : 'Add to Broadcast Queue'}</span>
+                      </Button>
+                    </div>
+
+                    {/* Back to Step 1 Button */}
+                    <div className="pt-2 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setStudioStep(1)}
+                        disabled={isPublishing}
+                        className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Back to Story &amp; Footage</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleResetStudio}
+                        disabled={isPublishing}
+                        className="text-xs font-semibold text-neutral-400 hover:text-red-600 cursor-pointer disabled:opacity-40"
+                      >
+                        Reset Studio
+                      </button>
+                    </div>
+                  </Card>
+                </div>
+              </div>
             </div>
-          </Card>
-        </>
+          )}
+        </div>
       )}
+
+      {/* Slide-over Broadcast Queue Monitor Drawer */}
+      <YouTubeQueueDrawer
+        isOpen={isQueueDrawerOpen}
+        onClose={() => setIsQueueDrawerOpen(false)}
+        tenantId={currentTenant?.tenantId}
+      />
     </div>
   );
 };

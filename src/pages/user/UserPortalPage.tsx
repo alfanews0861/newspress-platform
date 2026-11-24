@@ -40,13 +40,20 @@ import type {
   YouTubeAutomationConfig,
 } from '../../types/userPortal';
 
+export type { UserPortalTabKey };
+
 interface UserPortalPageProps {
+  initialTab?: UserPortalTabKey;
   onNavigate?: (path: string) => void;
 }
 
-export const UserPortalPage: React.FC<UserPortalPageProps> = ({ onNavigate }) => {
-  // Query param tab sync
-  const [activeTab, setActiveTab] = useState<UserPortalTabKey>('profile');
+export const UserPortalPage: React.FC<UserPortalPageProps> = ({ initialTab = 'profile', onNavigate }) => {
+  // Query param & prop tab sync
+  const [activeTab, setActiveTab] = useState<UserPortalTabKey>(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   // Master State
   const [profile, setProfile] = useState<UserPortalProfile>(UserPortalService.getProfile());
@@ -94,140 +101,91 @@ export const UserPortalPage: React.FC<UserPortalPageProps> = ({ onNavigate }) =>
   };
 
   const tabs = [
-    {
-      id: 'profile',
-      label: 'Profile & KYC',
-      icon: <User className="w-4 h-4 text-blue-600" />,
-    },
-    {
-      id: 'plan',
-      label: 'User Plan',
-      icon: <CreditCard className="w-4 h-4 text-purple-600" />,
-    },
-    {
-      id: 'credits',
-      label: 'Balance Credits',
-      icon: <Coins className="w-4 h-4 text-amber-600" />,
-    },
-    {
-      id: 'paper',
-      label: 'My ePaper',
-      icon: <BookOpen className="w-4 h-4 text-emerald-600" />,
-    },
-    {
-      id: 'reporter',
-      label: 'Reporter Desk',
-      icon: <Send className="w-4 h-4 text-indigo-600" />,
-    },
-    {
-      id: 'youtube',
-      label: 'YouTube Settings',
-      icon: <Youtube className="w-4 h-4 text-red-600" />,
-    },
-    {
-      id: 'legal',
-      label: 'Legal & Policies',
-      icon: <Scale className="w-4 h-4 text-slate-600" />,
-    },
+    { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
+    { id: 'plan', label: 'Plan', icon: <CreditCard className="w-4 h-4" /> },
+    { id: 'credits', label: 'Credits', icon: <Coins className="w-4 h-4" /> },
+    { id: 'paper', label: 'ePaper', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'reporter', label: 'Reporter', icon: <Send className="w-4 h-4" /> },
+    { id: 'youtube', label: 'Broadcast', icon: <Youtube className="w-4 h-4" /> },
+    { id: 'legal', label: 'Legal', icon: <Scale className="w-4 h-4" /> },
   ];
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-16">
-      {/* Page Title & Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
-            <Building2 className="w-4 h-4" />
-            <span>Alfa New Gen Platforms • User Portal</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
-            User Console &amp; Account Hub
+    <div className="space-y-5 max-w-6xl mx-auto pb-10">
+      {/* Compact Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#e0e3e7] dark:border-[#3c4043]">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#202124] dark:text-[#f8f9fa] tracking-tight">
+            Account &amp; Wallet
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Manage your verified profile KYC, subscription tier, credit wallet, digital broadsheet, reporter dispatches, and YouTube automation.
+          <p className="text-xs sm:text-sm text-[#5f6368] dark:text-[#9aa0a6] mt-0.5 truncate">
+            {profile.displayName} · {plan.name}
           </p>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setIsOnboardingModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100 cursor-pointer flex items-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Edit Profile</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsOnboardingModalOpen(true)}
+          className="min-h-[40px] sm:min-h-[38px] px-4 rounded-xl bg-white dark:bg-[#242629] border border-[#dadce0] dark:border-[#3c4043] text-[#202124] dark:text-[#e8eaed] text-xs font-medium hover:bg-[#f8f9fa] dark:hover:bg-[#2f3136] cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 self-start sm:self-auto"
+        >
+          <User className="w-3.5 h-3.5" />
+          <span>Edit Profile</span>
+        </button>
       </div>
 
       {/* Global Notification Banner */}
       {actionSuccessMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-medium text-emerald-800 dark:text-emerald-200 flex items-center gap-2 animate-in fade-in duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-medium text-emerald-800 dark:text-emerald-200 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{actionSuccessMsg}</span>
         </div>
       )}
 
-      {/* Quick Summary Pill Banner */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center shrink-0">
-            <User className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">User Profile</div>
-            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{profile.displayName}</div>
+      {/* Compact Summary Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043] min-w-0">
+          <div className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Profile</div>
+          <div className="text-sm font-semibold text-[#202124] dark:text-white truncate mt-1">
+            {profile.displayName}
           </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center shrink-0">
-            <CreditCard className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Active Plan</div>
-            <div className="text-xs sm:text-sm font-bold text-purple-700 dark:text-purple-300 truncate">{plan.name}</div>
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043] min-w-0">
+          <div className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Plan</div>
+          <div className="text-sm font-semibold text-[#202124] dark:text-white truncate mt-1">
+            {plan.name}
           </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center shrink-0">
-            <Coins className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Credits Balance</div>
-            <div className="text-xs sm:text-sm font-extrabold text-amber-600 dark:text-amber-400 font-mono">
-              {wallet.currentBalance.toLocaleString()}
-            </div>
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043] min-w-0">
+          <div className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Credits</div>
+          <div className="text-sm font-semibold text-[#1a73e8] dark:text-[#8ab4f8] tabular-nums mt-1">
+            {wallet.currentBalance.toLocaleString()}
           </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 flex items-center justify-center shrink-0">
-            <Youtube className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">YouTube Status</div>
-            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-              {youtubeConfig.isConnected ? 'Connected' : 'Not Connected'}
-            </div>
+        <div className="p-3.5 rounded-2xl bg-white dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043] min-w-0">
+          <div className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Broadcast</div>
+          <div className="text-sm font-semibold text-[#202124] dark:text-white truncate mt-1">
+            {youtubeConfig.isConnected ? 'Connected' : 'Not Connected'}
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="border-b border-slate-200 dark:border-slate-800">
-        <nav className="flex space-x-2 sm:space-x-3 overflow-x-auto scrollbar-none py-1">
+      <div className="border-b border-[#e0e3e7] dark:border-[#3c4043]">
+        <nav className="flex items-center gap-1 overflow-x-auto scrollbar-none -mb-px">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id as UserPortalTabKey)}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                className={`min-h-[44px] flex items-center gap-2 px-3.5 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ? 'border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8]'
+                    : 'border-transparent text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white'
                 }`}
               >
                 {tab.icon}
@@ -1222,11 +1180,10 @@ export const UserPortalPage: React.FC<UserPortalPageProps> = ({ onNavigate }) =>
         isOpen={isOnboardingModalOpen}
         onClose={() => setIsOnboardingModalOpen(false)}
         initialName={profile.displayName}
-        initialEmail={profile.email}
-        initialPhotoUrl={profile.photoURL}
+        email={profile.email}
         onSuccess={(updated) => {
           setProfile(updated);
-          showNotification('Profile details and statutory agreements updated successfully!');
+          showNotification('Profile details updated.');
         }}
       />
     </div>

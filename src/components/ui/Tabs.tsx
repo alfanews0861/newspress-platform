@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,31 +21,26 @@ export interface TabsProps {
 
 export const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className = '' }) => {
   return (
-    <div className={`border-b border-slate-200 dark:border-slate-800 flex space-x-1 font-sans overflow-x-auto scrollbar-none min-w-0 max-w-full ${className}`}>
+    <div
+      className={`border-b border-[#e0e3e7] dark:border-[#3c4043] flex items-center gap-1 font-sans overflow-x-auto scrollbar-none min-w-0 max-w-full ${className}`}
+    >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
           <button
             key={tab.id}
+            type="button"
             onClick={() => onChange(tab.id)}
-            className={`inline-flex items-center gap-2 py-2.5 sm:py-3 px-3 sm:px-4 text-xs font-semibold tracking-normal border-b-2 transition-all cursor-pointer select-none rounded-t-lg shrink-0 whitespace-nowrap ${
+            className={`inline-flex items-center gap-2 min-h-[44px] sm:min-h-[40px] px-3.5 sm:px-4 text-xs sm:text-sm font-medium border-b-2 transition-colors cursor-pointer select-none shrink-0 whitespace-nowrap ${
               isActive
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/20 font-bold'
-                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:border-slate-300 dark:hover:border-slate-700'
+                ? 'border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] dark:border-[#8ab4f8] font-semibold'
+                : 'border-transparent text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white'
             }`}
           >
             {tab.icon}
             <span>{tab.label}</span>
             {tab.count !== undefined && (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 font-bold'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                {tab.count}
-              </span>
+              <span className="text-[11px] font-mono tabular-nums opacity-75">{tab.count}</span>
             )}
           </button>
         );

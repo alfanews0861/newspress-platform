@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, Lock, RefreshCw, Layers } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, Lock, RefreshCw, Layers, Rss } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -19,6 +19,7 @@ import { marketplaceAccessControlService, ModerationStatus } from '../../service
 import { MarketplaceListing } from '../../types/marketplace';
 import { useAuth } from '../../hooks/useAuth';
 import { formatINR } from '../../utils/formatters';
+import { navigateTo } from '../../utils/navigation';
 
 export const MarketplaceAdminPage: React.FC = () => {
   const { user } = useAuth();
@@ -65,6 +66,12 @@ export const MarketplaceAdminPage: React.FC = () => {
           { label: 'Admin', href: '#/admin' },
           { label: 'Marketplace Moderation' }
         ]}
+        actions={
+          <Button variant="primary" size="sm" onClick={() => navigateTo('/admin/wire-feeds')}>
+            <Rss className="w-4 h-4 mr-1.5" />
+            Manage Wire Feeds
+          </Button>
+        }
       />
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 font-sans">

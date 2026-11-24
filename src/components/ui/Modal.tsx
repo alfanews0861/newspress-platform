@@ -54,29 +54,38 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-      {/* Google Soft Backdrop */}
       <div
         className="fixed inset-0 bg-[#202124]/50 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Modal Dialog */}
-      <div className="min-h-full flex items-center justify-center p-2.5 sm:p-4 text-center">
+      {/* Native bottom-sheet on mobile, centered dialog on desktop */}
+      <div className="min-h-full flex items-end sm:items-center justify-center sm:p-4 text-center">
         <div
-          className={`w-full ${maxWidthStyles[maxWidth]} transform overflow-hidden rounded-2xl sm:rounded-3xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] text-left align-middle shadow-2xl transition-all relative z-50`}
+          className={`w-full ${maxWidthStyles[maxWidth]} transform overflow-hidden rounded-t-3xl sm:rounded-2xl bg-white dark:bg-[#242629] border-t sm:border border-[#e0e3e7] dark:border-[#3c4043] text-left align-middle shadow-2xl transition-all relative z-50`}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Mobile sheet grab handle */}
+          <div className="sm:hidden pt-2.5 pb-1 flex justify-center">
+            <div className="w-10 h-1 rounded-full bg-[#dadce0] dark:bg-[#5f6368]" />
+          </div>
+
           {/* Header */}
-          <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#dadce0] dark:border-[#444746] flex items-center justify-between bg-white dark:bg-[#28292a]">
-            <div className="pr-2 min-w-0">
-              <h3 className="text-base font-semibold text-[#202124] dark:text-[#f2f2f2] font-sans tracking-tight truncate">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e0e3e7] dark:border-[#3c4043] flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-[#202124] dark:text-[#f8f9fa] font-sans tracking-tight truncate">
                 {title}
               </h3>
-              {subtitle && <p className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal mt-0.5 truncate">{subtitle}</p>}
+              {subtitle && (
+                <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-0.5 truncate">
+                  {subtitle}
+                </p>
+              )}
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="text-[#5f6368] dark:text-[#c4c7c5] hover:text-[#202124] dark:hover:text-white p-1.5 sm:p-2 rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#333537] transition-colors cursor-pointer shrink-0"
+              className="min-h-[40px] min-w-[40px] flex items-center justify-center text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white rounded-full hover:bg-[#f1f3f4] dark:hover:bg-[#2e3135] transition-colors cursor-pointer shrink-0"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -84,13 +93,13 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
 
           {/* Body */}
-          <div className="px-4 sm:px-6 py-3.5 sm:py-5 max-h-[80dvh] sm:max-h-[75vh] overflow-y-auto text-sm text-[#3c4043] dark:text-[#e3e3e3] bg-white dark:bg-[#28292a] font-sans">
+          <div className="px-4 sm:px-6 py-4 sm:py-5 max-h-[78dvh] sm:max-h-[75vh] overflow-y-auto text-sm text-[#3c4043] dark:text-[#dadce0] font-sans">
             {children}
           </div>
 
           {/* Footer */}
           {footer && (
-            <div className="px-4 sm:px-6 py-3 sm:py-4 bg-[#f8fafd] dark:bg-[#202124] border-t border-[#dadce0] dark:border-[#444746] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 font-sans">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-4 bg-[#f8fafd] dark:bg-[#1f2124] border-t border-[#e0e3e7] dark:border-[#3c4043] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 font-sans">
               {footer}
             </div>
           )}

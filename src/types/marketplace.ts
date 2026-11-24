@@ -91,10 +91,18 @@ export interface MarketplaceListing {
   wordCount?: number;
   hasPhotography?: boolean;
   photoCount?: number;
+  featuredImageUrl?: string;
+  imageCaption?: string;
   hasVideo?: boolean;
   videoCount?: number;
   originalityStatus?: string;
   originalityScorePercent?: number;
+
+  // Syndicated wire metadata
+  sourceType?: 'REPORTER' | 'WIRE_FEED';
+  sourceFeedId?: string;
+  sourceFeedName?: string;
+  includedInSubscription?: boolean;
 
   // Commercial tracking
   viewsCount?: number;

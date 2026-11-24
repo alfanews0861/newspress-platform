@@ -89,6 +89,7 @@ class MarketplaceService {
   private wallets: Map<string, ReporterWallet> = new Map();
   private payouts: Map<string, PayoutRequest> = new Map();
   private licenseToEditions: Map<string, string[]> = new Map();
+  private wireArticleCache: Map<string, NewsArticle> = new Map();
 
   constructor() {
     // Seed default subscription plans
@@ -1832,6 +1833,187 @@ class MarketplaceService {
     };
   }
 
+  /**
+   * Merges live syndicated wire listings published to Firestore by the GCE e2-micro worker.
+   */
+  upsertLiveWireListings(wireListings: MarketplaceListing[]): void {
+    let changed = false;
+    for (const item of wireListings) {
+      if (!item.listingId) continue;
+      const existing = this.listings.get(item.listingId);
+      if (!existing || existing.updatedAt !== item.updatedAt || existing.featuredImageUrl !== item.featuredImageUrl) {
+        this.listings.set(item.listingId, {
+          ...existing,
+          ...item,
+        });
+        changed = true;
+      }
+    }
+    if (changed) {
+      this.persistState();
+    }
+  }
+
+  /**
+   * Caches a full rewritten article fetched from Firestore /news/{newsId}.
+   */
+  cacheWireArticle(article: NewsArticle): void {
+    if (!article?.articleId) return;
+    this.wireArticleCache.set(article.articleId, article);
+  }
+
+  /**
+   * Claims a subscriber-included wire story at ₹0 without consuming paid pack units.
+   * Requires an active Marketplace subscription entitlement on the buyer tenant.
+   */
+  async claimSubscriberIncludedStory(params: {
+    idempotencyKey: string;
+    buyerTenantId: string;
+    buyerTenantName?: string;
+    buyerUserId: string;
+    buyerUserName?: string;
+    listingId: string;
+  }): Promise<{
+    purchase: MarketplacePurchase;
+    license: NewsLicense;
+  }> {
+    const {
+      idempotencyKey,
+      buyerTenantId,
+      buyerTenantName = 'Subscriber Organization',
+      buyerUserId,
+      buyerUserName = 'Subscriber Editor',
+      listingId,
+    } = params;
+
+    const listing = this.listings.get(listingId);
+    if (!listing) throw new Error('Listing not found');
+
+    const isSubscriberIncluded = Boolean(
+      listing.includedInSubscription ||
+        (listing.sourceType === 'WIRE_FEED' && listing.pricingModel === 'SUBSCRIPTION_ENTITLEMENT' && listing.price === 0)
+    );
+    if (!isSubscriberIncluded) {
+      throw new Error('This listing is not eligible for zero-cost subscriber wire claims.');
+    }
+
+    const entitlement = this.entitlements.get(buyerTenantId);
+    if (!entitlement || entitlement.status !== 'active') {
+      throw new Error('An active Marketplace subscription is required to claim included wire stories.');
+    }
+
+    // Reuse existing active license if already claimed
+    const existingLicense = Array.from(this.licenses.values()).find(
+      (lic) => lic.listingId === listingId && lic.buyerTenantId === buyerTenantId && lic.status === 'ACTIVE'
+    );
+    const now = new Date().toISOString();
+
+    if (existingLicense) {
+      const existingPurchase: MarketplacePurchase = {
+        purchaseId: existingLicense.purchaseId || `wire_claim_${Date.now()}`,
+        idempotencyKey,
+        buyerTenantId,
+        buyerTenantName,
+        buyerUserId,
+        buyerUserName,
+        listingId,
+        newsId: listing.newsId,
+        reporterId: listing.reporterId,
+        reporterName: listing.reporterName,
+        sourceTenantId: listing.sourceTenantId,
+        licenseId: existingLicense.licenseId,
+        pricingModel: 'SUBSCRIPTION_ENTITLEMENT',
+        grossAmount: 0,
+        platformFee: 0,
+        reporterShare: 0,
+        sourceOrganizationShare: 0,
+        currency: listing.currency || 'INR',
+        status: 'completed',
+        purchasedAt: existingLicense.grantedAt,
+        articleTitle: listing.title,
+        licenseType: existingLicense.type,
+      };
+      return { purchase: existingPurchase, license: existingLicense };
+    }
+
+    const purchaseId = `wire_claim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const licenseId = `lic_wire_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const license: NewsLicense = {
+      licenseId,
+      purchaseId,
+      listingId,
+      newsId: listing.newsId,
+      articleTitle: listing.title,
+      buyerTenantId,
+      buyerTenantName,
+      buyerUserId,
+      sellerReporterId: listing.reporterId,
+      sellerReporterName: listing.reporterName,
+      sourceTenantId: listing.sourceTenantId,
+      type: 'DIGITAL_AND_PRINT',
+      scope: 'subscriber_wire_syndication',
+      territory: listing.state || 'National',
+      durationDays: 365,
+      allowedMedia: ['digital_web', 'print_broadsheet'],
+      allowedEditions: -1,
+      exclusivity: false,
+      resaleAllowed: false,
+      derivativeEditingAllowed: true,
+      attributionRequired: true,
+      status: 'ACTIVE',
+      grantedAt: now,
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    const purchase: MarketplacePurchase = {
+      purchaseId,
+      idempotencyKey,
+      buyerTenantId,
+      buyerTenantName,
+      buyerUserId,
+      buyerUserName,
+      listingId,
+      newsId: listing.newsId,
+      reporterId: listing.reporterId,
+      reporterName: listing.reporterName,
+      sourceTenantId: listing.sourceTenantId,
+      licenseId,
+      pricingModel: 'SUBSCRIPTION_ENTITLEMENT',
+      grossAmount: 0,
+      platformFee: 0,
+      reporterShare: 0,
+      sourceOrganizationShare: 0,
+      currency: listing.currency || 'INR',
+      status: 'completed',
+      purchasedAt: now,
+      entitlementId: entitlement.entitlementId,
+      articleTitle: listing.title,
+      licenseType: 'DIGITAL_AND_PRINT',
+    };
+
+    listing.purchasesCount = (listing.purchasesCount || 0) + 1;
+    this.purchases.set(purchaseId, purchase);
+    this.licenses.set(licenseId, license);
+    this.idempotencyRecords.set(idempotencyKey, purchase);
+    this.persistState();
+
+    await auditService.log({
+      tenantId: buyerTenantId,
+      actorId: buyerUserId,
+      actorName: buyerUserName,
+      actorRole: 'buyer',
+      action: 'SUBSCRIBER_WIRE_CLAIMED',
+      entityType: 'NewsLicense',
+      entityId: licenseId,
+      newState: license,
+      reason: `Claimed subscriber-included wire story "${listing.title}" at ₹0`,
+      metadata: { listingId, newsId: listing.newsId, entitlementId: entitlement.entitlementId },
+    });
+
+    return { purchase, license };
+  }
+
   // ====================================================
   // CONTENT ACCESS CONTROL & REDACTION
   // ====================================================
@@ -1852,6 +2034,8 @@ class MarketplaceService {
     headline: string;
     leadParagraph: string;
     bodyContent?: string;
+    featuredImageUrl?: string;
+    imageCaption?: string;
     byline: string;
     category: string;
     location?: string;
@@ -1861,8 +2045,9 @@ class MarketplaceService {
   } {
     const { newsId, requestingTenantId, requestingUserId, requestingRole } = params;
 
-    // Find the underlying article from dynamic newsSubmissionService first, then seed articles
+    // Find the underlying article from live wire cache, dynamic newsSubmissionService, then seed articles
     const article =
+      this.wireArticleCache.get(newsId) ||
       newsSubmissionService.getArticle(newsId) ||
       MOCK_NEWS_ARTICLES.find(a => a.articleId === newsId);
     const listing = Array.from(this.listings.values()).find(l => l.newsId === newsId);
@@ -1872,6 +2057,9 @@ class MarketplaceService {
     const byline = article?.byline || listing?.reporterByline || 'Staff Reporter';
     const category = article?.category || listing?.category || 'News';
     const location = article?.location || listing?.district;
+    const featuredImageUrl =
+      article?.coverImageUrl || article?.heroImageUrl || article?.imageUrl || listing?.featuredImageUrl;
+    const imageCaption = article?.coverImageCaption || article?.imageCaption || listing?.imageCaption;
 
     // 1. Check if user is the original author
     if (article?.authorId === requestingUserId || listing?.reporterId === requestingUserId) {
@@ -1914,6 +2102,8 @@ class MarketplaceService {
         headline,
         leadParagraph: lead,
         bodyContent: article?.bodyContent || `${lead}\n\n[Full Syndicated Wire Dispatch: Complete verified text released under license ${activeLicense.licenseId}. Authorized for publication under ${activeLicense.type} terms.]`,
+        featuredImageUrl,
+        imageCaption,
         byline,
         category,
         location,
@@ -1925,16 +2115,19 @@ class MarketplaceService {
     }
 
     // 4. Fallback: Public / Unpurchased preview only
-    // NO FREE NEWS: Full story content is omitted
     return {
       hasFullAccess: false,
       headline,
       leadParagraph: lead,
       bodyContent: undefined, // Omitted
+      featuredImageUrl,
+      imageCaption,
       byline,
       category,
       location,
-      accessReason: 'Marketplace Preview Only (Full story requires license or subscription redemption)',
+      accessReason: listing?.includedInSubscription
+        ? 'Subscriber Wire Preview (Claim free with your active Marketplace subscription)'
+        : 'Marketplace Preview Only (Full story requires license or subscription redemption)',
       isEvidenceRedacted: true
     };
   }
@@ -1961,6 +2154,7 @@ class MarketplaceService {
       license: lic,
       listing: lic.listingId ? this.listings.get(lic.listingId) : undefined,
       article:
+        this.wireArticleCache.get(lic.newsId) ||
         newsSubmissionService.getArticle(lic.newsId) ||
         MOCK_NEWS_ARTICLES.find(a => a.articleId === lic.newsId)
     }));

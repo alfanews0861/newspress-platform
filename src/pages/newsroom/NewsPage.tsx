@@ -8,25 +8,13 @@ import {
   Newspaper,
   Plus,
   Search,
-  Filter,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  ShieldCheck,
-  MapPin,
   Megaphone,
   FileText,
-  List,
-  LayoutGrid,
   RotateCcw,
-  SlidersHorizontal,
-  ArrowUpDown
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Modal } from '../../components/ui/Modal';
 import { usePermission } from '../../hooks/usePermission';
@@ -46,9 +34,7 @@ export const NewsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedEditorialStatus, setSelectedEditorialStatus] = useState<string>('all');
-  const [selectedOriginality, setSelectedOriginality] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'words_desc'>('newest');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [isNewArticleModalOpen, setIsNewArticleModalOpen] = useState(false);
 
   // New story modal state
@@ -92,11 +78,7 @@ export const NewsPage: React.FC = () => {
       const matchesStatus =
         selectedEditorialStatus === 'all' || a.editorialStatus === selectedEditorialStatus;
 
-      const matchesOriginality =
-        selectedOriginality === 'all' ||
-        (a.originalityStatus && a.originalityStatus.toLowerCase() === selectedOriginality.toLowerCase());
-
-      return matchesSearch && matchesCategory && matchesStatus && matchesOriginality;
+      return matchesSearch && matchesCategory && matchesStatus;
     })
     .sort((a, b) => {
       if (sortBy === 'oldest') {
@@ -112,30 +94,31 @@ export const NewsPage: React.FC = () => {
     searchQuery.trim() !== '' ||
     selectedCategory !== 'all' ||
     selectedEditorialStatus !== 'all' ||
-    selectedOriginality !== 'all' ||
     sortBy !== 'newest';
 
   const resetFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
     setSelectedEditorialStatus('all');
-    setSelectedOriginality('all');
     setSortBy('newest');
   };
 
   const categories = [
-    { id: 'all', label: 'All Desks' },
+    { id: 'all', label: 'All' },
     { id: 'national', label: 'National' },
     { id: 'state', label: 'State' },
-    { id: 'district', label: 'District News' },
-    { id: 'metro_transit', label: 'Metro & Transit' },
-    { id: 'city_hall', label: 'City Hall' },
-    { id: 'commerce', label: 'Commerce & Shipping' },
-    { id: 'investigative', label: 'Investigative' }
+    { id: 'district', label: 'District' },
+    { id: 'metro_transit', label: 'Metro' },
+    { id: 'city_hall', label: 'City' },
+    { id: 'commerce', label: 'Business' },
+    { id: 'investigative', label: 'Investigative' },
   ];
 
   const handleCreateArticle = async () => {
-    if (!headline || !leadParagraph) return;
+    if (!headline.trim() || !leadParagraph.trim()) {
+      setModalError('Headline and lead paragraph are required.');
+      return;
+    }
     setModalError(null);
 
     try {
@@ -150,11 +133,11 @@ export const NewsPage: React.FC = () => {
           bodyContent: bodyContent || leadParagraph,
           category,
           location,
-          reporterDeclaration: 'original_field_report'
+          reporterDeclaration: 'original_field_report',
         })).articleId,
         reporterId: user?.uid || 'user-sofia-chen',
         declaration: 'original_field_report',
-        clientCapturedAt: new Date().toISOString()
+        clientCapturedAt: new Date().toISOString(),
       });
 
       reload();
@@ -163,19 +146,15 @@ export const NewsPage: React.FC = () => {
       setLeadParagraph('');
       setBodyContent('');
     } catch (err: any) {
-      setModalError(`Error creating article: ${err.message}`);
+      setModalError(err?.message || 'Could not submit story.');
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       <PageHeader
-        title="News Dispatch & Wire"
-        subtitle={`Tenant-scoped newsroom story pipeline for ${currentTenant.organizationName}. Stories undergo algorithmic originality indexing and multi-factor verification prior to publishing.`}
-        breadcrumbs={[
-          { label: 'Newsroom', href: '#' },
-          { label: 'News Dispatch' },
-        ]}
+        title="Stories"
+        subtitle={currentTenant.organizationName}
         actions={
           activeMainTab === 'news_articles' && can('news.create') ? (
             <Button
@@ -184,371 +163,185 @@ export const NewsPage: React.FC = () => {
               leftIcon={<Plus className="w-4 h-4" />}
               onClick={() => setIsNewArticleModalOpen(true)}
             >
-              Draft New Story
+              New Story
             </Button>
           ) : undefined
         }
       />
 
-      {/* Main Switcher: News Stories Wire vs. Advertisements Upload Tab */}
-      <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-2">
+      {/* Clean Desk Switcher */}
+      <div className="flex items-center gap-1 border-b border-[#e0e3e7] dark:border-[#3c4043]">
         <button
+          type="button"
           onClick={() => setActiveMainTab('news_articles')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+          className={`min-h-[44px] px-4 text-sm font-medium inline-flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
             activeMainTab === 'news_articles'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8]'
+              : 'border-transparent text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white'
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>News Stories & Wire</span>
-          <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
-            {articles.length}
-          </span>
+          <span>Stories</span>
+          <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6] tabular-nums">({articles.length})</span>
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveMainTab('advertisements')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+          className={`min-h-[44px] px-4 text-sm font-medium inline-flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
             activeMainTab === 'advertisements'
-              ? 'bg-amber-600 text-white shadow-sm'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8]'
+              : 'border-transparent text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white'
           }`}
         >
           <Megaphone className="w-4 h-4" />
-          <span>Advertisements Desk</span>
-          <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
-            New
-          </span>
+          <span>Ads</span>
         </button>
       </div>
 
-      {/* RENDER ADVERTISEMENTS DESK WHEN TAB IS ACTIVE */}
       {activeMainTab === 'advertisements' ? (
         <AdvertisementUploadManager />
       ) : (
         <>
-          {/* Enhanced Filter and Control Toolbar */}
-          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-            {/* Top Row: Search and Category Pills */}
-            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-              <div className="w-full lg:w-80 shrink-0">
+          {/* Compact Filter Bar */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043] space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div className="flex-1">
                 <Input
-                  placeholder="Search headline, reporter byline, district..."
+                  placeholder="Search headline, reporter, or district..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  leftIcon={<Search className="w-4 h-4 text-slate-400" />}
+                  leftIcon={<Search className="w-4 h-4" />}
                 />
               </div>
 
-              {/* Categories / Desks Rail */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-sans font-medium transition-all whitespace-nowrap cursor-pointer shrink-0 ${
-                      selectedCategory === cat.id
-                        ? 'bg-blue-600 text-white shadow-xs font-semibold'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                <select
+                  aria-label="Filter by status"
+                  value={selectedEditorialStatus}
+                  onChange={(e) => setSelectedEditorialStatus(e.target.value)}
+                  className="min-h-[44px] sm:min-h-[40px] px-3 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#1b1c1f] text-xs font-medium text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8] cursor-pointer"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="approved">Approved</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="in_review">In Review</option>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+
+                <select
+                  aria-label="Sort stories"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="min-h-[44px] sm:min-h-[40px] px-3 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#1b1c1f] text-xs font-medium text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8] cursor-pointer"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="words_desc">Longest</option>
+                </select>
               </div>
             </div>
 
-            {/* Bottom Row: Secondary Filters (Status, Originality, Sort, Reset, View Mode Toggle) */}
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Editorial Status Filter */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Status:</span>
-                  <select
-                    value={selectedEditorialStatus}
-                    onChange={(e) => setSelectedEditorialStatus(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="approved">Approved</option>
-                    <option value="submitted">Submitted</option>
-                    <option value="in_review">In Review</option>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                  </select>
-                </div>
-
-                {/* Originality Filter */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium">Originality:</span>
-                  <select
-                    value={selectedOriginality}
-                    onChange={(e) => setSelectedOriginality(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="all">All Originality</option>
-                    <option value="verified_original">Verified Original</option>
-                    <option value="pending">Pending</option>
-                    <option value="flagged_plagiarism">Flagged Plagiarism</option>
-                  </select>
-                </div>
-
-                {/* Sort selector */}
-                <div className="flex items-center gap-1.5">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-slate-700 dark:text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="words_desc">Longest (Word Count)</option>
-                  </select>
-                </div>
-
-                {/* Reset Button */}
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 hover:underline px-2 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Reset</span>
-                  </button>
-                )}
-              </div>
-
-              {/* View Mode Switcher */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 ml-auto">
+            {/* Horizontally Scrollable Desk Rail */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+              {categories.map((cat) => (
                 <button
+                  key={cat.id}
                   type="button"
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer ${
-                    viewMode === 'list'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`min-h-[36px] px-3 rounded-xl text-xs transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    selectedCategory === cat.id
+                      ? 'bg-[#1a73e8] text-white font-semibold'
+                      : 'bg-[#f1f3f4] dark:bg-[#1b1c1f] text-[#3c4043] dark:text-[#bdc1c6] hover:bg-[#e8eaed] dark:hover:bg-[#2f3136] font-medium'
                   }`}
-                  title="Compact List View"
                 >
-                  <List className="w-3.5 h-3.5" />
-                  <span>List View</span>
+                  {cat.label}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('grid')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer ${
-                    viewMode === 'grid'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                  title="Grid View"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                  <span>Grid View</span>
-                </button>
-              </div>
+              ))}
             </div>
-          </div>
 
-          {/* Results Count Banner */}
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
-            <span>
-              Showing <strong className="text-slate-800 dark:text-slate-200 font-semibold">{filteredArticles.length}</strong> of {articles.length} news stories
-              {hasActiveFilters && ' (filtered)'}
-            </span>
-            <span className="text-[11px] text-slate-400">
-              Mode: {viewMode === 'list' ? 'Compact List Items' : 'Standard Grid Cards'}
-            </span>
-          </div>
-
-          {/* Articles Display: List View (Compact small boxes) vs Grid View */}
-          {filteredArticles.length === 0 ? (
-            <div className="text-center py-12 p-6 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <Newspaper className="w-10 h-10 mx-auto text-slate-400 mb-2" />
-              <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">No stories match your filter</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Try adjusting your search query, desk category or editorial status.</p>
+            {/* Subtle Results Count */}
+            <div className="pt-2 border-t border-[#eceff1] dark:border-[#3c4043] flex items-center justify-between text-xs text-[#5f6368] dark:text-[#9aa0a6] tabular-nums">
+              <span>
+                <strong className="text-[#202124] dark:text-white font-semibold">{filteredArticles.length}</strong> of {articles.length} stories
+              </span>
               {hasActiveFilters && (
                 <button
+                  type="button"
                   onClick={resetFilters}
-                  className="mt-3 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                  className="inline-flex items-center gap-1 text-[#1a73e8] dark:text-[#8ab4f8] font-medium hover:underline cursor-pointer"
                 >
-                  Clear All Filters
+                  <RotateCcw className="w-3 h-3" />
+                  Reset
                 </button>
               )}
             </div>
-          ) : viewMode === 'list' ? (
-            /* COMPACT LIST ITEMS (Small Cards) */
+          </div>
+
+          {/* Stories Feed */}
+          {filteredArticles.length === 0 ? (
+            <div className="text-center py-12 px-5 rounded-2xl border border-dashed border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#242629]">
+              <Newspaper className="w-9 h-9 mx-auto text-[#9aa0a6] mb-2.5 stroke-1.5" />
+              <h4 className="text-sm font-semibold text-[#202124] dark:text-white">No stories found</h4>
+              <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-1">
+                Adjust your search or clear active filters.
+              </p>
+              {hasActiveFilters && (
+                <div className="mt-4">
+                  <Button variant="secondary" size="sm" onClick={resetFilters}>
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
             <div className="space-y-3">
               {filteredArticles.map((article) => (
-                <div
+                <article
                   key={article.articleId}
-                  className="p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-xs hover:shadow-sm flex flex-col sm:flex-row gap-4 items-start font-sans"
+                  className="p-3.5 sm:p-4 rounded-2xl border border-[#e0e3e7] dark:border-[#3c4043] bg-white dark:bg-[#242629] hover:border-[#bdc1c6] dark:hover:border-[#5f6368] transition-colors flex flex-col sm:flex-row gap-3.5 items-start"
                 >
-                  {/* Small Thumbnail */}
-                  {article.imageUrl ? (
-                    <div className="w-full sm:w-32 h-28 sm:h-24 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 relative group">
+                  {article.imageUrl && (
+                    <div className="w-full sm:w-32 h-36 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-[#f1f3f4] dark:bg-[#1b1c1f]">
                       <img
                         src={article.imageUrl}
                         alt={article.headline}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover"
                         loading="lazy"
                       />
-                      {article.district && (
-                        <span className="absolute bottom-1 left-1 bg-black/75 backdrop-blur-xs text-[10px] text-white px-1.5 py-0.5 rounded font-sans flex items-center gap-0.5">
-                          <MapPin className="w-2.5 h-2.5" /> {article.district}
-                        </span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="w-full sm:w-32 h-20 sm:h-24 rounded-lg shrink-0 border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center text-slate-400">
-                      <Newspaper className="w-5 h-5 stroke-1 mb-1 text-slate-400" />
-                      <span className="text-[10px] text-slate-400">No Photo</span>
                     </div>
                   )}
 
-                  {/* Main Details */}
                   <div className="flex-1 min-w-0 space-y-1.5 w-full">
-                    {/* Badges line */}
-                    <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <Badge variant="primary" size="sm">
-                        {article.category}
-                      </Badge>
-                      <StatusBadge status={article.editorialStatus} />
-                      <StatusBadge status={article.originalityStatus || 'UNVERIFIED'} />
-                      {article.district && !article.imageUrl && (
-                        <span className="inline-flex items-center text-xs font-semibold text-blue-700 dark:text-blue-400 gap-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>{article.district}</span>
-                          {article.state && <span className="text-slate-400 font-normal">({article.state})</span>}
-                        </span>
-                      )}
-                      {article.isMarketplaceEligible && (
-                        <span className="ml-auto text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/60">
-                          Marketplace Eligible
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Headline */}
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-sans leading-snug line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                      {article.headline}
-                    </h3>
-
-                    {/* Lead Excerpt */}
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-1 sm:line-clamp-2 font-normal font-sans">
-                      {article.leadParagraph}
-                    </p>
-
-                    {/* Footer Meta */}
-                    <div className="pt-1 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 flex-wrap gap-2 border-t border-slate-100 dark:border-slate-800/60 mt-2">
-                      <div className="flex items-center gap-2 flex-wrap text-[11px]">
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">Byline: {article.byline}</span>
-                        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
-                        <span className="capitalize">{article.authorType} Reporter</span>
-                        <span aria-hidden="true" className="text-slate-300 dark:text-slate-700">·</span>
-                        <span className="font-medium text-slate-700 dark:text-slate-300">{article.wordCount} words</span>
-                      </div>
-
-                      {article.tags && article.tags.length > 0 && (
-                        <div className="hidden sm:flex items-center gap-1">
-                          {article.tags.slice(0, 3).map((tag) => (
-                            <span
-                              key={tag}
-                              className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                          {article.tags.length > 3 && (
-                            <span className="text-[10px] text-slate-400">+{article.tags.length - 3}</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* GRID VIEW (Large Cards) */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {filteredArticles.map((article) => (
-                <Card
-                  key={article.articleId}
-                  variant="default"
-                  className="flex flex-col justify-between hover:border-slate-400 dark:hover:border-slate-700 transition-all hover:shadow-md"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="primary" size="sm">
-                        {article.category}
-                      </Badge>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={article.editorialStatus} />
-                        <StatusBadge status={article.originalityStatus || 'UNVERIFIED'} />
-                      </div>
-                    </div>
-
-                    {article.imageUrl && (
-                      <div className="relative w-full h-44 overflow-hidden rounded-md border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
-                        <img
-                          src={article.imageUrl}
-                          alt={article.headline}
-                          className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
-                          loading="lazy"
-                        />
-                        {article.imageCaption && (
-                          <div className="absolute bottom-0 inset-x-0 bg-slate-950/80 backdrop-blur-xs text-[11px] text-slate-200 px-2 py-1 line-clamp-1 font-sans">
-                            📷 {article.imageCaption}
-                          </div>
+                    <div className="flex items-center justify-between gap-2 text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                        <span className="font-semibold text-[#1a73e8] dark:text-[#8ab4f8]">{article.category}</span>
+                        {article.district && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="truncate">{article.district}</span>
+                          </>
                         )}
                       </div>
-                    )}
+                      <StatusBadge status={article.editorialStatus} />
+                    </div>
 
-                    {article.district && (
-                      <div className="flex items-center text-xs font-semibold text-blue-700 dark:text-blue-400 gap-1">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span>{article.district}</span>
-                        {article.state && <span className="text-slate-400">({article.state})</span>}
-                      </div>
-                    )}
-
-                    <h3 className="text-base font-bold text-black dark:text-white font-sans leading-snug">
+                    <h3 className="text-[15px] sm:text-base font-semibold text-[#202124] dark:text-[#f8f9fa] leading-snug line-clamp-2">
                       {article.headline}
                     </h3>
 
-                    <p className="text-xs text-black dark:text-slate-300 leading-relaxed line-clamp-3 font-normal">
+                    <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] leading-relaxed line-clamp-2">
                       {article.leadParagraph}
                     </p>
 
-                    <div className="pt-1 flex flex-wrap gap-1.5">
-                      {article.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-[11px] font-sans px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-black dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-medium"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
+                    <div className="pt-1 flex items-center gap-2 text-xs text-[#5f6368] dark:text-[#9aa0a6] flex-wrap tabular-nums">
+                      <span className="font-medium text-[#3c4043] dark:text-[#e8eaed]">{article.byline}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{article.wordCount} words</span>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-black dark:text-slate-400 font-sans">
-                    <div>
-                      <span className="text-black dark:text-white font-semibold">Byline: {article.byline}</span>
-                      <span className="text-black dark:text-slate-400 block text-[11px] capitalize font-medium">{article.authorType} Reporter</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-black dark:text-slate-300 font-medium">{article.wordCount} words</span>
-                      {article.isMarketplaceEligible && (
-                        <span className="block text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Marketplace Eligible</span>
-                      )}
-                    </div>
-                  </div>
-                </Card>
+                </article>
               ))}
             </div>
           )}
@@ -559,9 +352,9 @@ export const NewsPage: React.FC = () => {
       <Modal
         isOpen={isNewArticleModalOpen}
         onClose={() => setIsNewArticleModalOpen(false)}
-        title="File Story Dispatch"
-        subtitle={`Filing into ${currentTenant.organizationName} editorial desk`}
-        maxWidth="xl"
+        title="New Story"
+        subtitle={currentTenant.organizationName}
+        maxWidth="lg"
         footer={
           <>
             <Button
@@ -572,7 +365,7 @@ export const NewsPage: React.FC = () => {
               Cancel
             </Button>
             <Button variant="primary" size="sm" onClick={handleCreateArticle}>
-              Submit to Editorial Desk
+              Submit Story
             </Button>
           </>
         }
@@ -583,70 +376,64 @@ export const NewsPage: React.FC = () => {
               {modalError}
             </div>
           )}
+
           <Input
-            label="Article Headline"
-            placeholder="e.g. Municipal Transit Authority Approves Clean Fleet Timetable"
+            label="Headline"
+            placeholder="Enter story headline..."
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
           />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-black dark:text-slate-200">
-                Editorial Desk / Category
+              <label className="block text-xs font-medium text-[#3c4043] dark:text-[#e8eaed]">
+                Desk
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm text-black dark:text-slate-100 font-medium focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-sans"
+                className="w-full min-h-[44px] sm:min-h-[40px] bg-white dark:bg-[#1b1c1f] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3.5 text-sm text-[#202124] dark:text-[#f8f9fa] focus:outline-none focus:border-[#1a73e8]"
               >
-                <option value="Metro & Transit">Metro & Transit</option>
+                <option value="Metro & Transit">Metro &amp; Transit</option>
                 <option value="City Hall">City Hall</option>
-                <option value="Commerce & Shipping">Commerce & Shipping</option>
+                <option value="Commerce & Shipping">Business</option>
                 <option value="Investigative">Investigative</option>
                 <option value="National">National</option>
               </select>
             </div>
 
             <Input
-              label="Location / Landmark"
-              placeholder="e.g. City Hall West Annex"
+              label="Location"
+              placeholder="City or district"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-black dark:text-slate-200">
-              Lead Paragraph (Inverted Pyramid)
+            <label className="block text-xs font-medium text-[#3c4043] dark:text-[#e8eaed]">
+              Lead Paragraph
             </label>
             <textarea
               rows={3}
-              placeholder="State the core news hook: who, what, when, where, and why..."
+              placeholder="Core summary of the story..."
               value={leadParagraph}
               onChange={(e) => setLeadParagraph(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm text-black dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-sans transition-colors"
+              className="w-full bg-white dark:bg-[#1b1c1f] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3.5 py-2.5 text-sm text-[#202124] dark:text-[#f8f9fa] placeholder-[#5f6368] dark:placeholder-[#9aa0a6] focus:outline-none focus:border-[#1a73e8]"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-black dark:text-slate-200">
-              Story Body & Sourced Quotes
+            <label className="block text-xs font-medium text-[#3c4043] dark:text-[#e8eaed]">
+              Body
             </label>
             <textarea
-              rows={6}
-              placeholder="Provide background context, attribution, documentary evidence, and secondary sources..."
+              rows={5}
+              placeholder="Full story text and quotes..."
               value={bodyContent}
               onChange={(e) => setBodyContent(e.target.value)}
-              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-sm text-black dark:text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-sans transition-colors"
+              className="w-full bg-white dark:bg-[#1b1c1f] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3.5 py-2.5 text-sm text-[#202124] dark:text-[#f8f9fa] placeholder-[#5f6368] dark:placeholder-[#9aa0a6] focus:outline-none focus:border-[#1a73e8]"
             />
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 text-xs text-black dark:text-blue-300 flex items-center gap-2.5 font-sans font-medium">
-            <Sparkles className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
-            <span>
-              All submissions undergo algorithmic originality indexing and metadata attribution checks upon desk submission.
-            </span>
           </div>
         </div>
       </Modal>

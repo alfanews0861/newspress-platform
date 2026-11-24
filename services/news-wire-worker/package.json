@@ -1,0 +1,21 @@
+{
+  "name": "newspress-news-wire-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lightweight Google Compute Engine e2-micro Always Free worker for NewsPress Marketplace wire ingestion and editorial rewriting.",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "run-once": "node src/index.js --once"
+  },
+  "dependencies": {
+    "@google/genai": "^3.6.1",
+    "cheerio": "^1.0.0",
+    "dotenv": "^17.2.3",
+    "fast-xml-parser": "^4.5.1",
+    "firebase-admin": "^13.0.2"
+  }
+}

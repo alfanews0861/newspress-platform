@@ -25,28 +25,38 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full space-y-1.5 text-left font-sans">
         {label && (
-          <label htmlFor={selectId} className="block text-xs font-medium text-[#202124] dark:text-slate-200">
+          <label
+            htmlFor={selectId}
+            className="block text-xs font-semibold text-[#3c4043] dark:text-[#dadce0]"
+          >
             {label}
           </label>
         )}
         <select
           id={selectId}
           ref={ref}
-          className={`w-full bg-white dark:bg-slate-900 border rounded-lg px-3.5 py-2 text-sm text-[#202124] dark:text-slate-100 transition-all focus:outline-none ${
+          className={`w-full min-h-[44px] sm:min-h-[40px] bg-white dark:bg-[#1a1c1e] border rounded-xl px-3.5 py-2 text-sm text-[#202124] dark:text-[#f8f9fa] transition-colors focus:outline-none ${
             error
-              ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
-              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20'
+              ? 'border-[#d93025] focus:border-[#d93025] focus:ring-2 focus:ring-[#d93025]/20'
+              : 'border-[#dadce0] dark:border-[#3c4043] hover:border-[#bdc1c6] dark:hover:border-[#5f6368] focus:border-[#1a73e8] focus:ring-2 focus:ring-[#1a73e8]/20'
           } ${className}`}
           {...props}
         >
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value} disabled={opt.disabled} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <option
+              key={opt.value}
+              value={opt.value}
+              disabled={opt.disabled}
+              className="bg-white dark:bg-[#242629] text-[#202124] dark:text-[#f8f9fa]"
+            >
               {opt.label}
             </option>
           ))}
         </select>
-        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-        {!error && helperText && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{helperText}</p>}
+        {error && <p className="text-xs text-[#d93025] dark:text-[#f28b82] mt-1">{error}</p>}
+        {!error && helperText && (
+          <p className="text-xs text-[#5f6368] dark:text-[#9aa0a6] mt-1">{helperText}</p>
+        )}
       </div>
     );
   }

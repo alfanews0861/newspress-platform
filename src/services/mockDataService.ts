@@ -17,6 +17,7 @@ import { Subscription } from '../types/billing';
 import { TELUGU_NEWS_ARTICLES_100 } from '../data/teluguSampleNews';
 import { TELUGU_NEWSPAPER_BRAND, TELUGU_NEWSPAPER_EDITION, TELUGU_PREPLANNED_PAGES } from '../data/teluguEditionSample';
 import { READYMADE_MASTHEAD_TEMPLATES } from '../data/readymadeMastheadTemplates';
+import { INDIAN_MEDIA } from '../data/indianMediaAssets';
 
 export { TELUGU_NEWS_ARTICLES_100, TELUGU_NEWSPAPER_BRAND, TELUGU_NEWSPAPER_EDITION, TELUGU_PREPLANNED_PAGES };
 
@@ -494,7 +495,7 @@ export const MOCK_TENANTS: Tenant[] = [
     organizationName: 'The Metropolitan Chronicle',
     legalName: 'Metropolitan News Media Publishing Group LLC',
     tagline: 'The Independent Voice of Record Since 1894',
-    logoUrl: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=120&auto=format&fit=crop&q=80',
+    logoUrl: INDIAN_MEDIA.heroNewsroom,
     contact: {
       email: 'desk@metrochronicle.press',
       phone: '+1 (212) 555-0192',
@@ -518,7 +519,7 @@ export const MOCK_TENANTS: Tenant[] = [
     organizationName: 'Pacific Tribune & Dispatch',
     legalName: 'Pacific Rim Media & Investigative Consortium',
     tagline: 'Deep Regional Investigative Journalism',
-    logoUrl: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=120&auto=format&fit=crop&q=80',
+    logoUrl: INDIAN_MEDIA.peopleReadingPaper,
     contact: {
       email: 'newsroom@pacifictribune.org',
       phone: '+1 (415) 555-8321',
@@ -541,7 +542,7 @@ export const MOCK_TENANTS: Tenant[] = [
     organizationName: 'Financial Courier & Gazette',
     legalName: 'Global Markets Newspaper House Ltd',
     tagline: 'Capital Markets, Trade & Industrial Intelligence',
-    logoUrl: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=120&auto=format&fit=crop&q=80',
+    logoUrl: INDIAN_MEDIA.broadcastStudio,
     contact: {
       email: 'editorial@couriergazette.co.uk',
       phone: '+44 20 7946 0912',
@@ -643,7 +644,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-alfa-admin',
     email: 'alfanewsservice@gmail.com',
     displayName: 'Alfa News Admin (Publisher & Platform SuperAdmin)',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.seniorEditorPortrait,
     platformRole: 'super_admin',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',
@@ -656,7 +657,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-ananya-sen',
     email: 'ananya.sen@newspress.io',
     displayName: 'Ananya Sen (Customer Support & Operations Lead)',
-    avatarUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.femaleFieldReporter,
     platformRole: 'support_admin',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',
@@ -669,7 +670,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-vikram-singhania',
     email: 'vikram.singhania@newspress.io',
     displayName: 'Vikram Singhania (Platform Infrastructure Admin)',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.maleFieldReporter,
     platformRole: 'platform_admin',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',
@@ -682,7 +683,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-elena-vance',
     email: 'elena.vance@metrochronicle.press',
     displayName: 'Elena Vance (Editor-in-Chief)',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.broadcastStudio,
     platformRole: 'none',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',
@@ -694,7 +695,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-marcus-sterling',
     email: 'marcus.sterling@metrochronicle.press',
     displayName: 'Marcus Sterling (Desk Editor)',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.seniorEditorPortrait,
     platformRole: 'none',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',
@@ -706,7 +707,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-sofia-chen',
     email: 'sofia.chen@metrochronicle.press',
     displayName: 'Sofia Chen (Staff Reporter)',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.femaleFieldReporter,
     platformRole: 'none',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',
@@ -718,7 +719,7 @@ export const MOCK_USERS: User[] = [
     personId: 'person-david-okafor',
     email: 'david.okafor.reporter@gmail.com',
     displayName: 'David K. Okafor (Freelance Reporter & Seller)',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=96&auto=format&fit=crop&q=80',
+    avatarUrl: INDIAN_MEDIA.maleFieldReporter,
     platformRole: 'none',
     activeTenantId: 'tenant-metro-chronicle',
     status: 'active',

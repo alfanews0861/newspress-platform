@@ -514,4 +514,36 @@ export class UserPortalService {
       message: 'Account deletion request received under Google Play Developer Policy. Your personal data and profile will be completely purged within 7 business days.',
     };
   }
+
+  static getSubscriptionPlan(): UserSubscriptionPlan {
+    return this.getPlan();
+  }
+
+  static getCreditWallet(): UserCreditWallet {
+    return this.getWallet();
+  }
+
+  static getDigitalEPapers(): UserPaperBookmark[] {
+    return this.getPapers();
+  }
+
+  static getReporterDispatches(): UserReporterDispatch[] {
+    return this.getDispatches();
+  }
+
+  static subscribe(listener: () => void): () => void {
+    if (typeof window === 'undefined') return () => {};
+    const events = [
+      'alfanewgen_user_profile_updated',
+      'alfanewgen_user_plan_updated',
+      'alfanewgen_wallet_updated',
+      'alfanewgen_dispatches_updated',
+      'alfanewgen_youtube_updated',
+    ];
+    events.forEach((evt) => window.addEventListener(evt, listener));
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, listener));
+    };
+  }
 }
+

@@ -998,24 +998,27 @@ exports.composeVideo = onRequest(
                     thumbnailPath: uploads.youtubeThumbnail,
                     accessToken: fields.youtubeAccessToken,
                     refreshToken: fields.youtubeRefreshToken,
-                    clientId: fields.youtubeClientId,
-                    clientSecret: fields.youtubeClientSecret,
+                    clientId: fields.youtubeClientId || process.env.YOUTUBE_CLIENT_ID,
+                    clientSecret: process.env.YOUTUBE_CLIENT_SECRET || fields.youtubeClientSecret,
                     title: fields.youtubeTitle || 'NewsPress Broadcast',
                     description: fields.youtubeDescription || '',
                     tags: parsedTags,
-                    privacyStatus: fields.youtubePrivacyStatus || 'public',
+                    privacyStatus: 'public',
                   });
 
                   // Persist broadcast record to Firestore so it is never lost even if browser crashed/closed
                   try {
                     const record = {
                       videoId: ytResult.videoId,
+                      tenantId: fields.tenantId || 'tenant_default',
                       youtubeUrl: ytResult.youtubeUrl,
                       embedUrl: `https://www.youtube.com/embed/${ytResult.videoId}`,
                       title: ytResult.title,
                       publishedAt: ytResult.publishedAt || new Date().toISOString(),
+                      privacyStatus: 'public',
                       newsLocation: fields.newsLocation || '',
-                      language: fields.language || 'te',
+                      location: fields.newsLocation || '',
+                      language: fields.language || 'en',
                       voiceActorId: fields.voiceActorId || 'ravi_shankar',
                       channelTitle: fields.channelTitle || '',
                       status: 'published',

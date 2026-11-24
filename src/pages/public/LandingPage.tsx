@@ -5,51 +5,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { UnifiedPlatformHeader } from '../../components/navigation/UnifiedPlatformHeader';
+import { INDIAN_MEDIA } from '../../data/indianMediaAssets';
 import {
-  Newspaper,
-  BookOpen,
-  CheckCircle2,
-  Clock,
-  ShieldCheck,
-  ChevronRight,
-  ChevronLeft,
-  Sparkles,
-  Zap,
-  Layers,
   ArrowRight,
-  Star,
-  Users,
+  ChevronRight,
+  Check,
   Printer,
-  Smartphone,
   Coins,
-  Scale,
-  AlertCircle,
+  Radio,
   FileText,
-  Building2,
-  ExternalLink,
   Sun,
   Moon,
-  Menu as MenuIcon,
-  X,
-  Play,
-  Pause,
-  Award,
-  Globe,
-  Lock,
-  ChevronDown,
-  Quote,
-  TrendingUp,
-  Radio,
-  Check,
-  MapPin,
-  Mail,
-  Phone,
-  Cpu,
-  BadgeCheck,
-  Sliders,
-  Eye,
-  Camera,
-  Compass,
 } from 'lucide-react';
 
 interface LandingPageProps {
@@ -57,7 +23,6 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
-  // Theme state: Default to LIGHT mode as requested
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('newspress_theme');
@@ -66,1471 +31,342 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     return 'light';
   });
 
-  // Language state: English or Hindi only
-  const [lang, setLang] = useState<'en' | 'hi'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('newspress_lang');
-      return saved === 'hi' ? 'hi' : 'en';
-    }
-    return 'en';
-  });
-
-  useEffect(() => {
-    const handleLang = (e: any) => {
-      if (e.detail) setLang(e.detail);
-    };
-    window.addEventListener('languagechange', handleLang);
-    return () => window.removeEventListener('languagechange', handleLang);
-  }, []);
-
-  // Slider State
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isSliderAutoplay, setIsSliderAutoplay] = useState(true);
-
-  // Testimonial Filter State
-  const [testimonialFilter, setTestimonialFilter] = useState<'all' | 'national' | 'regional' | 'hindi' | 'wire'>('all');
-
-  // Interactive Live Engine Preview Tab
-  const [activeEngineTab, setActiveEngineTab] = useState<'plate' | 'editorial' | 'wire' | 'pullout'>('plate');
-
-  // Billing Toggle
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-
-  // IST Live Clock
-  const [istTime, setIstTime] = useState('');
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setIstTime(
-        now.toLocaleTimeString('en-IN', {
-          timeZone: 'Asia/Kolkata',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true,
-        })
-      );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('newspress_theme', theme);
   }, [theme]);
 
-  // Carousel Autoplay
-  useEffect(() => {
-    if (!isSliderAutoplay) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [isSliderAutoplay]);
-
-  const navigateTo = (path: string) => {
-    onNavigate(path);
-  };
+  const navigateTo = (path: string) => onNavigate(path);
 
   return (
-    <div className="min-h-screen bg-[#f8fafd] dark:bg-[#1f1f1f] text-[#202124] dark:text-[#f2f2f2] font-sans selection:bg-[#e8f0fe] selection:text-[#1a73e8] transition-colors duration-200">
-      {/* =========================================================================
-          UNIFIED PLATFORM HEADER
-          ========================================================================= */}
+    <div className="min-h-screen bg-white dark:bg-[#1a1c1e] text-[#202124] dark:text-[#f8f9fa] font-sans selection:bg-[#e8f0fe] selection:text-[#1a73e8] transition-colors">
       <UnifiedPlatformHeader currentPath="/" onNavigate={navigateTo} />
 
-      {/* =========================================================================
-          1. HERO SECTION (GOOGLE WORKSPACE CLEAN + LIVE INTERACTIVE NEWSROOM MOCKUP)
-          ========================================================================= */}
-      <section id="hero" className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-20 bg-[#f8fafd] dark:bg-[#1f1f1f]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-8">
-          {/* Google 4-Color Pill Badge */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-medium bg-white dark:bg-[#28292a] text-[#3c4043] dark:text-[#e3e3e3] border border-[#dadce0] dark:border-[#444746] shadow-xs">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[#1a73e8]" />
-              <span className="w-2 h-2 rounded-full bg-[#ea4335]" />
-              <span className="w-2 h-2 rounded-full bg-[#fbbc04]" />
-              <span className="w-2 h-2 rounded-full bg-[#34a853]" />
-            </span>
-            <span className="font-semibold text-[#1a73e8] dark:text-[#8ab4f8]">NewsPress Workspace</span>
-            <span className="text-[#dadce0] dark:text-[#5e5e5e]">|</span>
-            <span>{lang === 'hi' ? 'भारतीय समाचार पत्रों के लिए आधुनिक ऑपरेटिंग सिस्टम' : 'The Modern Operating System for Indian Dailies'}</span>
-          </div>
+      {/* 1. HERO */}
+      <section
+        id="hero"
+        className="google-hero-glow pt-8 pb-12 sm:pt-14 sm:pb-20 border-b border-[#e0e3e7] dark:border-[#3c4043]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
+          <div className="max-w-3xl mx-auto text-center space-y-4">
+            <p className="text-xs sm:text-sm font-medium text-[#5f6368] dark:text-[#bdc1c6]">
+              <span className="text-[#1a73e8] dark:text-[#8ab4f8] font-semibold">Pan-India Newsroom Suite</span>
+              <span className="mx-2 text-[#bdc1c6]" aria-hidden="true">·</span>
+              <span>Print, Field &amp; Broadcast</span>
+            </p>
 
-          {/* Google-Style Headline & Subtitle */}
-          <div className="space-y-4 max-w-4xl mx-auto">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-normal text-[#202124] dark:text-[#f2f2f2] tracking-tight leading-[1.18]">
-              {lang === 'hi' ? (
-                <>
-                  आधुनिक समाचार पत्र प्रकाशन,{' '}
-                  <span className="text-[#1a73e8] font-medium">सरल और स्पष्ट।</span>
-                </>
-              ) : (
-                <>
-                  Modern newspaper publishing,{' '}
-                  <span className="text-[#1a73e8] font-medium">simplified.</span>
-                </>
-              )}
+            <h1 className="text-3xl sm:text-5xl lg:text-[3.5rem] font-bold text-[#202124] dark:text-[#f8f9fa] tracking-tight leading-[1.12]">
+              Modern newspaper publishing,{' '}
+              <span className="text-[#1a73e8] dark:text-[#8ab4f8]">built</span>{' '}
+              <span className="text-[#ea4335] dark:text-[#f28b82]">for</span>{' '}
+              <span className="text-[#e37400] dark:text-[#fdd663]">India&apos;s</span>{' '}
+              <span className="text-[#1e8e3e] dark:text-[#81c995]">newsrooms.</span>
             </h1>
-            <p className="text-base sm:text-xl text-[#5f6368] dark:text-[#c4c7c5] max-w-3xl mx-auto font-normal leading-relaxed">
-              {lang === 'hi'
-                ? 'गूगल-मानक स्पष्टता के साथ भारतीय समाचार पत्रों के लिए विशेष रूप से डिज़ाइन किया गया। आधुनिक संपादकीय तकनीक, 8-कॉलम ब्रॉडशीट लेआउट और स्वचालित 10:00 PM नाइट प्रेस लॉक।'
-                : 'Designed with Google-standard clarity for India\'s independent newsrooms. Smart editorial engine, 8-column broadsheet layout, and automated midnight press locks.'}
-            </p>
-          </div>
 
-          {/* Action Buttons (Google Pill Design) */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full max-w-md mx-auto sm:max-w-none">
-            <button
-              onClick={() => navigateTo('/dashboard')}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium text-sm shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>{lang === 'hi' ? 'न्यूज़रूम कंसोल खोलें' : 'Open Newsroom Console'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => navigateTo('/marketplace')}
-              className="w-full sm:w-auto px-7 py-3.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f1f3f4] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] font-medium text-sm transition-all cursor-pointer shadow-none flex items-center justify-center gap-2"
-            >
-              <span>{lang === 'hi' ? 'लाइव वायर मार्केटप्लेस' : 'View Wire Marketplace'}</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-            </button>
-          </div>
-
-          {/* Trust strip */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-[#5f6368] dark:text-[#9aa0a6] pt-1">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#1e8e3e]" />
-              <span>PCI Ethics Aligned</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#1a73e8]" />
-              <span>300+ DPI Vector PDF</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#ea4335]" />
-              <span>10:00 PM Night Press Lock</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#f9ab00]" />
-              <span>Instant UPI Stringer Payouts</span>
-            </span>
-          </div>
-
-          {/* =========================================================================
-              HERO STUDIO & BROADSHEET INTERACTIVE MOCKUP SHOWCASE
-              ========================================================================= */}
-          <div className="pt-6 sm:pt-10 max-w-6xl mx-auto">
-            <div className="rounded-3xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xl overflow-hidden text-left transition-all">
-              {/* Studio Window Chrome Bar */}
-              <div className="px-5 py-3.5 bg-[#f1f3f4] dark:bg-[#202124] border-b border-[#dadce0] dark:border-[#444746] flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#ea4335]/80" />
-                  <div className="w-3 h-3 rounded-full bg-[#fbbc04]/80" />
-                  <div className="w-3 h-3 rounded-full bg-[#34a853]/80" />
-                  <span className="ml-3 text-xs font-medium text-[#5f6368] dark:text-[#9aa0a6] hidden sm:inline-block">
-                    NewsPress Production Console — Daily Broadsheet Edition Planner
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#e6f4ea] dark:bg-[#0d2818] text-[#137333] dark:text-[#81c995]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#1e8e3e] animate-pulse" />
-                    <span>IST Live: {istTime || '10:00:00 PM'}</span>
-                  </span>
-                  <span className="text-[11px] font-mono text-[#5f6368] dark:text-[#8e918f] hidden md:inline-block">
-                    Press Lock SLA: 99.98%
-                  </span>
-                </div>
-              </div>
-
-              {/* Main Window Workspace Body */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#dadce0] dark:divide-[#444746]">
-                {/* Left Panel: 8-Column Broadsheet Page Preview */}
-                <div className="lg:col-span-7 p-6 space-y-5 bg-[#fafbfe] dark:bg-[#232425]">
-                  <div className="flex items-center justify-between pb-3 border-b border-[#dadce0] dark:border-[#444746]">
-                    <div className="space-y-0.5">
-                      <div className="text-xs uppercase tracking-wider font-semibold text-[#1a73e8] dark:text-[#8ab4f8]">
-                        Front Page Broadsheet • Page 1 of 16
-                      </div>
-                      <div className="text-sm font-bold text-[#202124] dark:text-[#f2f2f2]">
-                        National Edition • 8-Column Grid Standard
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-white dark:bg-[#2d2f31] border border-[#dadce0] dark:border-[#444746] text-[#3c4043] dark:text-[#c4c7c5]">
-                        350mm × 540mm
-                      </span>
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#e8f0fe] text-[#1a73e8] dark:bg-[#004a77] dark:text-[#a8c7fa]">
-                        300 DPI Preflight PASS
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Simulated High-Res Broadsheet Masthead & Top Story */}
-                  <div className="bg-white dark:bg-[#28292a] p-5 rounded-2xl border border-[#dadce0] dark:border-[#444746] shadow-xs space-y-4">
-                    {/* Newspaper Masthead */}
-                    <div className="text-center border-b-2 border-[#202124] dark:border-[#dadce0] pb-3">
-                      <div className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2] uppercase">
-                        The Indian National Chronicle
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-[#5f6368] dark:text-[#9aa0a6] pt-1 uppercase tracking-wider">
-                        <span>Vol. XLVIII No. 284</span>
-                        <span>New Delhi • Mumbai • Hyderabad • Bengaluru</span>
-                        <span>Price: ₹5.00</span>
-                      </div>
-                    </div>
-
-                    {/* Lead Story with Real Editorial Image */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                      <div className="sm:col-span-7 space-y-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#ea4335] bg-[#fce8e6] dark:bg-[#3c1410] px-2 py-0.5 rounded">
-                          Lead Investigation
-                        </span>
-                        <h4 className="font-serif text-base sm:text-lg font-bold text-[#202124] dark:text-[#f2f2f2] leading-snug">
-                          Cabinet Clears ₹14,200 Cr Clean Energy Corridor to Power Agro-Industrial Hubs
-                        </h4>
-                        <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] line-clamp-3 leading-relaxed">
-                          New high-capacity green grid will directly evacuate 8,000 MW renewable capacity across five states, lowering industrial power tariffs and driving solar irrigation pump adoption.
-                        </p>
-                      </div>
-                      <div className="sm:col-span-5">
-                        <img
-                          src="https://images.unsplash.com/photo-1509391365360-2e959784a276?w=600&auto=format&fit=crop&q=80"
-                          alt="Renewable Solar Energy Infrastructure"
-                          className="w-full h-32 object-cover rounded-xl border border-[#dadce0] dark:border-[#444746]"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Secondary Stories Strip */}
-                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#dadce0] dark:border-[#444746] text-xs">
-                      <div className="space-y-1">
-                        <div className="font-semibold text-[#202124] dark:text-[#f2f2f2] text-xs line-clamp-1">
-                          Reserve Bank Approves Cross-Border UPI Linking
-                        </div>
-                        <div className="text-[10px] text-[#5f6368] dark:text-[#9aa0a6]">
-                          Settlement time drops to instant retail remittance.
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="font-semibold text-[#202124] dark:text-[#f2f2f2] text-xs line-clamp-1">
-                          High Court Digital Registry Eliminates Cheque Backlogs
-                        </div>
-                        <div className="text-[10px] text-[#5f6368] dark:text-[#9aa0a6]">
-                          Magistrate courts cut pre-trial summons delays by 84%.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Panel: Newsroom Live Telemetry & Quick Action Controls */}
-                <div className="lg:col-span-5 p-6 space-y-4 bg-white dark:bg-[#28292a] flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-semibold uppercase tracking-wider text-[#202124] dark:text-[#f2f2f2] flex items-center gap-1.5">
-                        <Sliders className="w-3.5 h-3.5 text-[#1a73e8]" />
-                        <span>Live Production Status</span>
-                      </h4>
-                      <span className="text-[11px] font-medium text-[#1e8e3e] bg-[#e6f4ea] dark:bg-[#0d2818] px-2 py-0.5 rounded-full">
-                        Ready for Press Lock
-                      </span>
-                    </div>
-
-                    {/* 3 Telemetry Cards */}
-                    <div className="space-y-2.5">
-                      {/* 1. Vector PDF Plate */}
-                      <div className="p-3.5 rounded-xl border border-[#dadce0] dark:border-[#444746] bg-[#f8fafd] dark:bg-[#202124] space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-[#202124] dark:text-[#f2f2f2] flex items-center gap-1.5">
-                            <Printer className="w-3.5 h-3.5 text-[#1a73e8]" />
-                            <span>CMYK 300+ DPI Vector Plate</span>
-                          </span>
-                          <span className="font-mono text-[11px] text-[#1e8e3e] font-semibold">PASSED ✓</span>
-                        </div>
-                        <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
-                          Zero broken Indic ligatures, embedded font subsets, SHA-256 seal.
-                        </p>
-                      </div>
-
-                      {/* 2. Originality & Ethics Shield */}
-                      <div className="p-3.5 rounded-xl border border-[#dadce0] dark:border-[#444746] bg-[#f8fafd] dark:bg-[#202124] space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-[#202124] dark:text-[#f2f2f2] flex items-center gap-1.5">
-                            <ShieldCheck className="w-3.5 h-3.5 text-[#1e8e3e]" />
-                            <span>Originality &amp; Defamation Shield</span>
-                          </span>
-                          <span className="font-mono text-[11px] text-[#1e8e3e] font-semibold">98.4% UNIQUE</span>
-                        </div>
-                        <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
-                          Cross-checked against 50,000+ national wires under PCI norms.
-                        </p>
-                      </div>
-
-                      {/* 3. Instant Stringer Wire Settlement */}
-                      <div className="p-3.5 rounded-xl border border-[#dadce0] dark:border-[#444746] bg-[#f8fafd] dark:bg-[#202124] space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-[#202124] dark:text-[#f2f2f2] flex items-center gap-1.5">
-                            <Coins className="w-3.5 h-3.5 text-[#f9ab00]" />
-                            <span>Stringer UPI Royalty Settlement</span>
-                          </span>
-                          <span className="font-mono text-[11px] text-[#1a73e8] font-semibold">PAID IN 42s</span>
-                        </div>
-                        <p className="text-[11px] text-[#5f6368] dark:text-[#8e918f]">
-                          Direct RazorpayX payout to district reporter with Form 16A TDS.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Action Navigation */}
-                  <div className="pt-2">
-                    <button
-                      onClick={() => navigateTo('/newspaper/page-designer')}
-                      className="w-full py-2.5 px-4 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Launch Interactive 8-Column Page Designer</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          2. CORE CAPABILITIES HERO SHOWCASE CAROUSEL (IMAGES + SLIDER CONTROLS)
-          ========================================================================= */}
-      <section className="py-12 sm:py-16 bg-white dark:bg-[#202124] border-y border-[#dadce0] dark:border-[#444746]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Section Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] mb-2">
-                <Compass className="w-3.5 h-3.5" />
-                <span>Publishing Infrastructure Pillars</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2] tracking-tight">
-                Engineered for the Relentless Reality of Indian Newspapers
-              </h2>
-            </div>
-
-            {/* Slider Tab Selector Chips */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {SLIDES.map((slide, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                    currentSlide === idx
-                      ? 'bg-[#1a73e8] text-white shadow-xs'
-                      : 'bg-[#f1f3f4] dark:bg-[#28292a] text-[#3c4043] dark:text-[#c4c7c5] hover:bg-[#e8eaed] dark:hover:bg-[#333537]'
-                  }`}
-                >
-                  {slide.shortTitle[lang]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Slide Container */}
-          <div className="relative rounded-3xl overflow-hidden bg-[#f8fafd] dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-md">
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
-              {/* Left Column: Rich Details & Action */}
-              <div className="lg:col-span-6 p-6 sm:p-10 flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-white dark:bg-[#202124] border border-[#dadce0] dark:border-[#444746] text-[#1a73e8] dark:text-[#8ab4f8]">
-                    <span>{SLIDES[currentSlide].tag[lang]}</span>
-                  </div>
-
-                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2] leading-snug">
-                    {SLIDES[currentSlide].title[lang]}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
-                    {SLIDES[currentSlide].description[lang]}
-                  </p>
-
-                  {/* Bullet points */}
-                  <div className="space-y-2 pt-2">
-                    {SLIDES[currentSlide].bullets[lang].map((bullet, bIdx) => (
-                      <div key={bIdx} className="flex items-start gap-2.5 text-xs text-[#3c4043] dark:text-[#e3e3e3]">
-                        <CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995] shrink-0 mt-0.5" />
-                        <span>{bullet}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Bottom Actions & Slider Controls */}
-                <div className="pt-4 border-t border-[#dadce0] dark:border-[#444746] flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => navigateTo(SLIDES[currentSlide].ctaSecondaryLink)}
-                      className="px-6 py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-                    >
-                      <span>{SLIDES[currentSlide].ctaPrimary[lang]}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => setIsSliderAutoplay(!isSliderAutoplay)}
-                      className="p-2.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#202124] text-[#5f6368] dark:text-[#9aa0a6] hover:bg-[#f1f3f4] transition-all cursor-pointer"
-                      title={isSliderAutoplay ? 'Pause autoplay' : 'Resume autoplay'}
-                    >
-                      {isSliderAutoplay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-
-                  {/* Prev/Next arrows & dots */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setCurrentSlide((prev) => (prev - 1 + SLIDES.length) % SLIDES.length)}
-                      className="p-2 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#202124] text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] transition-all cursor-pointer"
-                      aria-label="Previous slide"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <div className="flex items-center gap-1 px-1">
-                      {SLIDES.map((_, dotIdx) => (
-                        <button
-                          key={dotIdx}
-                          onClick={() => setCurrentSlide(dotIdx)}
-                          className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                            currentSlide === dotIdx ? 'w-5 bg-[#1a73e8]' : 'w-1.5 bg-[#dadce0] dark:bg-[#5e5e5e]'
-                          }`}
-                          aria-label={`Go to slide ${dotIdx + 1}`}
-                        />
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => setCurrentSlide((prev) => (prev + 1) % SLIDES.length)}
-                      className="p-2 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#202124] text-[#3c4043] dark:text-[#e3e3e3] hover:bg-[#f1f3f4] transition-all cursor-pointer"
-                      aria-label="Next slide"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: High-Res Curated Image + Overlay Telemetry Badge */}
-              <div className="lg:col-span-6 relative min-h-[300px] lg:min-h-full">
-                <img
-                  src={SLIDES[currentSlide].image}
-                  alt={SLIDES[currentSlide].title.en}
-                  className="w-full h-full object-cover transition-all duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                {/* Overlaid Floating Status Badge */}
-                <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/95 dark:bg-[#202124]/95 backdrop-blur-md border border-white/20 dark:border-black/20 shadow-lg space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-[#202124] dark:text-[#f2f2f2]">
-                      {SLIDES[currentSlide].badgeTitle[lang]}
-                    </span>
-                    <span className="font-mono font-bold text-[11px] px-2 py-0.5 rounded-md bg-[#e6f4ea] dark:bg-[#0d2818] text-[#137333] dark:text-[#81c995]">
-                      {SLIDES[currentSlide].badgeStatus}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-[#5f6368] dark:text-[#c4c7c5]">
-                    {SLIDES[currentSlide].badgeDesc[lang]}
-                  </p>
-                  <div className="flex items-center justify-between text-[10px] font-mono text-[#70757a] dark:text-[#9aa0a6] pt-1 border-t border-[#dadce0]/60 dark:border-[#444746]">
-                    <span>{SLIDES[currentSlide].badgeMetric1}</span>
-                    <span>{SLIDES[currentSlide].badgeMetric2}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          3. GOOGLE 4-COLOR PRODUCT SUITE CARDS (WITH HIGH-RES THUMBNAILS)
-          ========================================================================= */}
-      <section className="py-14 sm:py-20 bg-[#f8fafd] dark:bg-[#1f1f1f]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
-              Complete Digital &amp; Print Newsroom Suite
-            </h2>
-            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#c4c7c5]">
-              Everything an Indian publishing house needs — from breaking rural field dispatches to high-speed midnight rotary press runs.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-            {/* 1. Google Blue Card: Digital Editorial */}
-            <div
-              onClick={() => navigateTo('/newsroom/editorial-queue')}
-              className="rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#1a73e8] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between overflow-hidden"
-            >
-              <div>
-                <div className="h-40 overflow-hidden relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600&auto=format&fit=crop&q=80"
-                    alt="Newsroom Editorial Desk"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#1a73e8] text-white flex items-center justify-center shadow-md">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-2.5">
-                  <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#1a73e8] transition-colors">
-                    {lang === 'hi' ? 'डिजिटल संपादकीय डेस्क' : 'Digital Editorial Desk'}
-                  </h3>
-                  <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
-                    {lang === 'hi'
-                      ? 'हर्फ़बज़ इंजन द्वारा शुद्ध भारतीय लिपि विन्यास और 85%+ मौलिकता सत्यापन।'
-                      : 'HarfBuzz Indic font shaping with zero broken conjuncts, headline fitting, and real-time PCI originality checks.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0">
-                <div className="pt-3 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center justify-between text-xs font-medium text-[#1a73e8] dark:text-[#8ab4f8]">
-                  <span>{lang === 'hi' ? 'संपादकीय कतार' : 'Inspect Queue'}</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Google Green Card: Press-Ready PDF */}
-            <div
-              onClick={() => navigateTo('/production/queue')}
-              className="rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#1e8e3e] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between overflow-hidden"
-            >
-              <div>
-                <div className="h-40 overflow-hidden relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&auto=format&fit=crop&q=80"
-                    alt="Web-Offset Rotary Printing Press"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#1e8e3e] text-white flex items-center justify-center shadow-md">
-                    <Printer className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-2.5">
-                  <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#1e8e3e] transition-colors">
-                    {lang === 'hi' ? '300+ DPI प्रेस प्लेट्स' : 'Press-Ready Vector PDF'}
-                  </h3>
-                  <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
-                    {lang === 'hi'
-                      ? 'वेब-ऑफसेट रोटरी प्रेसों के लिए सीएमवाईके प्रीफ्लाइट और रात 10:00 बजे नाइट लॉक।'
-                      : 'Automated CMYK color separation for offset rotary machines with 99.98% midnight press lock SLA.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0">
-                <div className="pt-3 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center justify-between text-xs font-medium text-[#1e8e3e] dark:text-[#81c995]">
-                  <span>{lang === 'hi' ? 'प्रोडक्शन पाइपलाइन' : 'Production Pipeline'}</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Google Yellow Card: Wire Marketplace & UPI */}
-            <div
-              onClick={() => navigateTo('/marketplace')}
-              className="rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#f9ab00] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between overflow-hidden"
-            >
-              <div>
-                <div className="h-40 overflow-hidden relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1495020689067-958852a7765e?w=600&auto=format&fit=crop&q=80"
-                    alt="Field Journalists Wire Reporting"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#f9ab00] text-white flex items-center justify-center shadow-md">
-                    <Coins className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-2.5">
-                  <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#f9ab00] transition-colors">
-                    {lang === 'hi' ? 'संवाददाता मार्केटप्लेस' : 'Stringer Wire & UPI'}
-                  </h3>
-                  <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
-                    {lang === 'hi'
-                      ? 'जिला व ग्रामीण पत्रकारों को यूपीआई द्वारा 60 सेकंड में तत्काल रॉयल्टी भुगतान।'
-                      : 'Instant UPI wire settlements to district stringers with automated Form 16A Section 194J TDS certificates.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0">
-                <div className="pt-3 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center justify-between text-xs font-medium text-[#f9ab00] dark:text-[#fdd663]">
-                  <span>{lang === 'hi' ? 'मार्केटप्लेस ब्राउज करें' : 'Browse Marketplace'}</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Google Red Card: Digital Broadcast Studio */}
-            <div
-              onClick={() => navigateTo('/newsroom/youtube-studio')}
-              className="rounded-2xl bg-white dark:bg-[#28292a] border border-[#dadce0] dark:border-[#444746] shadow-xs hover:border-[#ea4335] hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between overflow-hidden"
-            >
-              <div>
-                <div className="h-40 overflow-hidden relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=600&auto=format&fit=crop&q=80"
-                    alt="Television News Broadcast Studio"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#ea4335] text-white flex items-center justify-center shadow-md">
-                    <Zap className="w-4 h-4" />
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-2.5">
-                  <h3 className="font-semibold text-base text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#ea4335] transition-colors">
-                    {lang === 'hi' ? 'डिजिटल ब्रॉडकास्ट स्टूडियो' : 'Digital Broadcast Studio'}
-                  </h3>
-                  <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed">
-                    {lang === 'hi'
-                      ? 'अखबार की खबरों से सीधे 1-क्लिक में न्यूज़रील्स और डिजिटल ब्रॉडकास्ट तैयार करें।'
-                      : 'Turn print dispatches into broadcast-ready video bulletins with television-grade news anchors.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 pt-0">
-                <div className="pt-3 border-t border-[#dadce0]/60 dark:border-[#444746] flex items-center justify-between text-xs font-medium text-[#ea4335] dark:text-[#f28b82]">
-                  <span>{lang === 'hi' ? 'स्टूडियो खोलें' : 'Launch Studio'}</span>
-                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          4. LIVE PRODUCTION METRICS BANNER (GOOGLE 4-COLOR PALETTE)
-          ========================================================================= */}
-      <section className="bg-white dark:bg-[#202124] border-y border-[#dadce0] dark:border-[#444746] py-10 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            {/* Google Blue Metric */}
-            <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#1a73e8] dark:text-[#8ab4f8]">
-                48+
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
-                {lang === 'hi' ? 'भारतीय दैनिक समाचार पत्र' : 'Indian Publications Onboarded'}
-              </div>
-              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
-                {lang === 'hi' ? 'दैनिक भास्कर, लोकमत, ईनाडु आदि' : 'National Dailies & Regional Presses'}
-              </div>
-            </div>
-
-            {/* Google Green Metric */}
-            <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#1e8e3e] dark:text-[#81c995]">
-                1.24M+
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
-                {lang === 'hi' ? 'दैनिक मुद्रण प्रसार (सर्कुलेशन)' : 'Daily Print Circulation Managed'}
-              </div>
-              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
-                {lang === 'hi' ? 'जीरो प्लेट एरर के साथ मुद्रित' : 'Preflight-Checked Broadsheet Copies'}
-              </div>
-            </div>
-
-            {/* Google Yellow Metric */}
-            <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#f9ab00] dark:text-[#fdd663]">
-                99.98%
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
-                {lang === 'hi' ? 'नाइट प्रेस लॉक विश्वसनीयता' : 'Midnight Press Lock SLA'}
-              </div>
-              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
-                {lang === 'hi' ? '10:00 PM IST डेडलाइन गारंटी' : 'Guaranteed Offset Printing Windows'}
-              </div>
-            </div>
-
-            {/* Google Red Metric */}
-            <div className="space-y-1.5">
-              <div className="text-3xl sm:text-5xl font-extrabold font-sans text-[#ea4335] dark:text-[#f28b82]">
-                ₹4.2 Cr+
-              </div>
-              <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f2f2f2]">
-                {lang === 'hi' ? 'संवाददाताओं को तुरंत रॉयल्टी' : 'Direct Reporter Royalties Paid'}
-              </div>
-              <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] font-normal">
-                {lang === 'hi' ? 'UPI व रेज़रपे एक्स के माध्यम से' : 'Via Instant UPI & Section 194J TDS'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          5. INTERACTIVE PRINT & EDITORIAL ENGINE SHOWCASE (TABS WITH VISUAL PROOFS)
-          ========================================================================= */}
-      <section id="press-engine" className="py-16 sm:py-24 bg-white dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
-              {lang === 'hi'
-                ? 'औद्योगिक स्तर का मुद्रण और संपादकीय इंजन'
-                : 'Industrial-Grade Newspaper Print & Layout Engine'}
-            </h2>
-            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#c4c7c5] font-normal">
-              {lang === 'hi'
-                ? 'वेब-ऑफसेट रोटरी प्रेसों, 8-कॉलम ब्रॉडशीट और नाइट प्रेस शेड्यूल के लिए पूर्ण क्लाउड तकनीक।'
-                : 'Designed for the relentless reality of Indian print runs: 300+ DPI vector PDF plates, CMYK preflight verification, and instant UPI payouts.'}
+            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#bdc1c6] max-w-xl mx-auto leading-relaxed">
+              Manage field stories, design 8-column print editions, and publish digital video bulletins from one workspace.
             </p>
 
-            {/* Interactive feature selector tabs (Google Pill Chips) */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-              {[
-                { id: 'plate', label: lang === 'hi' ? 'नाइट प्रेस प्लेट्स' : 'Night Press Plates' },
-                { id: 'editorial', label: lang === 'hi' ? 'ओरिजिनैलिटी सुरक्षा' : 'Originality & Ethics Guard' },
-                { id: 'wire', label: lang === 'hi' ? 'संवाददाता मार्केटप्लेस' : 'Stringer Wire & UPI' },
-                { id: 'pullout', label: lang === 'hi' ? 'जिला पुलआउट्स' : 'District Editions' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveEngineTab(tab.id as any)}
-                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
-                    activeEngineTab === tab.id
-                      ? 'bg-[#1a73e8] text-white shadow-xs'
-                      : 'bg-white dark:bg-[#28292a] text-[#3c4043] dark:text-[#c4c7c5] border border-[#dadce0] dark:border-[#444746] hover:bg-[#f1f3f4] dark:hover:bg-[#333537]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Interactive Feature Display */}
-          <div className="bg-[#f8fafd] dark:bg-[#28292a] rounded-3xl border border-[#dadce0] dark:border-[#444746] p-6 sm:p-10 shadow-xs">
-            {activeEngineTab === 'plate' && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] uppercase tracking-wider">
-                    {lang === 'hi' ? 'वेब-ऑफसेट रोटरी प्रेसों के लिए' : 'Web-Offset Rotary Press Pipeline'}
-                  </span>
-                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                    {lang === 'hi' ? '300+ DPI वेक्टर PDF और स्वचालित प्रीफ्लाइट' : '300+ DPI Vector PDF/X-1a Preflight Generation'}
-                  </h3>
-                  <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                    {lang === 'hi'
-                      ? 'भारतीय भाषाओं (हिंदी, तमिल, तेलुगु, आदि) के अक्षरों के जटिल विन्यास को बिना किसी टूट-फूट के 8-कॉलम ब्रॉडशीट पर सही ढंग से मुद्रित करने के लिए HarfBuzz इंजन का उपयोग किया जाता है।'
-                      : 'HarfBuzz Indic font shaping guarantees zero broken conjuncts or misplaced matras on high-speed broadsheet offset machines. Every plate undergoes rigorous automated checks before midnight lock.'}
-                  </p>
-                  <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> CMYK 4-Color Channel Separation</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Embedded Indic Font Subsetting</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> SHA-256 Immutable Audit Signature</div>
-                  </div>
-                  <div className="pt-4">
-                    <button onClick={() => navigateTo('/production/queue')} className="px-5 py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer">
-                      {lang === 'hi' ? 'प्रोडक्शन कतार देखें' : 'View Production Queue'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-6">
-                  <img
-                    src="https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=800&auto=format&fit=crop&q=80"
-                    alt="Offset Rotary Printing Press"
-                    className="w-full h-80 object-cover rounded-2xl border border-[#dadce0] dark:border-[#444746] shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeEngineTab === 'editorial' && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-semibold text-[#1e8e3e] dark:text-[#81c995] uppercase tracking-wider">
-                    {lang === 'hi' ? 'प्रेस परिषद (PCI) के अनुरूप' : 'PCI Ethics Code & Originality'}
-                  </span>
-                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                    {lang === 'hi' ? 'साहित्यिक चोरी और मानहानि से पूर्ण सुरक्षा' : 'Anti-Plagiarism & Defamation Screening Engine'}
-                  </h3>
-                  <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                    {lang === 'hi'
-                      ? 'हर खबर को 85% मौलिकता स्कोर पार करना होगा। स्वचालित तथ्य जांच और कॉपी-फिटिंग आपके संपादकों का बहुमूल्य समय बचाती है।'
-                      : 'Real-time phrase fingerprinting across 50,000+ daily sources prevents copyright infringement and defamation risks while fitting headlines precisely to newspaper column widths.'}
-                  </p>
-                  <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated 0-100 Originality Scoring</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Smart Headline & Copy Fitter</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Dual-Source Fact Corroboration Guard</div>
-                  </div>
-                  <div className="pt-4">
-                    <button onClick={() => navigateTo('/newsroom/editorial-queue')} className="px-5 py-2.5 rounded-full bg-[#1e8e3e] hover:bg-[#137333] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer">
-                      {lang === 'hi' ? 'संपादकीय कतार देखें' : 'Inspect Editorial Queue'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-6">
-                  <img
-                    src="https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=800&auto=format&fit=crop&q=80"
-                    alt="Editorial Studio Control Room"
-                    className="w-full h-80 object-cover rounded-2xl border border-[#dadce0] dark:border-[#444746] shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeEngineTab === 'wire' && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-semibold text-[#f9ab00] dark:text-[#fdd663] uppercase tracking-wider">
-                    {lang === 'hi' ? 'संवाददाताओं के लिए निष्पक्ष आय' : 'Rural Journalism & Instant Royalties'}
-                  </span>
-                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                    {lang === 'hi' ? 'UPI और रेज़रपे एक्स से तुरंत खाते में भुगतान' : 'Instant UPI Wire Royalties via RazorpayX'}
-                  </h3>
-                  <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                    {lang === 'hi'
-                      ? 'जिला और तहसील स्तर के पत्रकारों द्वारा भेजी गई खबरों को जब कोई बड़ा अखबार खरीदता है, तो राशि तुरंत सीधे पत्रकार के यूपीआई खाते में जमा हो जाती है।'
-                      : 'Stringers upload field photographs and dispatches from mobile phones. Once approved by an Editor-in-Chief, royalty funds settle to the journalist\'s UPI address in under 60 seconds with Section 194J TDS compliance.'}
-                  </p>
-                  <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Instant UPI Settlement (No Escrow Hold)</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated Digital Form 16A TDS Certificates</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Ironclad Broadsheet Syndication Rights</div>
-                  </div>
-                  <div className="pt-4">
-                    <button onClick={() => navigateTo('/marketplace')} className="px-5 py-2.5 rounded-full bg-[#f9ab00] hover:bg-[#e37400] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer">
-                      {lang === 'hi' ? 'मार्केटप्लेस ब्राउज करें' : 'Browse Wire Marketplace'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-6">
-                  <img
-                    src="https://images.unsplash.com/photo-1495020689067-958852a7765e?w=800&auto=format&fit=crop&q=80"
-                    alt="Field Journalists Reporting"
-                    className="w-full h-80 object-cover rounded-2xl border border-[#dadce0] dark:border-[#444746] shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {activeEngineTab === 'pullout' && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-6 space-y-4">
-                  <span className="text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] uppercase tracking-wider">
-                    {lang === 'hi' ? 'मल्टी-टेनेंट जिला संस्करण' : 'Multi-Tenant Regional Pullouts'}
-                  </span>
-                  <h3 className="text-xl sm:text-3xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                    {lang === 'hi' ? 'मुख्य अखबार और जिला सप्लीमेंट्स का आसान प्रबंधन' : 'Coordinate 50+ Regional Pullouts from One Screen'}
-                  </h3>
-                  <p className="text-sm text-[#3c4043] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                    {lang === 'hi'
-                      ? 'मुख्य राज्य संस्करण और विभिन्न जिलों के 4 से 8 पेज के लोकल सप्लीमेंट्स को अलग-अलग टीमों द्वारा बिना किसी भ्रम के एक साथ तैयार किया जा सकता है।'
-                      : 'Decoupled multi-tenant workspaces allow independent regional bureaus to produce local district tabs while sharing common state, national, and business pages seamlessly.'}
-                  </p>
-                  <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium">
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Dynamic Advertising Split Replacements</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Independent District Desk Roles & Permissions</div>
-                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-[#1e8e3e] dark:text-[#81c995]" /> Automated Deadline Tracking by Timezone</div>
-                  </div>
-                  <div className="pt-4">
-                    <button onClick={() => navigateTo('/newspaper/brands')} className="px-5 py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium shadow-none hover:shadow-xs transition-all cursor-pointer">
-                      {lang === 'hi' ? 'संस्करण ब्रांड देखें' : 'View Regional Brands'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-6">
-                  <img
-                    src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800&auto=format&fit=crop&q=80"
-                    alt="Newspaper Proofs & Broadsheet Stacks"
-                    className="w-full h-80 object-cover rounded-2xl border border-[#dadce0] dark:border-[#444746] shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          6. LIVE WIRE MARKETPLACE STORY FEED (WITH REAL PHOTOS & UPI CARDS)
-          ========================================================================= */}
-      <section id="stringer-wire" className="py-16 sm:py-24 bg-[#f8fafd] dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#444746]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8] mb-2">
-                <Coins className="w-3.5 h-3.5" />
-                <span>{lang === 'hi' ? 'लाइव सिंडिकेटेड वायर' : 'Live Syndicated Wire Marketplace'}</span>
-              </div>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
-                {lang === 'hi' ? 'सत्यापित ग्रामीण व खोजी समाचार' : 'Verified Rural & Investigative Field Reports'}
-              </h2>
-            </div>
-            <button
-              onClick={() => navigateTo('/marketplace')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-medium transition-all shadow-none hover:shadow-xs cursor-pointer shrink-0"
-            >
-              <span>{lang === 'hi' ? 'पूरा वायर मार्केटप्लेस खोलें' : 'Open Full Marketplace'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {WIRE_STORIES.map((story) => (
-              <div
-                key={story.id}
-                className="bg-white dark:bg-[#28292a] rounded-2xl border border-[#dadce0] dark:border-[#444746] overflow-hidden shadow-xs hover:shadow-md hover:border-[#1a73e8] transition-all flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="relative h-44 overflow-hidden">
-                    <img
-                      src={story.image}
-                      alt={story.title[lang]}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-white/95 dark:bg-[#202124]/95 backdrop-blur-md text-[10px] font-semibold text-[#202124] dark:text-[#f2f2f2] border border-[#dadce0] dark:border-[#444746]">
-                      {story.district}
-                    </div>
-                    <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-[#e6f4ea] dark:bg-[#0d2818] text-[#137333] dark:text-[#81c995] text-[10px] font-semibold border border-[#ceead6] dark:border-[#137333]">
-                      {story.originality}% Original
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-2">
-                    <h4 className="font-semibold text-sm text-[#202124] dark:text-[#f2f2f2] group-hover:text-[#1a73e8] dark:group-hover:text-[#8ab4f8] transition-colors line-clamp-2">
-                      {story.title[lang]}
-                    </h4>
-                    <p className="text-[11px] text-[#5f6368] dark:text-[#c4c7c5] line-clamp-2 leading-relaxed">
-                      {story.summary[lang]}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 pt-0 border-t border-[#dadce0]/60 dark:border-[#444746] mt-2">
-                  <div className="flex items-center justify-between text-xs pt-3">
-                    <div>
-                      <span className="text-[10px] text-[#5f6368] dark:text-[#8e918f] block">{lang === 'hi' ? 'रॉयल्टी मूल्य' : 'Royalty Price'}</span>
-                      <span className="font-bold text-[#202124] dark:text-[#f2f2f2] text-sm">₹{story.price}</span>
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] text-[10px] font-semibold border border-[#d2e3fc] dark:border-[#1a73e8] flex items-center gap-1">
-                      <Zap className="w-3 h-3 text-[#1e8e3e] dark:text-[#81c995]" />
-                      <span>Instant UPI</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          7. INDIAN EDITORS TESTIMONIALS (REAL PORTRAITS & VERIFIED REVIEWS)
-          ========================================================================= */}
-      <section id="testimonials" className="py-16 sm:py-24 bg-white dark:bg-[#202124] border-b border-[#dadce0] dark:border-[#444746]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-medium bg-[#e8f0fe] dark:bg-[#004a77] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#d2e3fc] dark:border-[#1a73e8]">
-              <Award className="w-3.5 h-3.5" />
-              <span>{lang === 'hi' ? 'संपादकीय विश्वास व समीक्षाएं' : 'Journalistic Trust & Editorial Endorsements'}</span>
-            </div>
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
-              {lang === 'hi'
-                ? 'भारत के प्रमुख समाचार पत्र संपादकों की समीक्षाएं'
-                : 'Trusted by India\'s Foremost Editors & Bureau Chiefs'}
-            </h2>
-            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
-              {lang === 'hi'
-                ? 'दैनिक भास्कर, द हिंदू, लोकमत, मलयला मनोरमा और प्रमुख समाचार सिंडिकेट्स के शीर्ष संपादकों के अनुभव।'
-                : 'Discover how editors across leading Indian publications streamline multi-edition night press locks, eliminate broken Indic ligatures, and source verified rural journalism.'}
-            </p>
-
-            {/* Filter buttons (Google Pill Chips) */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-              {[
-                { id: 'all', label: lang === 'hi' ? 'सभी समीक्षाएं (All)' : 'All Reviews (6)' },
-                { id: 'national', label: lang === 'hi' ? 'राष्ट्रीय दैनिक (National)' : 'National Dailies' },
-                { id: 'hindi', label: lang === 'hi' ? 'हिंदी बेल्ट (Hindi Belt)' : 'Hindi Editions' },
-                { id: 'regional', label: lang === 'hi' ? 'क्षेत्रीय प्रेस (Regional)' : 'Regional Press' },
-                { id: 'wire', label: lang === 'hi' ? 'न्यूज वायर (Wire & Syndicate)' : 'Wire & Syndicates' },
-              ].map((btn) => (
-                <button
-                  key={btn.id}
-                  onClick={() => setTestimonialFilter(btn.id as any)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                    testimonialFilter === btn.id
-                      ? 'bg-[#1a73e8] text-white shadow-xs'
-                      : 'bg-white dark:bg-[#28292a] text-[#3c4043] dark:text-[#c4c7c5] border border-[#dadce0] dark:border-[#444746] hover:bg-[#f1f3f4] dark:hover:bg-[#333537]'
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Testimonial Cards Grid with Real Photography */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {TESTIMONIALS.filter(
-              (item) => testimonialFilter === 'all' || item.category === testimonialFilter
-            ).map((t) => (
-              <div
-                key={t.id}
-                className="bg-[#f8fafd] dark:bg-[#28292a] rounded-2xl border border-[#dadce0] dark:border-[#444746] p-6 sm:p-7 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group relative overflow-hidden"
-              >
-                <div className="absolute top-0 left-0 right-0 h-1 bg-[#1a73e8]" />
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1 text-[#f9ab00]">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-[#f9ab00] text-[#f9ab00]" />
-                      ))}
-                    </div>
-                    <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-white dark:bg-[#202124] text-[#1a73e8] dark:text-[#a8c7fa] border border-[#dadce0] dark:border-[#444746]">
-                      {t.publication}
-                    </span>
-                  </div>
-
-                  <div className="relative pt-2">
-                    <Quote className="w-8 h-8 text-[#dadce0] dark:text-[#444746] absolute -top-1 -left-2 opacity-60" />
-                    <p className="text-xs sm:text-sm text-[#3c4043] dark:text-[#e3e3e3] font-normal leading-relaxed relative z-10 pl-3">
-                      &quot;{t.quote[lang]}&quot;
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-6 mt-6 border-t border-[#dadce0] dark:border-[#444746] flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={t.photo}
-                      alt={t.name.en}
-                      className="w-11 h-11 rounded-full object-cover border border-[#dadce0] dark:border-[#444746] shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <div className="font-semibold text-xs sm:text-sm text-[#202124] dark:text-[#f2f2f2] truncate flex items-center gap-1">
-                        <span>{t.name[lang]}</span>
-                        <BadgeCheck className="w-3.5 h-3.5 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" />
-                      </div>
-                      <div className="text-[11px] text-[#5f6368] dark:text-[#8e918f] truncate">
-                        {t.role[lang]}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-[#e6f4ea] dark:bg-[#0d2818] text-[#137333] dark:text-[#81c995] font-medium border border-[#ceead6] dark:border-[#137333] shrink-0 font-mono">
-                    {t.metric}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          8. TRANSPARENT PRICING PLANS (INR WITH MONTHLY / ANNUAL TOGGLE)
-          ========================================================================= */}
-      <section id="pricing" className="py-16 sm:py-24 bg-[#f8fafd] dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#444746]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3 mb-14">
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#202124] dark:text-[#f2f2f2]">
-              {lang === 'hi'
-                ? 'भारतीय समाचार पत्र प्रकाशकों के लिए पारदर्शी मूल्य'
-                : 'Simple, Transparent Subscription Plans in INR'}
-            </h2>
-            <p className="text-sm sm:text-base text-[#5f6368] dark:text-[#c4c7c5] font-normal">
-              {lang === 'hi'
-                ? 'जिला स्तर के समाचार पत्रों से लेकर राष्ट्रीय बहु-भाषी प्रकाशन समूहों तक के लिए उपयुक्त।'
-                : 'All plans include 300+ DPI vector PDF plates, automated night press scheduling, and Press Council compliance.'}
-            </p>
-
-            {/* Billing cycle switch */}
-            <div className="flex items-center justify-center gap-3 pt-4">
-              <span className={`text-xs font-semibold ${billingPeriod === 'monthly' ? 'text-[#202124] dark:text-[#f2f2f2]' : 'text-[#5f6368] dark:text-[#8e918f]'}`}>
-                {lang === 'hi' ? 'मासिक बिलिंग' : 'Monthly'}
-              </span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-1">
               <button
-                onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'annual' : 'monthly')}
-                className="w-12 h-6 rounded-full bg-[#1a73e8] p-0.5 transition-colors cursor-pointer relative"
-                aria-label="Toggle billing period"
-              >
-                <div
-                  className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                    billingPeriod === 'annual' ? 'translate-x-6' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-              <span className={`text-xs font-semibold ${billingPeriod === 'annual' ? 'text-[#202124] dark:text-[#f2f2f2]' : 'text-[#5f6368] dark:text-[#8e918f]'}`}>
-                {lang === 'hi' ? 'वार्षिक (20% की बचत)' : 'Annual (Save 20%)'}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {/* Plan 1: Pay As You Go (PAYG) */}
-            <div className="rounded-3xl border-2 border-[#1e8e3e] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-all relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#1e8e3e] text-white text-[9px] font-bold uppercase tracking-wider py-1 px-3 rounded-bl-xl shadow-xs">
-                {lang === 'hi' ? 'नो फिक्स्ड कॉस्ट' : 'NO FIXED MONTHLY COST'}
-              </div>
-              <div className="space-y-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#1e8e3e] dark:text-[#81c995]">
-                  {lang === 'hi' ? 'पे ऐज़ यू गो' : 'Pay As You Go (Prepaid Wallet)'}
-                </span>
-                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                  {lang === 'hi' ? 'छोटे व साप्ताहिक समाचार पत्र' : 'Micro & Weekly Press'}
-                </h3>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
-                    ₹0
-                  </span>
-                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (Prepaid Wallet)</span>
-                </div>
-                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                  {lang === 'hi'
-                    ? 'कोई मासिक प्रतिबद्धता नहीं। केवल उपयोग किए गए पृष्ठों और संपादकीय कार्यों के लिए भुगतान करें।'
-                    : 'Zero monthly commitments. Ideal for weekly tabloids, occasional specials, and indie journalists.'}
-                </p>
-                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-[#dadce0] dark:border-[#444746]">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> <strong>₹49</strong> / Print PDF Plate (300 DPI)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> <strong>₹1.50</strong> / Headline & Copy Fitting</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> <strong>₹29</strong> / Broadcast Video Bulletin</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Minimum ₹500 UPI Top-Up</div>
-                </div>
-              </div>
-              <button
-                onClick={() => navigateTo('/login')}
-                className="mt-6 w-full py-2.5 rounded-full border border-[#1e8e3e] bg-[#e6f4ea] hover:bg-[#ceead6] dark:bg-[#0d2818] dark:hover:bg-[#133920] text-[#137333] dark:text-[#81c995] text-xs font-semibold transition-all cursor-pointer shadow-none"
-              >
-                {lang === 'hi' ? 'वॉलेट रिचार्ज करें' : 'Start with Pay As You Go'}
-              </button>
-            </div>
-
-            {/* Plan 2: District Starter */}
-            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
-              <div className="space-y-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
-                  {lang === 'hi' ? 'जिला स्टार्टर' : 'District Starter Pro'}
-                </span>
-                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                  {lang === 'hi' ? 'जिला व स्वतंत्र समाचार पत्र' : 'Independent District Press'}
-                </h3>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
-                    ₹{billingPeriod === 'annual' ? '3,999' : '4,999'}
-                  </span>
-                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
-                </div>
-                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                  {lang === 'hi'
-                    ? 'अधिकतम 2 क्षेत्रीय संस्करण, 25 रिपोर्टर सीटें और 300 DPI ब्रॉडशीट प्लेट निर्यात।'
-                    : 'Up to 2 daily editions, 25 reporter seats, and vector print-ready PDF broadsheet exports.'}
-                </p>
-                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-[#dadce0] dark:border-[#444746]">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 2 Regional Daily Editions</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 25 Accredited Reporter Seats</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 300+ DPI Vector PDF Export</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 500 Copy-Fitting Operations</div>
-                </div>
-              </div>
-              <button
-                onClick={() => navigateTo('/login')}
-                className="mt-6 w-full py-2.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
-              >
-                {lang === 'hi' ? 'ट्रायल शुरू करें' : 'Start Free 14-Day Trial'}
-              </button>
-            </div>
-
-            {/* Plan 3: State Pro (Most Popular) */}
-            <div className="rounded-3xl border-2 border-[#1a73e8] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-md relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#1a73e8] text-white text-[9px] font-bold uppercase tracking-wider py-1 px-3 rounded-bl-xl shadow-xs">
-                {lang === 'hi' ? 'सबसे लोकप्रिय' : 'MOST POPULAR'}
-              </div>
-              <div className="space-y-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#1a73e8] dark:text-[#8ab4f8]">
-                  {lang === 'hi' ? 'स्टेट प्रो' : 'State Pro Edition'}
-                </span>
-                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                  {lang === 'hi' ? 'राज्य स्तरीय दैनिक समाचार पत्र' : 'State Daily Publications'}
-                </h3>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
-                    ₹{billingPeriod === 'annual' ? '11,999' : '14,999'}
-                  </span>
-                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
-                </div>
-                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                  {lang === 'hi'
-                    ? '12 क्षेत्रीय संस्करण, असीमित रिपोर्टर, नाइट प्रेस लॉक और तत्काल UPI संवाददाता रॉयल्टी।'
-                    : '12 district editions, unlimited reporters, automated night press lock, and instant UPI wire royalties.'}
-                </p>
-                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-[#dadce0] dark:border-[#444746]">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 12 District Editions &amp; Pullouts</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Unlimited Reporter Mobile Seats</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Automated Night Press Lock (10:00 PM)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 2,500 Editorial Operations + 120 Video Bulletins</div>
-                </div>
-              </div>
-              <button
+                type="button"
                 onClick={() => navigateTo('/dashboard')}
-                className="mt-6 w-full py-2.5 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs font-semibold shadow-none hover:shadow-xs transition-all cursor-pointer"
+                className="min-h-[46px] px-7 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white font-semibold text-sm transition-colors inline-flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
               >
-                {lang === 'hi' ? 'प्रो संस्करण शुरू करें' : 'Launch State Pro'}
-              </button>
-            </div>
-
-            {/* Plan 4: National Enterprise */}
-            <div className="rounded-3xl border border-[#dadce0] dark:border-[#444746] bg-white dark:bg-[#28292a] p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
-              <div className="space-y-4">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#8e918f]">
-                  {lang === 'hi' ? 'नेशनल एंटरप्राइज' : 'National Enterprise'}
-                </span>
-                <h3 className="text-xl font-bold text-[#202124] dark:text-[#f2f2f2]">
-                  {lang === 'hi' ? 'राष्ट्रीय मीडिया नेटवर्क' : 'Multi-Language Networks'}
-                </h3>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-extrabold text-[#202124] dark:text-[#f2f2f2]">
-                    ₹{billingPeriod === 'annual' ? '31,999' : '39,999'}
-                  </span>
-                  <span className="text-xs text-[#5f6368] dark:text-[#8e918f] font-normal">/ month (+GST)</span>
-                </div>
-                <p className="text-xs text-[#5f6368] dark:text-[#c4c7c5] leading-relaxed font-normal">
-                  {lang === 'hi'
-                    ? 'असीमित संस्करण, कस्टम प्रेस क्लस्टर, समर्पित सर्वर और 24/7 आपातकालीन सहायता।'
-                    : 'Unlimited editions, dedicated high-speed rendering clusters, custom font libraries, and 24/7 hotline.'}
-                </p>
-                <div className="space-y-2 pt-2 text-xs text-[#3c4043] dark:text-[#c4c7c5] font-medium border-t border-[#dadce0] dark:border-[#444746]">
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Unlimited Editions &amp; Master Brands</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Dedicated Cloud Cluster (Mumbai / Hyd)</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> Developer REST API &amp; Webhooks</div>
-                  <div className="flex items-center gap-2"><Check className="w-4 h-4 text-[#1e8e3e] shrink-0" /> 24/7 Night Press Engineer Support</div>
-                </div>
-              </div>
-              <button
-                onClick={() => navigateTo('/developer')}
-                className="mt-6 w-full py-2.5 rounded-full border border-[#dadce0] dark:border-[#444746] bg-white hover:bg-[#f8fafd] dark:bg-[#28292a] dark:hover:bg-[#333537] text-[#1a73e8] dark:text-[#a8c7fa] text-xs font-medium transition-all cursor-pointer shadow-none"
-              >
-                {lang === 'hi' ? 'विशेष परामर्श' : 'Contact Enterprise Team'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          9. AFFILIATE & PARTNER GROWTH PROGRAM BANNER
-          ========================================================================= */}
-      <section id="affiliate" className="py-14 bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-950 text-white border-b border-indigo-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-8 sm:p-12 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="space-y-4 max-w-2xl">
-              <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-amber-300" />
-                <span>NewsPress Partner &amp; Affiliate Program</span>
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
-                {lang === 'hi'
-                  ? 'न्यूज़प्रेस पार्टनर बनें — हर महीने 20% से 30% आवर्ती कमीशन कमाएं'
-                  : 'Earn 20% to 30% Recurring Monthly Commission'}
-              </h2>
-              <p className="text-xs sm:text-sm text-blue-100 font-normal leading-relaxed">
-                {lang === 'hi'
-                  ? 'जिला समाचार पत्रों, प्रिंटिंग प्रेसों और मीडिया चैनलों को रेफर करें। हर महीने सीधे अपने UPI खाते में पैसिव इनकम प्राप्त करें।'
-                  : 'Recommend NewsPress to local district newspapers, DTP centers, offset printing presses, and digital news channels. Earn lifelong recurring passive income with instant UPI payouts.'}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs text-blue-100">
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 20% - 30% Recurring Cut</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Monthly UPI Payouts</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 5% TDS (Sec 194H)</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 10% on PAYG Top-ups</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Ready WhatsApp Kit</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> 60-Day Cookie Lifetime</div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
-              <button
-                onClick={() => navigateTo('/affiliate')}
-                className="px-8 py-4 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg hover:shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>{lang === 'hi' ? 'पार्टनर डैशबोर्ड खोलें' : 'Join Partner Program'}</span>
+                <span>Open Newsroom</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
-                onClick={() => navigateTo('/login')}
-                className="px-8 py-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-medium text-xs border border-white/20 transition-all cursor-pointer text-center"
+                type="button"
+                onClick={() => navigateTo('/marketplace')}
+                className="min-h-[46px] px-6 rounded-full border border-[#dadce0] dark:border-[#5f6368] bg-white dark:bg-[#242629] hover:bg-[#f1f6fe] dark:hover:bg-[#2e3135] text-[#1a73e8] dark:text-[#8ab4f8] font-semibold text-sm transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
               >
-                Sign In to Account
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          10. STATUTORY LEGAL & COMPLIANCE PORTAL CARD
-          ========================================================================= */}
-      <section className="py-14 bg-[#f8fafd] dark:bg-[#1f1f1f] border-b border-[#dadce0] dark:border-[#3c4043]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white dark:bg-[#28292a] rounded-3xl border border-[#dadce0] dark:border-[#444746] p-8 sm:p-10 shadow-xs">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#1a73e8] dark:text-[#8ab4f8] uppercase tracking-wide">
-                  <Scale className="w-4 h-4" />
-                  <span>Statutory Compliance &amp; Indian Press Regulations</span>
-                </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-[#202124] dark:text-[#f2f2f2] mt-1">
-                  {lang === 'hi'
-                    ? 'भारतीय प्रेस परिषद व डिजिटल मीडिया नियमों के अनुसार नीतियां'
-                    : 'Certified Statutory Governance &amp; Indian Legal Policies'}
-                </h3>
-                <p className="text-xs sm:text-sm text-[#5f6368] dark:text-[#c4c7c5] mt-2 max-w-2xl font-normal">
-                  {lang === 'hi'
-                    ? 'डिजिटल पर्सनल डेटा प्रोटेक्शन एक्ट (DPDP 2023), आईटी नियम 2021 के नियम 11 के तहत शिकायत निवारण अधिकारी और प्रेस काउंसिल आचार संहिता।'
-                    : 'Full legal coverage: DPDP Act 2023 Privacy Policy, Newsroom Terms of Service, Press Council of India (PCI) Ethics, Rule 11 Grievance Redressal, and Wire Royalty Terms.'}
-                </p>
-              </div>
-
-              <button
-                onClick={() => navigateTo('/legal')}
-                className="px-6 py-3 rounded-full bg-[#1a73e8] hover:bg-[#1557b0] text-white text-xs sm:text-sm font-medium shrink-0 flex items-center gap-2 shadow-none hover:shadow-xs transition-all cursor-pointer"
-              >
-                <span>{lang === 'hi' ? 'कानूनी केंद्र खोलें' : 'Open Legal Center'}</span>
+                <span>Browse Marketplace</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8 pt-8 border-t border-[#dadce0] dark:border-[#444746]">
-              {[
-                { label: 'Privacy Policy', sub: 'DPDP Act 2023' },
-                { label: 'Terms of Service', sub: '99.98% Night SLA' },
-                { label: 'PCI Ethics Code', sub: 'Journalistic Norms' },
-                { label: 'Grievance Desk', sub: 'Rule 11 IT Rules 2021' },
-                { label: 'Cookie Policy', sub: 'Strictly Necessary' },
-                { label: 'Wire Royalty Terms', sub: 'Sec 194J & UPI' },
-              ].map((item, idx) => (
+          {/* Visual Showcase Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            <div
+              onClick={() => navigateTo('/dashboard')}
+              className="lg:col-span-7 relative rounded-2xl sm:rounded-3xl overflow-hidden border border-[#d2e3fc] dark:border-[#3c4043] bg-[#eef4ff] dark:bg-[#242629] min-h-[240px] sm:min-h-[340px] lg:min-h-[400px] group cursor-pointer"
+            >
+              <img
+                src={INDIAN_MEDIA.heroNewsroom}
+                alt="Indian journalists collaborating in a modern newsroom"
+                referrerPolicy="no-referrer"
+                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+              <div className="absolute bottom-0 inset-x-0 p-5 sm:p-7 text-white space-y-1">
+                <div className="text-xs text-white/80">Print &amp; Digital Newsroom</div>
+                <h2 className="text-lg sm:text-2xl font-bold text-white leading-snug max-w-lg">
+                  From field dispatches to midnight press runs.
+                </h2>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 grid grid-cols-2 gap-3 sm:gap-4">
+              {HERO_TILES.map((tile) => (
                 <div
-                  key={idx}
-                  onClick={() => navigateTo('/legal')}
-                  className="p-3.5 rounded-2xl border border-[#dadce0] dark:border-[#444746] bg-[#f8fafd] dark:bg-[#1f1f1f] hover:border-[#1a73e8] transition-all cursor-pointer text-left"
+                  key={tile.title}
+                  onClick={() => navigateTo(tile.route)}
+                  className={`rounded-2xl overflow-hidden border ${tile.surfaceClass} flex flex-col justify-between group cursor-pointer`}
                 >
-                  <div className="text-xs font-semibold text-[#202124] dark:text-[#f2f2f2] truncate">{item.label}</div>
-                  <div className="text-[10px] text-[#5f6368] dark:text-[#8e918f] truncate mt-0.5">{item.sub}</div>
+                  <div className="relative h-28 sm:h-36 overflow-hidden">
+                    <img
+                      src={tile.image}
+                      alt={tile.alt}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-3 sm:p-4">
+                    <div className={`text-[11px] font-semibold ${tile.labelColor}`}>{tile.kicker}</div>
+                    <div className="text-xs sm:text-sm font-bold text-[#202124] dark:text-[#f8f9fa] leading-snug mt-0.5">
+                      {tile.title}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* 4-Column Metric Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-6 border-t border-[#e0e3e7] dark:border-[#3c4043]">
+            {IMPACT_STATS.map((stat) => (
+              <div key={stat.label} className="space-y-0.5">
+                <div className={`text-2xl sm:text-3xl font-bold tabular-nums ${stat.color}`}>
+                  {stat.value}
+                </div>
+                <div className="text-xs sm:text-sm font-semibold text-[#202124] dark:text-[#f8f9fa]">
+                  {stat.label}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          11. CLEAN GOOGLE WORKSPACE FOOTER
-          ========================================================================= */}
-      <footer className="bg-[#1f1f1f] text-[#e3e3e3] border-t border-[#3c4043] pt-14 pb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            {/* Brand column */}
-            <div className="md:col-span-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-[#1a73e8] text-white flex items-center justify-center font-sans font-bold text-base shadow-none">
-                  NP
+      {/* 2. FOUR CONNECTED DESKS */}
+      <section
+        id="suite"
+        className="py-12 sm:py-18 bg-[#f8fafd] dark:bg-[#16181a] border-b border-[#e0e3e7] dark:border-[#3c4043]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="max-w-xl space-y-1.5">
+            <p className="text-xs sm:text-sm font-semibold text-[#1a73e8] dark:text-[#8ab4f8]">
+              Platform Suite
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-[#202124] dark:text-[#f8f9fa] tracking-tight">
+              Four tools built for daily publishing.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {DESK_CARDS.map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.title}
+                  onClick={() => navigateTo(card.route)}
+                  className={`rounded-2xl border ${card.surfaceClass} overflow-hidden flex flex-col justify-between group cursor-pointer`}
+                >
+                  <div className="p-5 sm:p-6 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-semibold ${card.accentText}`}>
+                        {card.number} · {card.kicker}
+                      </span>
+                      <Icon className={`w-4 h-4 ${card.accentText}`} />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-[#202124] dark:text-[#f8f9fa]">
+                      {card.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#3c4043] dark:text-[#dadce0] leading-relaxed">
+                      {card.summary}
+                    </p>
+                    <div className={`inline-flex items-center gap-1 text-xs sm:text-sm font-semibold pt-1 ${card.accentText}`}>
+                      <span>{card.cta}</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </div>
+                  <div className="px-5 sm:px-6">
+                    <div className="h-40 sm:h-48 rounded-t-xl overflow-hidden border-t border-x border-black/5 dark:border-white/10">
+                      <img
+                        src={card.image}
+                        alt={card.alt}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-sans font-bold text-lg tracking-tight text-white">NewsPress Platform</div>
-                  <div className="text-[11px] text-[#9aa0a6]">Cloud Newsroom OS &amp; News Wire</div>
-                </div>
-              </div>
-              <p className="text-xs text-[#9aa0a6] leading-relaxed font-normal">
-                Empowering India&apos;s independent newspapers, regional dailies, and accredited journalists with high-fidelity Indic typography, automated midnight press locks, and direct UPI royalties.
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. SIMPLE PRICING */}
+      <section
+        id="pricing"
+        className="py-12 sm:py-18 bg-white dark:bg-[#1a1c1e] border-b border-[#e0e3e7] dark:border-[#3c4043]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-xs sm:text-sm font-semibold text-[#1e8e3e] dark:text-[#81c995]">
+                Pricing
               </p>
-              <div className="flex items-center gap-2 text-xs text-[#8ab4f8] font-medium">
-                <ShieldCheck className="w-4 h-4 text-[#81c995]" />
-                <span>PCI Norms • RNI Standards • DPDP Act 2023 Compliant</span>
-              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-[#202124] dark:text-[#f8f9fa] tracking-tight">
+                Simple plans for every publication.
+              </h2>
             </div>
 
-            {/* Links 1: Editorial */}
-            <div className="md:col-span-2 space-y-3 text-xs">
-              <div className="font-bold text-white uppercase tracking-wider text-[11px]">Editorial Desks</div>
-              <ul className="space-y-2 text-slate-400">
-                <li><button onClick={() => navigateTo('/dashboard')} className="hover:text-white transition-colors cursor-pointer">Newsroom Overview</button></li>
-                <li><button onClick={() => navigateTo('/newsroom/news')} className="hover:text-white transition-colors cursor-pointer">News Dispatch</button></li>
-                <li><button onClick={() => navigateTo('/newsroom/editorial-queue')} className="hover:text-white transition-colors cursor-pointer">Editorial Queue</button></li>
-                <li><button onClick={() => navigateTo('/newsroom/assignments')} className="hover:text-white transition-colors cursor-pointer">Field Assignments</button></li>
-                <li><button onClick={() => navigateTo('/newsroom/reporters')} className="hover:text-white transition-colors cursor-pointer">Reporters Directory</button></li>
-                <li><button onClick={() => navigateTo('/affiliate')} className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors cursor-pointer flex items-center gap-1"><span>Affiliate Program (Earn 25%)</span></button></li>
-              </ul>
-            </div>
-
-            {/* Links 2: Print Production */}
-            <div className="md:col-span-2 space-y-3 text-xs">
-              <div className="font-bold text-white uppercase tracking-wider text-[11px]">Print &amp; Editions</div>
-              <ul className="space-y-2 text-slate-400">
-                <li><button onClick={() => navigateTo('/newspaper/editions')} className="hover:text-white transition-colors cursor-pointer">Editions Desk</button></li>
-                <li><button onClick={() => navigateTo('/newspaper/front-page')} className="hover:text-white transition-colors cursor-pointer">Front Page Planner</button></li>
-                <li><button onClick={() => navigateTo('/newspaper/page-designer')} className="hover:text-white transition-colors cursor-pointer">8-Col Page Designer</button></li>
-                <li><button onClick={() => navigateTo('/production/queue')} className="hover:text-white transition-colors cursor-pointer">Night Press Queue</button></li>
-                <li><button onClick={() => navigateTo('/production/downloads')} className="hover:text-white transition-colors cursor-pointer">Vector PDF Downloads</button></li>
-              </ul>
-            </div>
-
-            {/* Links 3: Statutory Policies */}
-            <div className="md:col-span-2 space-y-3 text-xs">
-              <div className="font-bold text-white uppercase tracking-wider text-[11px]">Legal &amp; Policies</div>
-              <ul className="space-y-2 text-slate-400">
-                <li><button onClick={() => navigateTo('/legal')} className="hover:text-white transition-colors cursor-pointer">Privacy Policy (DPDP)</button></li>
-                <li><button onClick={() => navigateTo('/legal')} className="hover:text-white transition-colors cursor-pointer">Terms of Service</button></li>
-                <li><button onClick={() => navigateTo('/legal')} className="hover:text-white transition-colors cursor-pointer">PCI Editorial Ethics</button></li>
-                <li><button onClick={() => navigateTo('/legal')} className="hover:text-white transition-colors cursor-pointer">Grievance Redressal</button></li>
-                <li><button onClick={() => navigateTo('/legal')} className="hover:text-white transition-colors cursor-pointer">Section 194J Royalty</button></li>
-              </ul>
-            </div>
-
-            {/* Links 4: Indian Bureaus */}
-            <div className="md:col-span-2 space-y-3 text-xs">
-              <div className="font-bold text-white uppercase tracking-wider text-[11px]">Indian Bureaus</div>
-              <div className="space-y-2.5 text-slate-400 text-[11px]">
-                <div>
-                  <strong className="text-white block">New Delhi Bureau:</strong>
-                  Press Club Road, New Delhi - 110001
-                </div>
-                <div>
-                  <strong className="text-white block">Hyderabad Tech Hub:</strong>
-                  Press Towers, HITEC City - 500081
-                </div>
-                <div className="pt-1 text-blue-400 font-medium">
-                  Phone: +91 40 2388 9911<br />
-                  Email: desk@newspress-india.org
-                </div>
-              </div>
+            <div className="inline-flex self-start sm:self-auto items-center p-1 rounded-full bg-[#f1f3f4] dark:bg-[#242629] border border-[#e0e3e7] dark:border-[#3c4043]">
+              <button
+                type="button"
+                onClick={() => setBillingPeriod('monthly')}
+                className={`min-h-[36px] px-4 rounded-full text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  billingPeriod === 'monthly'
+                    ? 'bg-white dark:bg-[#1a73e8] text-[#202124] dark:text-white shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#bdc1c6]'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingPeriod('annual')}
+                className={`min-h-[36px] px-4 rounded-full text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                  billingPeriod === 'annual'
+                    ? 'bg-white dark:bg-[#1a73e8] text-[#202124] dark:text-white shadow-xs'
+                    : 'text-[#5f6368] dark:text-[#bdc1c6]'
+                }`}
+              >
+                Annual (-20%)
+              </button>
             </div>
           </div>
 
-          <div className="border-t border-slate-800/80 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-            <div>
-              © 2026 <strong>Alfa New Gen Platforms</strong>. All Rights Reserved.
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+            {PRICING_PLANS.map((plan) => {
+              const price = billingPeriod === 'annual' ? plan.annualPrice : plan.monthlyPrice;
+              const displayPrice = price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`;
+              return (
+                <div
+                  key={plan.id}
+                  className={`rounded-2xl bg-[#f8fafd] dark:bg-[#242629] overflow-hidden flex flex-col justify-between border ${
+                    plan.featured
+                      ? 'border-2 border-[#1a73e8]'
+                      : 'border-[#e0e3e7] dark:border-[#3c4043]'
+                  }`}
+                >
+                  <div>
+                    <div className={`h-1 w-full ${plan.barColor}`} />
+                    <div className="p-5 sm:p-6 space-y-4">
+                      <div>
+                        <div className={`text-xs font-semibold ${plan.labelColor}`}>
+                          {plan.audience}
+                        </div>
+                        <h3 className="text-lg font-bold text-[#202124] dark:text-[#f8f9fa] mt-0.5">
+                          {plan.name}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-3xl font-bold tabular-nums text-[#202124] dark:text-[#f8f9fa]">
+                          {displayPrice}
+                        </span>
+                        <span className="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                          {plan.unit}
+                        </span>
+                      </div>
+
+                      <ul className="space-y-2 pt-3 border-t border-[#e0e3e7] dark:border-[#3c4043] text-xs sm:text-sm text-[#3c4043] dark:text-[#e8eaed]">
+                        {plan.features.map((feat) => (
+                          <li key={feat} className="flex items-start gap-2">
+                            <Check className={`w-4 h-4 shrink-0 mt-0.5 ${plan.labelColor}`} />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="p-5 sm:p-6 pt-0">
+                    <button
+                      type="button"
+                      onClick={() => navigateTo(plan.route)}
+                      className={`w-full min-h-[44px] px-4 rounded-full text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                        plan.featured
+                          ? 'bg-[#1a73e8] hover:bg-[#1557b0] text-white'
+                          : 'border border-[#dadce0] dark:border-[#5f6368] bg-white dark:bg-[#1a1c1e] hover:bg-[#f1f6fe] dark:hover:bg-[#2e3135] text-[#1a73e8] dark:text-[#8ab4f8]'
+                      }`}
+                    >
+                      {plan.cta}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. QUIET FOOTER */}
+      <footer className="bg-[#f8f9fa] dark:bg-[#1f2124] text-[#5f6368] dark:text-[#bdc1c6] py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="2.5" y="3.5" width="19" height="17" rx="4" stroke="#4285f4" strokeWidth="2.2" />
+                  <line x1="6.5" y1="8.5" x2="12.5" y2="8.5" stroke="#ea4335" strokeWidth="2.2" strokeLinecap="round" />
+                  <line x1="6.5" y1="12.5" x2="17.5" y2="12.5" stroke="#fbbc04" strokeWidth="2.2" strokeLinecap="round" />
+                  <line x1="6.5" y1="16.5" x2="14.5" y2="16.5" stroke="#34a853" strokeWidth="2.2" strokeLinecap="round" />
+                  <circle cx="16.2" cy="8.5" r="1.6" fill="#4285f4" />
+                </svg>
+                <span className="font-bold text-lg tracking-tight text-[#202124] dark:text-[#f8f9fa]">
+                  NewsPress
+                </span>
+              </div>
+              <p className="text-xs max-w-sm">
+                Newspaper publishing, field reporter wire, and broadcast studio for Indian media teams.
+              </p>
             </div>
-            <div className="flex items-center gap-4 text-[11px]">
-              <span>RNI Regd: IND-TEL-99182</span>
-              <span>•</span>
-              <span>CERT-In Empanelled Cloud (Mumbai / Delhi)</span>
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium">
+              <button type="button" onClick={() => navigateTo('/dashboard')} className="hover:text-[#1a73e8] cursor-pointer py-1">
+                Console
+              </button>
+              <button type="button" onClick={() => navigateTo('/marketplace')} className="hover:text-[#1a73e8] cursor-pointer py-1">
+                Marketplace
+              </button>
+              <button type="button" onClick={() => navigateTo('/newspaper/page-designer')} className="hover:text-[#1a73e8] cursor-pointer py-1">
+                Page Designer
+              </button>
+              <button type="button" onClick={() => navigateTo('/legal')} className="hover:text-[#1a73e8] cursor-pointer py-1">
+                Legal &amp; Privacy
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#dadce0] dark:border-[#5f6368] bg-white dark:bg-[#242629] text-xs font-medium text-[#3c4043] dark:text-[#e8eaed] cursor-pointer"
+              >
+                {theme === 'light' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5 text-[#fbbc04]" />}
+                <span>{theme === 'light' ? 'Dark' : 'Light'}</span>
+              </button>
             </div>
+          </div>
+
+          <div className="border-t border-[#e0e3e7] dark:border-[#3c4043] pt-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+            <span>© 2026 NewsPress India</span>
+            <span>desk@newspress-india.org</span>
           </div>
         </div>
       </footer>
@@ -1538,461 +374,160 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   );
 };
 
-/* =========================================================================
-   CAROUSEL SLIDES DATA (HIGH-RES PHOTOGRAPHY & DUAL LANGUAGE EN / HI)
-   ========================================================================= */
-interface Slide {
-  image: string;
-  tag: { en: string; hi: string };
-  shortTitle: { en: string; hi: string };
-  title: { en: string; hi: string };
-  subtitle: { en: string; hi: string };
-  description: { en: string; hi: string };
-  bullets: { en: string[]; hi: string[] };
-  ctaPrimary: { en: string; hi: string };
-  ctaSecondary: { en: string; hi: string };
-  ctaSecondaryLink: string;
-  badgeTitle: { en: string; hi: string };
-  badgeStatus: string;
-  badgeDesc: { en: string; hi: string };
-  badgeMetric1: string;
-  badgeMetric2: string;
-}
-
-const SLIDES: Slide[] = [
+const HERO_TILES = [
   {
-    image: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=1200&auto=format&fit=crop&q=80',
-    tag: {
-      en: 'High-Speed Web-Offset Printing',
-      hi: 'हाई-स्पीड वेब-ऑफसेट प्रिंटिंग',
-    },
-    shortTitle: {
-      en: 'Offset Press',
-      hi: 'ऑफसेट प्रेस',
-    },
-    title: {
-      en: 'Zero-Delay Night Press Lock & 300+ DPI Vector PDF Plates',
-      hi: 'जीरो-डिली नाइट प्रेस लॉक और 300+ DPI वेक्टर प्लेट्स',
-    },
-    subtitle: {
-      en: 'Guaranteed 10:00 PM IST Midnight Distribution Deadlines',
-      hi: 'रात 10:00 बजे की समयसीमा पर स्वचालित मुद्रण गारंटी',
-    },
-    description: {
-      en: 'Automated CMYK color separation, Indic complex font embedding, and instant direct routing to regional printing presses across India.',
-      hi: 'स्वचालित सीएमवाईके कलर सेपरेशन और भारतीय लिपियों के सही विन्यास के साथ सभी प्रिंटिंग प्रेसों को समय पर डिजिटल प्लेट्स का हस्तांतरण।',
-    },
-    bullets: {
-      en: [
-        'HarfBuzz Indic font shaping with zero broken ligatures',
-        '8-column broadsheet and tabloid automatic pagination',
-        'Automatic low-DPI image guards and preflight checks',
-        'SHA-256 tamper-proof cryptographic audit seal',
-      ],
-      hi: [
-        'हर्फ़बज़ इंजन द्वारा हिंदी व क्षेत्रीय लिपियों का शुद्ध विन्यास',
-        '8-कॉलम ब्रॉडशीट और टैब्लॉइड स्वचालित पेजिनेशन',
-        'लो-डीपीआई चित्रों और फॉन्ट त्रुटियों की स्वचालित जांच',
-        'SHA-256 डिजिटल सील के साथ छेड़छाड़-मुक्त मुद्रण प्लेट',
-      ],
-    },
-    ctaPrimary: {
-      en: 'Explore Production Queue',
-      hi: 'प्रोडक्शन कतार देखें',
-    },
-    ctaSecondary: {
-      en: 'Download Sample Plate',
-      hi: 'सैंपल प्लेट डाउनलोड करें',
-    },
-    ctaSecondaryLink: '/production/queue',
-    badgeTitle: {
-      en: 'Night Press Lock Monitor',
-      hi: 'नाइट प्रेस लॉक मॉनिटर',
-    },
-    badgeStatus: 'LOCKED ✓',
-    badgeDesc: {
-      en: 'Plate Package #9812 verified and transmitted to rotary plant.',
-      hi: 'प्लेट पैकेज #9812 सत्यापित और रोटरी प्लांट को प्रेषित।',
-    },
-    badgeMetric1: 'DPI: 300 (Vector CMYK)',
-    badgeMetric2: 'Time: 09:42 PM IST',
+    kicker: 'Field Beats',
+    title: 'Live Dispatches',
+    route: '/newsroom/reporters',
+    image: INDIAN_MEDIA.femaleFieldReporter,
+    alt: 'Field journalist reporting live',
+    surfaceClass: 'google-surface-blue',
+    labelColor: 'text-[#1a73e8] dark:text-[#8ab4f8]',
   },
   {
-    image: 'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=1200&auto=format&fit=crop&q=80',
-    tag: {
-      en: 'Press Council of India Aligned Standards',
-      hi: 'प्रेस परिषद के अनुरूप संपादकीय डेस्क',
-    },
-    shortTitle: {
-      en: 'Editorial Engine',
-      hi: 'संपादकीय इंजन',
-    },
-    title: {
-      en: 'Digital Editorial Desk with Originality Scoring & Anti-Plagiarism Shield',
-      hi: 'ओरिजिनैलिटी स्कोरिंग और साहित्यिक चोरी से सुरक्षा युक्त संपादकीय डेस्क',
-    },
-    subtitle: {
-      en: 'Safeguard Journalistic Integrity Under PCI Norms',
-      hi: 'पीसीआई दिशानिर्देशों के तहत पत्रकारिता की विश्वसनीयता सुनिश्चित करें',
-    },
-    description: {
-      en: 'Real-time plagiarism screening, defamation risk alerts, and automated copy-fitting calibrated specifically for Indian language daily publishing.',
-      hi: 'साहित्यिक चोरी की स्वचालित जांच, मानहानि के जोखिमों से सुरक्षा और कॉलम की चौड़ाई के अनुसार हेडलाइन को सटीक बैठाने की सुविधा।',
-    },
-    bullets: {
-      en: [
-        'Strict ≥85% originality threshold for wire publication',
-        'Defamation and contempt screening against PCI guidelines',
-        'Column-aware headline fitting in English & Indic scripts',
-        'Transparent human-in-the-loop audit logs for all edits',
-      ],
-      hi: [
-        'प्रकाशन के लिए न्यूनतम 85% मौलिकता अनिवार्य',
-        'प्रेस परिषद के नियमों के अनुसार मानहानि जांच',
-        'कॉलम के आकार के अनुसार हेडलाइन का स्वतः समायोजन',
-        'प्रत्येक संपादन के लिए पारदर्शी ऑडिट लॉग',
-      ],
-    },
-    ctaPrimary: {
-      en: 'Test Originality Desk',
-      hi: 'ओरिजिनैलिटी डेस्क देखें',
-    },
-    ctaSecondary: {
-      en: 'View Editorial Workflow',
-      hi: 'संपादकीय कार्यप्रवाह',
-    },
-    ctaSecondaryLink: '/newsroom/editorial-queue',
-    badgeTitle: {
-      en: 'Originality Radar Score',
-      hi: 'ओरिजिनैलिटी राडार स्कोर',
-    },
-    badgeStatus: '98.4% UNIQUE',
-    badgeDesc: {
-      en: 'Corroborated across 50,000+ wire dispatches. 0% plagiarism detected.',
-      hi: '50,000+ वायर खबरों से मिलान किया गया। 0% साहित्यिक चोरी।',
-    },
-    badgeMetric1: 'Fact Check: PASS',
-    badgeMetric2: 'PCI Aligned ✓',
+    kicker: 'Broadcast',
+    title: 'News Bulletins',
+    route: '/newsroom/youtube-studio',
+    image: INDIAN_MEDIA.broadcastStudio,
+    alt: 'Television broadcast news studio',
+    surfaceClass: 'google-surface-red',
+    labelColor: 'text-[#d93025] dark:text-[#f28b82]',
   },
   {
-    image: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?w=1200&auto=format&fit=crop&q=80',
-    tag: {
-      en: '5,000+ Accredited Indian Stringers',
-      hi: '5,000+ मान्यता प्राप्त संवाददाता',
-    },
-    shortTitle: {
-      en: 'Stringer Wire',
-      hi: 'स्ट्रिंगर वायर',
-    },
-    title: {
-      en: 'India\'s 1st Syndicated Reporter Wire with Instant UPI Royalties',
-      hi: 'भारत का पहला सिंडिकेटेड वायर • पत्रकारों को तुरंत यूपीआई रॉयल्टी',
-    },
-    subtitle: {
-      en: 'Fair Royalties Settled in Under 60 Seconds via RazorpayX',
-      hi: 'रेज़रपे एक्स के माध्यम से 60 सेकंड में पारदर्शी भुगतान',
-    },
-    description: {
-      en: 'Connect rural correspondents, district investigative journalists, and national media houses with automated copyright licensing and Section 194J TDS compliance.',
-      hi: 'ग्रामीण और जिला स्तर के संवाददाताओं को बड़े अखबारों से जोड़ें। स्वचालित कॉपीराइट लाइसेंसिंग और कानूनी टीडीएस कटौती की पारदर्शी व्यवस्था।',
-    },
-    bullets: {
-      en: [
-        'Instant UPI payments settled directly to reporter bank accounts',
-        'Digital Form 16A quarterly certificates generated automatically',
-        'Exclusive and non-exclusive broadsheet print licenses',
-        'Mobile dispatch app with camera photo and GPS coordinates',
-      ],
-      hi: [
-        'पत्रकार के बैंक व यूपीआई खाते में तुरंत भुगतान',
-        'डिजिटल फॉर्म 16A प्रमाणपत्र स्वतः तैयार',
-        'विशेष और गैर-विशेष प्रिंट अधिकार लाइसेंस',
-        'मोबाइल से सीधे फोटो और जीपीएस के साथ खबर भेजने की सुविधा',
-      ],
-    },
-    ctaPrimary: {
-      en: 'Explore Wire Marketplace',
-      hi: 'वायर मार्केटप्लेस देखें',
-    },
-    ctaSecondary: {
-      en: 'Join as Freelance Reporter',
-      hi: 'संवाददाता के रूप में जुड़ें',
-    },
-    ctaSecondaryLink: '/marketplace',
-    badgeTitle: {
-      en: 'UPI Royalty Settlement',
-      hi: 'यूपीआई रॉयल्टी ट्रांसफर',
-    },
-    badgeStatus: 'PAID IN 42s',
-    badgeDesc: {
-      en: '₹2,400 royalty credited to journalist@upi for Warangal field report.',
-      hi: 'वारंगल खोजी खबर के लिए ₹2,400 की रॉयल्टी सीधे खाते में जमा।',
-    },
-    badgeMetric1: 'TDS (194J): 2% Deducted',
-    badgeMetric2: 'RazorpayX Transferred',
+    kicker: 'Print Editions',
+    title: '8-Col Broadsheet',
+    route: '/newspaper/page-designer',
+    image: INDIAN_MEDIA.peopleReadingPaper,
+    alt: 'Readers enjoying morning newspaper',
+    surfaceClass: 'google-surface-yellow',
+    labelColor: 'text-[#b06000] dark:text-[#fdd663]',
   },
   {
-    image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop&q=80',
-    tag: {
-      en: 'Multi-Tenant Regional Editions',
-      hi: 'मल्टी-टेनेंट क्षेत्रीय संस्करण',
-    },
-    shortTitle: {
-      en: 'Regional Pullouts',
-      hi: 'जिला पुलआउट्स',
-    },
-    title: {
-      en: 'Manage 50+ District Pullouts & State Editions on One Unified Cloud',
-      hi: '50+ जिला संस्करण और राज्य सप्लीमेंट्स एक ही एकीकृत क्लाउड पर',
-    },
-    subtitle: {
-      en: 'Independent Bureau Desks with Cryptographic Tenant Isolation',
-      hi: 'पूर्ण सुरक्षा और गोपनीयता के साथ स्वतंत्र जिला ब्यूरो कार्यप्रवाह',
-    },
-    description: {
-      en: 'Effortlessly synchronize front-page planners, local advertising split runs, and midnight press deadlines across every printing facility.',
-      hi: 'राज्य की मुख्य खबरों के साथ-साथ जिला स्तर के 4 से 8 पेज के लोकल सप्लीमेंट्स को बिना किसी भ्रम के तेजी से तैयार करें।',
-    },
-    bullets: {
-      en: [
-        'Dynamic regional advertising splits without redesigning pages',
-        'Dedicated editorial roles for Bureau Chiefs and Sub-Editors',
-        'Real-time edition readiness gauge and preflight scoring',
-        'Timezone-aware night press lock schedules across print hubs',
-      ],
-      hi: [
-        'पेज दोबारा बनाए बिना क्षेत्रीय विज्ञापनों का स्वतः बदलाव',
-        'ब्यूरो चीफ और सब-एडिटर्स के लिए सुरक्षित भूमिकाएं',
-        'वास्तविक समय में संस्करण की तैयारी और प्रीफ्लाइट स्कोर',
-        'प्रिंट हब के अनुसार नाइट प्रेस लॉक का स्वतः प्रबंधन',
-      ],
-    },
-    ctaPrimary: {
-      en: 'View Edition Matrix',
-      hi: 'संस्करण मैट्रिक्स देखें',
-    },
-    ctaSecondary: {
-      en: 'Open Page Designer',
-      hi: 'पेज डिजाइनर खोलें',
-    },
-    ctaSecondaryLink: '/newspaper/editions',
-    badgeTitle: {
-      en: 'Regional Edition Cluster',
-      hi: 'क्षेत्रीय संस्करण क्लस्टर',
-    },
-    badgeStatus: '64 EDITIONS LIVE',
-    badgeDesc: {
-      en: 'All regional tabs synchronized for Delhi, Jaipur, Indore and Raipur.',
-      hi: 'दिल्ली, जयपुर, इंदौर और रायपुर के सभी संस्करण समन्वयित।',
-    },
-    badgeMetric1: 'Make-Ready: -38%',
-    badgeMetric2: 'Ad Yield: +24%',
+    kicker: 'Wire Market',
+    title: 'Instant UPI Pay',
+    route: '/marketplace',
+    image: INDIAN_MEDIA.maleFieldReporter,
+    alt: 'District photojournalist in local market',
+    surfaceClass: 'google-surface-green',
+    labelColor: 'text-[#137333] dark:text-[#81c995]',
   },
 ];
 
-/* =========================================================================
-   INDIAN EDITORS TESTIMONIALS DATA (REAL PORTRAITS & DUAL EN / HI)
-   ========================================================================= */
-interface TestimonialItem {
-  id: string;
-  name: { en: string; hi: string };
-  role: { en: string; hi: string };
-  publication: string;
-  category: 'national' | 'regional' | 'hindi' | 'wire';
-  photo: string;
-  quote: { en: string; hi: string };
-  metric: string;
-}
+const IMPACT_STATS = [
+  { value: '48+', label: 'Indian Dailies', color: 'text-[#1a73e8] dark:text-[#8ab4f8]' },
+  { value: '1.24M+', label: 'Daily Circulation', color: 'text-[#1e8e3e] dark:text-[#81c995]' },
+  { value: '99.98%', label: 'On-Time Press Lock', color: 'text-[#e37400] dark:text-[#fdd663]' },
+  { value: '₹4.2 Cr+', label: 'Reporter Royalties', color: 'text-[#d93025] dark:text-[#f28b82]' },
+];
 
-const TESTIMONIALS: TestimonialItem[] = [
+const DESK_CARDS = [
   {
-    id: 'eenadu-raghava',
-    name: {
-      en: 'K. Raghava Rao',
-      hi: 'के. राघव राव',
-    },
-    role: {
-      en: 'Former Executive Editor, Hyderabad',
-      hi: 'पूर्व कार्यकारी संपादक, हैदराबाद',
-    },
-    publication: 'Eenadu (ईनाडु)',
-    category: 'regional',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-    quote: {
-      en: 'Coordinating 23 district pullouts used to be five hours of late-night telephone chaos. With NewsPress Indic shaping and automated templates, our night press runs begin 45 minutes ahead of schedule without a single broken glyph.',
-      hi: '23 जिला संस्करणों का समन्वय पहले आधी रात को फोन पर होने वाली अफरातफरी थी। न्यूज़प्रेस के स्वचालित टेम्पलेट्स और हर्फ़बज़ इंजन के कारण बिना किसी टूटे अक्षर के हमारा प्रिंट रन 45 मिनट पहले शुरू हो जाता है।',
-    },
-    metric: '-45 min Night Press Start',
+    number: '01',
+    kicker: 'Editorial Desk',
+    title: 'Stories & Copy Review',
+    summary: 'Review field dispatches across 11 Indian languages and approve stories in one tap.',
+    cta: 'Open Stories',
+    route: '/newsroom/news',
+    icon: FileText,
+    image: INDIAN_MEDIA.heroNewsroom,
+    alt: 'Editors reviewing stories together',
+    surfaceClass: 'google-surface-blue',
+    accentText: 'text-[#1a73e8] dark:text-[#8ab4f8]',
   },
   {
-    id: 'hindu-madhav',
-    name: {
-      en: 'Madhav Narayan',
-      hi: 'माधव नारायण',
-    },
-    role: {
-      en: 'Consulting Senior Editor, Chennai / Delhi',
-      hi: 'कंसल्टिंग सीनियर एडिटर, चेन्नई / दिल्ली',
-    },
-    publication: 'The Hindu (द हिंदू)',
-    category: 'national',
-    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
-    quote: {
-      en: 'In 34 years in Indian journalism, I haven\'t seen a SaaS platform that respects both editorial independence and print rigor. The PCI-aligned fact-checking and originality detection shield us from defamatory feeds while protecting freelance reporters\' rights.',
-      hi: 'भारतीय पत्रकारिता में 34 वर्षों में मैंने ऐसा कोई सॉफ्टवेयर नहीं देखा जो संपादकीय स्वतंत्रता और मुद्रण की गुणवत्ता दोनों का सम्मान करता हो। पीसीआई-अनुरूप ओरिजिनैलिटी जांच हमें मानहानि से बचाती है।',
-    },
-    metric: '100% PCI Ethics Compliance',
+    number: '02',
+    kicker: 'Print Studio',
+    title: '8-Column Page Designer',
+    summary: 'Assemble daily editions and export 300 DPI print-ready PDF plates cleanly.',
+    cta: 'Open Designer',
+    route: '/newspaper/page-designer',
+    icon: Printer,
+    image: INDIAN_MEDIA.peopleReadingPaper,
+    alt: 'Printed daily newspaper edition',
+    surfaceClass: 'google-surface-green',
+    accentText: 'text-[#137333] dark:text-[#81c995]',
   },
   {
-    id: 'bhaskar-sunil',
-    name: {
-      en: 'Sunil Sharma',
-      hi: 'सुनील शर्मा',
-    },
-    role: {
-      en: 'Bureau Chief & Night Desk Head, Bhopal',
-      hi: 'ब्यूरो चीफ व नाइट डेस्क प्रमुख, भोपाल',
-    },
-    publication: 'Dainik Bhaskar (दैनिक भास्कर)',
-    category: 'hindi',
-    photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop&q=80',
-    quote: {
-      en: 'Managing 64 regional pullouts with dynamic advertising splits was an operational nightmare. NewsPress handles CMYK vector PDF export with industrial reliability. Our press plants in Indore and Raipur receive flawless vector broadsheets every midnight.',
-      hi: 'विज्ञापनों के अलग-अलग बदलावों के साथ 64 क्षेत्रीय संस्करण चलाना बहुत कठिन कार्य था। न्यूज़प्रेस सीएमवाईके वेक्टर पीडीएफ को पूर्ण विश्वसनीयता के साथ निर्यात करता है। हमारे सभी प्रिंटिंग प्लांट्स को आधी रात को सही प्लेट्स मिलती हैं।',
-    },
-    metric: '64 Regional Editions Locked',
+    number: '03',
+    kicker: 'Marketplace',
+    title: 'Verified Reporter Wire',
+    summary: 'License original district stories with instant UPI payouts to accredited reporters.',
+    cta: 'Browse Wire',
+    route: '/marketplace',
+    icon: Coins,
+    image: INDIAN_MEDIA.maleFieldReporter,
+    alt: 'Field correspondent covering local story',
+    surfaceClass: 'google-surface-yellow',
+    accentText: 'text-[#b06000] dark:text-[#fdd663]',
   },
   {
-    id: 'manorama-raja',
-    name: {
-      en: 'Rajasekharan Nair',
-      hi: 'राजशेखरन नायर',
-    },
-    role: {
-      en: 'Technical Director & Production Head, Kottayam',
-      hi: 'तकनीकी निदेशक व प्रोडक्शन प्रमुख, कोट्टायम',
-    },
-    publication: 'Malayala Manorama (मलयला मनोरमा)',
-    category: 'national',
-    photo: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80',
-    quote: {
-      en: 'The vector PDF engine with preflight verification guarantees that our press operators never encounter font dropouts or low-res images. It has reduced our rotary press make-ready time by 38%.',
-      hi: 'वेक्टर पीडीएफ इंजन और प्रीफ्लाइट जांच यह सुनिश्चित करती है कि हमारे प्रिंटिंग प्रेस ऑपरेटरों को कभी भी फॉन्ट गायब होने या कम रेजोल्यूशन की तस्वीरों का सामना न करना पड़े। इसने तैयारी का समय 38% घटा दिया है।',
-    },
-    metric: '38% Faster Make-Ready Time',
-  },
-  {
-    id: 'lokmat-vikram',
-    name: {
-      en: 'Vikram Deshmukh',
-      hi: 'विक्रम देशमुख',
-    },
-    role: {
-      en: 'Senior Wire Editor, Mumbai / Pune',
-      hi: 'वरिष्ठ वायर संपादक, मुंबई / पुणे',
-    },
-    publication: 'Lokmat Media (लोकमत)',
-    category: 'wire',
-    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop&q=80',
-    quote: {
-      en: 'The reporter marketplace with instant RazorpayX payouts has revolutionized rural reporting. Stringers receive fair royalties within minutes, and publishers obtain ironclad copyright and GST invoices.',
-      hi: 'रेज़रपे एक्स के माध्यम से तत्काल भुगतान वाले रिपोर्टर मार्केटप्लेस ने ग्रामीण पत्रकारिता में क्रांति ला दी है। संवाददाताओं को मिनटों में उचित रॉयल्टी मिलती है और प्रकाशकों को सुरक्षित कॉपीराइट और जीएसटी इनवॉइस प्राप्त होता है।',
-    },
-    metric: 'Instant UPI Royalties Paid',
-  },
-  {
-    id: 'syndicate-aruna',
-    name: {
-      en: 'Aruna Ramamurthy',
-      hi: 'अरुणा राममूर्ति',
-    },
-    role: {
-      en: 'Managing Editor, National Press Syndicate, Delhi',
-      hi: 'प्रबंध संपादक, नेशनल प्रेस सिंडिकेट, दिल्ली',
-    },
-    publication: 'Indian Express Wire Group',
-    category: 'national',
-    photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
-    quote: {
-      en: 'For independent journalists and grassroots stringers, NewsPress has created a dignified economic model. Field dispatches with verified coordinates turn into finished print broadsheets in minutes.',
-      hi: 'स्वतंत्र पत्रकारों और जमीनी संवाददाताओं के लिए न्यूज़प्रेस ने एक सम्मानजनक आर्थिक मॉडल तैयार किया है। सत्यापित जीपीएस के साथ आने वाली खबरें कुछ ही मिनटों में तैयार प्रिंट पेज बन जाती हैं।',
-    },
-    metric: '180+ Rural Stringers Active',
+    number: '04',
+    kicker: 'Broadcast',
+    title: 'Digital Video Studio',
+    summary: 'Turn approved news stories into broadcast-ready bulletins with tickers and studio audio.',
+    cta: 'Open Studio',
+    route: '/newsroom/youtube-studio',
+    icon: Radio,
+    image: INDIAN_MEDIA.broadcastStudio,
+    alt: 'Digital television news studio',
+    surfaceClass: 'google-surface-red',
+    accentText: 'text-[#c5221f] dark:text-[#f28b82]',
   },
 ];
 
-/* =========================================================================
-   WIRE STORIES DATA (WITH REAL EDITORIAL PHOTOGRAPHY)
-   ========================================================================= */
-interface WireStory {
-  id: string;
-  image: string;
-  district: string;
-  originality: number;
-  title: { en: string; hi: string };
-  summary: { en: string; hi: string };
-  price: number;
-}
-
-const WIRE_STORIES: WireStory[] = [
+const PRICING_PLANS = [
   {
-    id: 'w1',
-    image: 'https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=600&auto=format&fit=crop&q=80',
-    district: 'Warangal / Rural',
-    originality: 98,
-    title: {
-      en: 'Drone Survey Uncovers Spurious Seed Distribution Ring in Cotton Belt',
-      hi: 'ड्रोन सर्वेक्षण ने कपास पट्टी में नकली बीज वितरण गिरोह का भंडाफोड़ किया',
-    },
-    summary: {
-      en: 'Exclusive photographic evidence of unapproved BT-seed packaging units operating in rural district boundaries.',
-      hi: 'ग्रामीण जिला सीमाओं में अवैध रूप से चल रही बिना मंजूरी वाली बीज पैकेजिंग इकाइयों के साक्ष्य।',
-    },
-    price: 2400,
+    id: 'payg',
+    audience: 'Weekly & Indie Press',
+    name: 'Pay As You Go',
+    monthlyPrice: 0,
+    annualPrice: 0,
+    unit: '/ month (Prepaid)',
+    features: [
+      '₹49 per 300 DPI Print Plate',
+      '₹29 per Video Bulletin',
+      '₹500 minimum UPI wallet top-up',
+    ],
+    cta: 'Start Free',
+    route: '/login',
+    featured: false,
+    barColor: 'bg-[#34a853]',
+    labelColor: 'text-[#1e8e3e] dark:text-[#81c995]',
   },
   {
-    id: 'w2',
-    image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=600&auto=format&fit=crop&q=80',
-    district: 'Jaipur / Energy',
-    originality: 96,
-    title: {
-      en: 'Thar Solar Micro-Grid Powers 14 Off-Grid Desert Hamlets',
-      hi: 'थार सोलर माइक्रो-ग्रिड से 14 दूरदराज के रेगिस्तानी गांवों में बिजली पहुंची',
-    },
-    summary: {
-      en: 'How localized decentralized battery storage changed nighttime healthcare and schooling in border villages.',
-      hi: 'सीमावर्ती गांवों में विकेंद्रीकृत बैटरी भंडारण ने स्वास्थ्य सेवाओं और स्कूलों की तस्वीर कैसे बदली।',
-    },
-    price: 1800,
+    id: 'state',
+    audience: 'Most Popular',
+    name: 'State Pro',
+    monthlyPrice: 14999,
+    annualPrice: 11999,
+    unit: '/ month',
+    features: [
+      '12 District Editions & Pullouts',
+      'Unlimited Reporter Seats',
+      '120 Broadcast Bulletins / month',
+    ],
+    cta: 'Launch State Pro',
+    route: '/dashboard',
+    featured: true,
+    barColor: 'bg-[#4285f4]',
+    labelColor: 'text-[#1a73e8] dark:text-[#8ab4f8]',
   },
   {
-    id: 'w3',
-    image: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80',
-    district: 'Delhi / Judicial',
-    originality: 99,
-    title: {
-      en: 'High Court Mandates Digital Summons via Encrypted Messaging for Cheque Bounces',
-      hi: 'उच्च न्यायालय ने चेक बाउंस मामलों में डिजिटल समन भेजने का दिया निर्देश',
-    },
-    summary: {
-      en: 'Judicial reform reduces average pre-trial service delay from 11 months to 48 hours across magistrate courts.',
-      hi: 'न्यायिक सुधार से मजिस्ट्रेट अदालतों में मुकदमों की सुनवाई में होने वाली देरी 11 महीने से घटकर 48 घंटे रह गई।',
-    },
-    price: 3200,
-  },
-  {
-    id: 'w4',
-    image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&auto=format&fit=crop&q=80',
-    district: 'Mumbai / Markets',
-    originality: 94,
-    title: {
-      en: 'SEBI Tightens Algo-Trading Safeguards to Curb Retail Derivates Volatility',
-      hi: 'सेबी ने खुदरा डेरिवेटिव्स में उतार-चढ़ाव रोकने के लिए एल्गो-ट्रेडिंग नियम कड़े किए',
-    },
-    summary: {
-      en: 'New margin multipliers and mandatory retail risk disclosures roll out across NSE and BSE equity derivatives.',
-      hi: 'एनएसई और बीएसई इक्विटी डेरिवेटिव्स में नए मार्जिन नियम और जोखिम प्रकटीकरण अनिवार्य किए गए।',
-    },
-    price: 2800,
+    id: 'district',
+    audience: 'Independent Dailies',
+    name: 'District Starter',
+    monthlyPrice: 4999,
+    annualPrice: 3999,
+    unit: '/ month',
+    features: [
+      '2 Regional Daily Editions',
+      '25 Accredited Reporter Seats',
+      '300 DPI Vector PDF Export',
+    ],
+    cta: 'Start 14-Day Trial',
+    route: '/login',
+    featured: false,
+    barColor: 'bg-[#fbbc04]',
+    labelColor: 'text-[#b06000] dark:text-[#fdd663]',
   },
 ];

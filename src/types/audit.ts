@@ -168,6 +168,7 @@ export type AuditAction =
   | 'LISTING_WITHDRAWN'
   | 'LICENSE_REVOKED'
   | 'EXCLUSIVE_LICENSE_ACQUIRED'
+  | 'SUBSCRIBER_WIRE_CLAIMED'
   // Phase 13 Mobile Operations & Offline Field Workflow Actions
   | 'PUSH_NOTIFICATION_DISPATCHED'
   | 'CONFLICT_RESOLVED'

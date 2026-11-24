@@ -142,7 +142,7 @@ export const VOICE_ACTORS: VoiceActorProfile[] = [
     name: 'Priyanka',
     teluguName: 'Priyanka',
     englishName: 'Priyanka',
-    googleOriginalVoice: 'Aoede',
+    googleOriginalVoice: 'Zephyr',
     gender: 'female',
     roleTitle: 'Dynamic Speed News & Live Anchor',
     emotionalTone: 'Dynamic & Vibrant Energy',
@@ -194,7 +194,6 @@ export interface YouTubeConnectedAccount {
   refreshToken?: string;
   tokenExpiresAt?: number;
   clientId?: string;
-  clientSecret?: string;
   connectedAt?: string;
   googleEmail?: string;
 }
@@ -243,6 +242,8 @@ export interface YouTubePublishResult {
 
 export interface YouTubeBroadcastRecord {
   videoId: string;
+  tenantId?: string;
+  createdBy?: string;
   youtubeUrl: string;
   embedUrl?: string;
   title: string;
@@ -256,6 +257,7 @@ export interface YouTubeBroadcastRecord {
   voiceActorId?: string;
   voiceActorName?: string;
   channelTitle?: string;
+  tags?: string[];
   status?: 'processing' | 'ready' | 'published';
   isSdReady?: boolean;
 }

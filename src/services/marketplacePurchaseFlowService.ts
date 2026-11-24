@@ -62,7 +62,19 @@ export class MarketplacePurchaseFlowService {
       reasons.push(`Listing is ${listing.availability} and unavailable for acquisition.`);
     }
 
-    if (listing.price <= 0) {
+    const isSubscriberIncludedWire = Boolean(
+      listing.includedInSubscription ||
+        (listing.sourceType === 'WIRE_FEED' && listing.pricingModel === 'SUBSCRIPTION_ENTITLEMENT' && listing.price === 0)
+    );
+
+    const entitlement = marketplaceService.getTenantEntitlement(req.buyerTenantId);
+    const hasActiveSubscription = Boolean(entitlement && entitlement.status === 'active');
+
+    if (isSubscriberIncludedWire) {
+      if (!hasActiveSubscription) {
+        reasons.push('An active Marketplace subscription is required to claim included wire stories.');
+      }
+    } else if (listing.price <= 0) {
       reasons.push('Invalid listing price. Free stories are prohibited on the marketplace.');
     }
 
@@ -109,12 +121,13 @@ export class MarketplacePurchaseFlowService {
     }
 
     // Subscription entitlement availability
-    const entitlement = marketplaceService.getTenantEntitlement(req.buyerTenantId);
     const canUseSubscription = Boolean(
-      listing.listingType === 'STANDARD' &&
-      entitlement &&
-      entitlement.status === 'active' &&
-      entitlement.remainingUnits > 0
+      isSubscriberIncludedWire
+        ? hasActiveSubscription
+        : listing.listingType === 'STANDARD' &&
+            entitlement &&
+            entitlement.status === 'active' &&
+            entitlement.remainingUnits > 0
     );
 
     return {
@@ -140,6 +153,22 @@ export class MarketplacePurchaseFlowService {
 
     const idempotencyKey = this.generateIdempotencyKey(req.buyerTenantId, req.listingId, req.checkoutId);
     const listing = validation.listing!;
+
+    // 0. Zero-cost claim for subscriber-included syndicated wire stories
+    const isSubscriberIncludedWire = Boolean(
+      listing.includedInSubscription ||
+        (listing.sourceType === 'WIRE_FEED' && listing.pricingModel === 'SUBSCRIPTION_ENTITLEMENT' && listing.price === 0)
+    );
+    if (isSubscriberIncludedWire) {
+      return marketplaceService.claimSubscriberIncludedStory({
+        idempotencyKey,
+        buyerTenantId: req.buyerTenantId,
+        buyerTenantName: req.buyerTenantName,
+        buyerUserId: req.buyerUserId,
+        buyerUserName: req.buyerUserName,
+        listingId: req.listingId,
+      });
+    }
 
     // 1. If subscription redemption requested and available
     if (req.useSubscriptionEntitlement && validation.canUseSubscription) {

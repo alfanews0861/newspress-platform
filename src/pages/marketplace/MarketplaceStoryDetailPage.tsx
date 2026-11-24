@@ -9,15 +9,12 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  ShieldCheck,
   Camera,
   Lock,
   CheckCircle,
-  FileText,
   Copy,
   Check,
   ChevronLeft,
-  Share2,
   AlertTriangle
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -28,8 +25,10 @@ import { MarketplacePurchaseModal } from '../../components/marketplace/Marketpla
 import { useTenant } from '../../hooks/useTenant';
 import { useAuth } from '../../hooks/useAuth';
 import { marketplaceService } from '../../services/marketplaceService';
-import { marketplaceContentWorkspaceService } from '../../services/marketplaceContentWorkspaceService';
+import { wireFeedService } from '../../services/wireFeedService';
 import { MarketplaceListing, LicenseType } from '../../types/marketplace';
+import { getWireLanguageLabel } from '../../types/wireFeed';
+import { sanitizeImageUrl } from '../../utils/urlSafety';
 import { formatINR, formatDate } from '../../utils/formatters';
 import { navigateTo } from '../../utils/navigation';
 
@@ -50,26 +49,62 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
   const [selectedLicense, setSelectedLicense] = useState<LicenseType>('DIGITAL_AND_PRINT');
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [imageError, setImageError] = useState<boolean>(false);
+  const [articleSyncTick, setArticleSyncTick] = useState<number>(0);
 
   useEffect(() => {
-    if (listingId) {
-      const item = marketplaceService.getListingById(listingId);
+    let active = true;
+    setImageError(false);
+
+    if (!listingId) return;
+
+    const loadItem = (item: MarketplaceListing | undefined) => {
+      if (!active) return;
       setListing(item);
       if (item && item.licenseOptions.length > 0) {
         setSelectedLicense(item.licenseOptions[0]);
       }
       if (item) {
         document.title = `${item.title} | NewsPress Wire`;
+        if (item.sourceType === 'WIRE_FEED' || item.includedInSubscription) {
+          wireFeedService.fetchArticleFromFirestore(item.newsId).then((article) => {
+            if (!active || !article) return;
+            marketplaceService.cacheWireArticle(article);
+            setArticleSyncTick((t) => t + 1);
+          });
+        }
       }
+    };
+
+    const existing = marketplaceService.getListingById(listingId);
+    if (existing) {
+      loadItem(existing);
+      return () => {
+        active = false;
+      };
     }
+
+    // If navigated directly to a live Firestore wire listing, subscribe once to hydrate it
+    const unsubscribe = wireFeedService.subscribeLiveWireListings((liveListings) => {
+      marketplaceService.upsertLiveWireListings(liveListings);
+      const found = marketplaceService.getListingById(listingId);
+      if (found) {
+        loadItem(found);
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [listingId]);
 
   if (!listing) {
     return (
       <div className="p-12 text-center space-y-4">
-        <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
-        <h3 className="text-lg font-bold text-slate-100 font-serif">Marketplace Dispatch Not Found</h3>
-        <p className="text-xs text-slate-400">The requested listing ID may have been withdrawn or archived.</p>
+        <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 font-serif">Marketplace Dispatch Not Found</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">The requested listing ID may have been withdrawn or archived.</p>
         <Button variant="secondary" size="sm" onClick={() => navigateTo('/marketplace')}>
           Return to Marketplace Wire
         </Button>
@@ -77,7 +112,13 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
     );
   }
 
+  const isSubscriberIncludedWire = Boolean(
+    listing.includedInSubscription ||
+      (listing.sourceType === 'WIRE_FEED' && listing.pricingModel === 'SUBSCRIPTION_ENTITLEMENT' && listing.price === 0)
+  );
+
   // Check if tenant possesses active license for full content access
+  void articleSyncTick;
   const authorizedContent = currentTenant && user
     ? marketplaceService.getAuthorizedStoryContent({
         newsId: listing.newsId,
@@ -87,6 +128,8 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
     : null;
 
   const hasFullAccess = authorizedContent?.hasFullAccess || false;
+  const safeHeroImage = sanitizeImageUrl(authorizedContent?.featuredImageUrl || listing.featuredImageUrl);
+  const heroCaption = authorizedContent?.imageCaption || listing.imageCaption;
 
   const handleCopyByline = () => {
     navigator.clipboard.writeText(`By ${listing.reporterByline || listing.reporterName} / NewsPress Wire`);
@@ -107,7 +150,7 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={handleCopyByline}>
-            {copied ? <Check className="w-4 h-4 mr-1 text-emerald-400" /> : <Copy className="w-4 h-4 mr-1" />}
+            {copied ? <Check className="w-4 h-4 mr-1 text-emerald-500" /> : <Copy className="w-4 h-4 mr-1" />}
             {copied ? 'Byline Copied' : 'Copy Byline'}
           </Button>
         </div>
@@ -115,7 +158,7 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
 
       <PageHeader
         title={listing.title}
-        subtitle={`Syndication Listing • Byline: ${listing.reporterByline || listing.reporterName} • ${listing.district}, ${listing.state}`}
+        subtitle={`Syndication Listing • Byline: ${listing.reporterByline || listing.reporterName} • ${listing.district || 'Pan-India'}, ${listing.state || 'India'}`}
         breadcrumbs={[
           { label: 'Marketplace', href: '#/marketplace' },
           { label: listing.category },
@@ -123,19 +166,42 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
         ]}
       />
 
-      {/* Primary Overview Card */}
+      {/* Primary Overview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Content Preview Block with Preview Protection */}
-          <Card variant="editorial" className="p-6 space-y-4">
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-sans">
-              <span>Published: {formatDate(listing.publishedAt)}</span>
-              <span>Word Count: {listing.wordCount || 500} words</span>
+          <Card variant="editorial" className="p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 font-sans">
+              <span>
+                {getWireLanguageLabel(listing.language)} · {listing.category} · Published {formatDate(listing.publishedAt)}
+              </span>
+              <span className="tabular-nums">{listing.wordCount || 500} words</span>
             </div>
 
+            {/* Lead Photograph */}
+            {safeHeroImage && !imageError && (
+              <figure className="space-y-2">
+                <div className="aspect-[16/9] w-full overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-800">
+                  <img
+                    src={safeHeroImage}
+                    alt={listing.title}
+                    referrerPolicy="no-referrer"
+                    onError={() => setImageError(true)}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {heroCaption && (
+                  <figcaption className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-sans">
+                    <Camera className="w-3.5 h-3.5 shrink-0" />
+                    <span>{heroCaption}</span>
+                  </figcaption>
+                )}
+              </figure>
+            )}
+
             {/* Lead Paragraph Preview */}
-            <p className="text-sm font-normal text-slate-700 dark:text-slate-200 leading-relaxed italic border-l-2 border-blue-600 pl-3 font-sans">
-              "{listing.shortDescription}"
+            <p className="text-sm font-normal text-slate-700 dark:text-slate-200 leading-relaxed font-sans">
+              {listing.shortDescription}
             </p>
 
             {/* Content Access Banner */}
@@ -145,7 +211,7 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
                   <CheckCircle className="w-4 h-4" />
                   <span>Licensed Entitlement Active — Full Story Unlocked</span>
                 </div>
-                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-sans space-y-3 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                <div className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans space-y-3 pt-2 border-t border-emerald-200 dark:border-emerald-800">
                   {authorizedContent?.bodyContent?.split('\n\n').map((p, idx) => (
                     <p key={idx}>{p}</p>
                   ))}
@@ -157,13 +223,15 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
                   <Lock className="w-5 h-5" />
                 </div>
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-white font-sans">
-                  Commercial Preview Protection Active
+                  {isSubscriberIncludedWire ? 'Included for Active Marketplace Subscribers' : 'Commercial Preview Protection Active'}
                 </h4>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto font-sans leading-relaxed">
-                  To protect investigative value and reporter royalties, full body text and high-resolution photo downloads require an authorized license purchase.
+                  {isSubscriberIncludedWire
+                    ? 'Claim this syndicated wire dispatch at ₹0 with your active Marketplace subscription to unlock the full rewritten copy and lead photograph.'
+                    : 'To protect investigative value and reporter royalties, full body text and high-resolution photo downloads require an authorized license purchase.'}
                 </p>
                 <Button variant="primary" size="sm" onClick={() => setIsPurchaseModalOpen(true)}>
-                  Acquire Rights for {formatINR(listing.price)}
+                  {isSubscriberIncludedWire ? 'Claim Story Free (₹0)' : `Acquire Rights for ${formatINR(listing.price)}`}
                 </Button>
               </div>
             )}
@@ -187,31 +255,41 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
 
             <div className="space-y-3 text-xs font-sans">
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Listing Category:</span>
-                <span className="text-slate-900 dark:text-white font-semibold">{listing.listingType}</span>
+                <span className="text-slate-500 dark:text-slate-400">Language:</span>
+                <span className="text-slate-900 dark:text-white font-semibold">{getWireLanguageLabel(listing.language)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Base Unit Rate:</span>
-                <span className="text-blue-600 dark:text-blue-400 font-bold">{formatINR(listing.price)}</span>
+                <span className="text-slate-500 dark:text-slate-400">Listing Category:</span>
+                <span className="text-slate-900 dark:text-white font-semibold">
+                  {isSubscriberIncludedWire ? 'SYNDICATED WIRE' : listing.listingType}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">Access Tier:</span>
+                {isSubscriberIncludedWire ? (
+                  <span className="text-emerald-700 dark:text-emerald-400 font-bold">Included in Subscription (₹0)</span>
+                ) : (
+                  <span className="text-blue-600 dark:text-blue-400 font-bold tabular-nums">{formatINR(listing.price)}</span>
+                )}
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 dark:text-slate-400">Beat Section:</span>
                 <span className="text-slate-700 dark:text-slate-300">{listing.category}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">District Location:</span>
-                <span className="text-slate-700 dark:text-slate-300">{listing.district || 'Regional'}</span>
+                <span className="text-slate-500 dark:text-slate-400">Location:</span>
+                <span className="text-slate-700 dark:text-slate-300">{listing.district || listing.state || 'Pan-India'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Originality Status:</span>
+                <span className="text-slate-500 dark:text-slate-400">Editorial Status:</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                   {listing.originalityStatus?.replace(/_/g, ' ') || 'VERIFIED'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Has Photography:</span>
+                <span className="text-slate-500 dark:text-slate-400">Photography:</span>
                 <span className="text-slate-700 dark:text-slate-300">
-                  {listing.hasPhotography ? `Yes (${listing.photoCount} High-Res)` : 'Text Only'}
+                  {safeHeroImage || listing.hasPhotography ? `Included (${Math.max(1, listing.photoCount || 1)})` : 'Text Only'}
                 </span>
               </div>
             </div>
@@ -221,7 +299,11 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
               className="w-full mt-2"
               onClick={() => setIsPurchaseModalOpen(true)}
             >
-              {hasFullAccess ? 'View / Renew Rights' : `Acquire Rights (${formatINR(listing.price)})`}
+              {hasFullAccess
+                ? 'View / Renew Rights'
+                : isSubscriberIncludedWire
+                ? 'Claim Story Free'
+                : `Acquire Rights (${formatINR(listing.price)})`}
             </Button>
           </Card>
 
@@ -235,11 +317,11 @@ export const MarketplaceStoryDetailPage: React.FC = () => {
                 {listing.reporterByline || listing.reporterName}
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400 font-sans block">
-                Source Desk: {listing.sourceTenantId || 'Freelance Open Wire'}
+                Source Desk: {listing.sourceFeedName || listing.sourceTenantId || 'NewsPress Syndication Desk'}
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed border-t border-slate-200 dark:border-slate-800 pt-2 font-sans">
-              Mandatory credit: <em>"{listing.reporterByline} / NewsPress Wire"</em> must accompany any print broadsheet or web publication.
+              Mandatory credit: <em>"{listing.reporterByline || listing.reporterName} / NewsPress Wire"</em> must accompany any print broadsheet or web publication.
             </p>
           </Card>
         </div>

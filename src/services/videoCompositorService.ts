@@ -87,6 +87,7 @@ export interface CompositedVideoResult {
 }
 
 export interface DirectYouTubePublishParams extends VideoCompositeParams {
+  tenantId?: string;
   thumbnailBlob?: Blob;
   youtubeTitle: string;
   youtubeDescription: string;
@@ -95,7 +96,6 @@ export interface DirectYouTubePublishParams extends VideoCompositeParams {
   youtubeAccessToken?: string;
   youtubeRefreshToken?: string;
   youtubeClientId?: string;
-  youtubeClientSecret?: string;
 }
 
 export interface DirectYouTubePublishResult {
@@ -542,22 +542,24 @@ export class VideoCompositorService {
     params: DirectYouTubePublishParams
   ): Promise<DirectYouTubePublishResult> {
     const {
-      mainVideoBlob,
+      tenantId,
       voiceOverAudioBlob,
       voiceScriptText,
       language,
       watermarkSettings,
       clipDurationMode = 'bulletin',
       sourceDuration,
+      speechRate,
+      voiceActorId,
+      voiceActorGoogleVoice,
+      emotionalStyle,
       thumbnailBlob,
       youtubeTitle,
       youtubeDescription,
       youtubeTags,
-      youtubePrivacyStatus = 'public',
       youtubeAccessToken,
       youtubeRefreshToken,
       youtubeClientId,
-      youtubeClientSecret,
       onProgress,
     } = params;
 
@@ -565,18 +567,26 @@ export class VideoCompositorService {
     const configuredUrl = (import.meta as any).env?.VITE_VIDEO_PROCESSOR_SERVICE_URL;
     const cloudServiceUrl = configuredUrl || DIRECT_CLOUD_RUN_URL;
 
-    onProgress?.(10, 'Preparing broadcast payload for Cloud Run Server...');
+    onProgress?.(10, 'Preparing broadcast payload for Studio Mastering Server...');
 
     const formData = new FormData();
 
     // Prepare sequential multi-clips + bumpers for Cloud processing
     await this.prepareClipsFormData(formData, params, onProgress);
 
-    if (voiceOverAudioBlob) formData.append('voiceAudio', voiceOverAudioBlob, 'voice.mp3');
+    if (voiceOverAudioBlob) {
+      const audioExt = voiceOverAudioBlob.type?.includes('wav') ? 'voice.wav' : 'voice.mp3';
+      formData.append('voiceAudio', voiceOverAudioBlob, audioExt);
+    }
     if (voiceScriptText) formData.append('voiceScriptText', voiceScriptText);
     if (language) formData.append('language', language);
     if (clipDurationMode) formData.append('clipDurationMode', clipDurationMode);
     if (sourceDuration) formData.append('sourceDuration', Math.round(sourceDuration).toString());
+    if (speechRate) formData.append('speechRate', speechRate.toString());
+    if (voiceActorId) formData.append('voiceActorId', voiceActorId);
+    if (voiceActorGoogleVoice) formData.append('voiceActorGoogleVoice', voiceActorGoogleVoice);
+    if (emotionalStyle) formData.append('emotionalStyle', emotionalStyle);
+    if (tenantId) formData.append('tenantId', tenantId);
     await this.appendWatermarkAndTickersToFormData(formData, {
       watermarkSettings,
       newsLocation: params.newsLocation,
@@ -587,16 +597,15 @@ export class VideoCompositorService {
       youtubeTitle,
     });
 
-    // Direct YouTube Broadcast Parameters
+    // Direct YouTube Broadcast Parameters (Always Direct Public)
     formData.append('directPublish', 'true');
     formData.append('youtubeTitle', youtubeTitle);
     formData.append('youtubeDescription', youtubeDescription);
     formData.append('youtubeTags', JSON.stringify(youtubeTags || []));
-    formData.append('youtubePrivacyStatus', youtubePrivacyStatus);
+    formData.append('youtubePrivacyStatus', 'public');
     if (youtubeAccessToken) formData.append('youtubeAccessToken', youtubeAccessToken);
     if (youtubeRefreshToken) formData.append('youtubeRefreshToken', youtubeRefreshToken);
     if (youtubeClientId) formData.append('youtubeClientId', youtubeClientId);
-    if (youtubeClientSecret) formData.append('youtubeClientSecret', youtubeClientSecret);
     if (thumbnailBlob) formData.append('youtubeThumbnail', thumbnailBlob, 'thumbnail.jpg');
 
     onProgress?.(45, 'Mastering broadcast package with anchor narration and preparing transmission...');
@@ -805,7 +814,8 @@ export class VideoCompositorService {
     language?: string,
     bannerSettings?: BroadcastBannerSettings
   ) {
-    const rawText = tickerText?.trim() || 'తాజా వార్తలు';
+    const defaultTickerFallback = language === 'te' ? 'తాజా వార్తలు' : 'BREAKING NEWS UPDATES';
+    const rawText = tickerText?.trim() || defaultTickerFallback;
 
     ctx.save();
     // Tier 1: Ticker height = 80px (raised up)
@@ -963,9 +973,15 @@ export class VideoCompositorService {
       ctx.fillText(isTelugu ? 'వాణిజ్య ప్రకటన' : 'ADVERTISEMENT', 36, bannerY + 74);
 
       // Sponsor Content
-      const sponsor = bannerSettings?.adBanner?.sponsorName || 'సురక్ష ఆటోమోటివ్స్ & సర్వీసెస్';
-      const adHeadline = bannerSettings?.adBanner?.headline || 'దసరా & దీపావళి ప్రత్యేక ఆఫర్ - 30% డిస్కౌంట్!';
-      const adContact = bannerSettings?.adBanner?.phoneOrContact || '📞 ప్రకటనల కొరకు: +91 98480 12345';
+      const sponsor =
+        bannerSettings?.adBanner?.sponsorName ||
+        (isTelugu ? 'సురక్ష ఆటోమోటివ్స్ & సర్వీసెస్' : 'National Commercial Partner');
+      const adHeadline =
+        bannerSettings?.adBanner?.headline ||
+        (isTelugu ? 'ప్రత్యేక పండుగ ఆఫర్ - 30% డిస్కౌంట్!' : 'Special Broadcast Partner Announcement');
+      const adContact =
+        bannerSettings?.adBanner?.phoneOrContact ||
+        (isTelugu ? '📞 ప్రకటనల కొరకు: +91 98480 12345' : 'For Broadcast Inquiries: +91 98480 12345');
 
       ctx.fillStyle = '#fef08a';
       ctx.font = isTelugu
@@ -1031,7 +1047,11 @@ export class VideoCompositorService {
       ctx.fillText(isTelugu ? 'మా ఛానెల్ లింక్స్' : 'OUR CHANNELS', 36, bannerY + 74);
 
       const channelTitle = bannerSettings?.channelBanner?.channelName || 'NewsPress 24x7 Digital Network';
-      const tagline = bannerSettings?.channelBanner?.tagline || 'నిష్పక్షపాత వార్తలు • ఎప్పటికప్పుడు తాజా సమాచారం';
+      const tagline =
+        bannerSettings?.channelBanner?.tagline ||
+        (isTelugu
+          ? 'నిష్పక్షపాత వార్తలు • ఎప్పటికప్పుడు తాజా సమాచారం'
+          : 'Independent Journalism • Verified National & Regional Coverage');
       const yt = bannerSettings?.channelBanner?.youtubeHandle || '@NewsPressOfficial';
       const wa = bannerSettings?.channelBanner?.whatsappNumber || '+91 98765 43210';
 

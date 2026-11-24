@@ -14,7 +14,8 @@ service cloud.firestore {
 
     function isPlatformAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == 'alfanewsservice@gmail.com' ||
+        (request.auth.token.email_verified == true &&
+         request.auth.token.email in ['alfanewsservice@gmail.com', 'alfanews0861@gmail.com']) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.platformRole in ['super_admin', 'platform_admin'])
       );
@@ -1309,6 +1310,205 @@ service cloud.firestore {
       allow get, list: if isSignedIn() && isPlatformAdmin();
       allow create, update, delete: if isPlatformAdmin();
     }
+
+    // ====================================================
+    // YOUTUBE NEWS VIDEO STUDIO — BROADCASTS & QUEUE
+    // ====================================================
+
+    function isValidYouTubeBroadcast(data) {
+      return data.videoId is string && data.videoId.size() > 0 && data.videoId.size() <= 128 &&
+        data.youtubeUrl is string && data.youtubeUrl.size() > 0 && data.youtubeUrl.size() <= 512 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 300 &&
+        (!('language' in data) || (data.language is string && data.language.size() <= 16)) &&
+        (!('privacyStatus' in data) || data.privacyStatus in ['public', 'unlisted', 'private']) &&
+        (!('status' in data) || data.status in ['published', 'processing', 'ready', 'failed']);
+    }
+
+    function isValidYouTubeVideoJob(data) {
+      return data.jobId is string && data.jobId.size() > 0 && data.jobId.size() <= 128 &&
+        data.tenantId is string && data.tenantId.size() > 0 && data.tenantId.size() <= 128 &&
+        data.userId is string && data.userId.size() > 0 && data.userId.size() <= 128 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 300 &&
+        data.priority in ['P1_FLASH_BREAKING', 'P2_PRIMETIME_BULLETIN', 'P3_ROUTINE_FIELD_REPORT'] &&
+        data.status in ['QUEUED', 'PROCESSING', 'PUBLISHED', 'FAILED', 'CANCELLED'] &&
+        data.progress is number && data.progress >= 0 && data.progress <= 100;
+    }
+
+    // --- YouTube Broadcast History Archive ---
+    match /youtube_broadcasts/{videoId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        resource.data.createdBy == request.auth.uid ||
+        (resource.data.tenantId is string && isTenantMember(resource.data.tenantId))
+      );
+      allow create: if isSignedIn() && isValidId(videoId) &&
+        isValidYouTubeBroadcast(request.resource.data) && (
+          isPlatformAdmin() ||
+          request.resource.data.createdBy == request.auth.uid ||
+          (request.resource.data.tenantId is string && isTenantMember(request.resource.data.tenantId))
+        );
+      allow update: if isSignedIn() &&
+        isValidYouTubeBroadcast(request.resource.data) &&
+        request.resource.data.videoId == resource.data.videoId && (
+          isPlatformAdmin() ||
+          resource.data.createdBy == request.auth.uid ||
+          (resource.data.tenantId is string && isTenantEditor(resource.data.tenantId))
+        );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        (resource.data.tenantId is string && isTenantAdmin(resource.data.tenantId))
+      );
+    }
+
+    // --- YouTube Broadcast Queue Jobs ---
+    match /youtube_video_queue/{jobId} {
+      allow get, list: if isSignedIn() && (
+        isPlatformAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        isTenantMember(resource.data.tenantId)
+      );
+      allow create: if isSignedIn() && isValidId(jobId) &&
+        isValidYouTubeVideoJob(request.resource.data) && (
+          isPlatformAdmin() ||
+          request.resource.data.userId == request.auth.uid ||
+          isTenantMember(request.resource.data.tenantId)
+        );
+      allow update: if isSignedIn() &&
+        isValidYouTubeVideoJob(request.resource.data) &&
+        request.resource.data.jobId == resource.data.jobId &&
+        request.resource.data.tenantId == resource.data.tenantId && (
+          isPlatformAdmin() ||
+          resource.data.userId == request.auth.uid ||
+          isTenantMember(resource.data.tenantId)
+        );
+      allow delete: if isSignedIn() && (
+        isPlatformAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // ====================================================
+    // MARKETPLACE WIRE FEED INGESTION & GCE WORKER RULES
+    // ====================================================
+
+    function isValidWireUrl(url) {
+      return url is string &&
+        url.size() >= 10 &&
+        url.size() <= 1024 &&
+        url.matches('^https?://[^\\s]+$');
+    }
+
+    function isValidWireLanguage(lang) {
+      return lang is string &&
+        lang in ['en', 'te', 'hi', 'ta', 'kn', 'ml', 'mr', 'bn', 'gu', 'or', 'pa'];
+    }
+
+    function isValidWireFeedSource(data) {
+      return data.keys().hasAll([
+          'sourceId', 'name', 'url', 'feedType', 'language', 'category',
+          'pollIntervalMinutes', 'maxItemsPerRun', 'enabled',
+          'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'sourceId', 'name', 'url', 'feedType', 'language', 'category',
+          'pollIntervalMinutes', 'maxItemsPerRun', 'enabled', 'regionTag',
+          'lastPolledAt', 'lastStatus', 'lastError',
+          'totalPublishedCount', 'createdBy', 'createdAt', 'updatedAt'
+        ]) &&
+        data.sourceId is string && data.sourceId.size() > 0 && data.sourceId.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 120 &&
+        isValidWireUrl(data.url) &&
+        data.feedType in ['auto', 'rss', 'website_section', 'article'] &&
+        isValidWireLanguage(data.language) &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 80 &&
+        data.pollIntervalMinutes is int && data.pollIntervalMinutes >= 5 && data.pollIntervalMinutes <= 1440 &&
+        data.maxItemsPerRun is int && data.maxItemsPerRun >= 1 && data.maxItemsPerRun <= 20 &&
+        data.enabled is bool &&
+        data.createdBy is string && data.createdBy.size() > 0 && data.createdBy.size() <= 128 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64 &&
+        (!('regionTag' in data) || (data.regionTag is string && data.regionTag.size() <= 64)) &&
+        (!('lastPolledAt' in data) || (data.lastPolledAt is string && data.lastPolledAt.size() <= 64)) &&
+        (!('lastStatus' in data) || data.lastStatus in ['idle', 'success', 'partial', 'failed']) &&
+        (!('lastError' in data) || (data.lastError is string && data.lastError.size() <= 500)) &&
+        (!('totalPublishedCount' in data) || (data.totalPublishedCount is int && data.totalPublishedCount >= 0));
+    }
+
+    function isValidWireScraperRun(data) {
+      return data.keys().hasAll([
+          'runId', 'workerId', 'sourceId', 'sourceName', 'language', 'category',
+          'startedAt', 'completedAt', 'durationMs',
+          'fetchedCount', 'skippedDuplicates', 'publishedCount', 'status'
+        ]) &&
+        data.runId is string && data.runId.size() > 0 && data.runId.size() <= 128 &&
+        data.workerId is string && data.workerId.size() > 0 && data.workerId.size() <= 128 &&
+        data.sourceId is string && data.sourceId.size() > 0 && data.sourceId.size() <= 128 &&
+        data.sourceName is string && data.sourceName.size() > 0 && data.sourceName.size() <= 120 &&
+        isValidWireLanguage(data.language) &&
+        data.category is string && data.category.size() > 0 && data.category.size() <= 80 &&
+        data.status in ['success', 'partial', 'failed'] &&
+        data.durationMs is int && data.durationMs >= 0 &&
+        data.fetchedCount is int && data.fetchedCount >= 0 &&
+        data.skippedDuplicates is int && data.skippedDuplicates >= 0 &&
+        data.publishedCount is int && data.publishedCount >= 0 &&
+        (!('errorMessage' in data) || (data.errorMessage is string && data.errorMessage.size() <= 500));
+    }
+
+    function isValidWireWorkerStatus(data) {
+      return data.workerId is string && data.workerId.size() > 0 && data.workerId.size() <= 128 &&
+        data.region is string && data.region.size() > 0 && data.region.size() <= 64 &&
+        data.status in ['online', 'idle', 'offline'] &&
+        data.lastHeartbeatAt is string && data.lastHeartbeatAt.size() <= 64 &&
+        (!('hostname' in data) || (data.hostname is string && data.hostname.size() <= 128)) &&
+        (!('machineType' in data) || (data.machineType is string && data.machineType.size() <= 64)) &&
+        (!('memoryUsageMb' in data) || (data.memoryUsageMb is number && data.memoryUsageMb >= 0 && data.memoryUsageMb <= 4096)) &&
+        (!('activeSourcesCount' in data) || (data.activeSourcesCount is int && data.activeSourcesCount >= 0)) &&
+        (!('publishedTodayCount' in data) || (data.publishedTodayCount is int && data.publishedTodayCount >= 0)) &&
+        (!('version' in data) || (data.version is string && data.version.size() <= 32));
+    }
+
+    // --- Admin-Configured Wire Feed Sources ---
+    match /wireFeedSources/{sourceId} {
+      allow get, list: if isPlatformAdmin();
+      allow create: if isPlatformAdmin() &&
+        isValidId(sourceId) &&
+        request.resource.data.sourceId == sourceId &&
+        isValidWireFeedSource(request.resource.data);
+      allow update: if isPlatformAdmin() &&
+        request.resource.data.sourceId == resource.data.sourceId &&
+        request.resource.data.createdBy == resource.data.createdBy &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        isValidWireFeedSource(request.resource.data);
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Wire Scraper Execution History (Immutable) ---
+    match /wireScraperRuns/{runId} {
+      allow get, list: if isPlatformAdmin();
+      allow create: if isPlatformAdmin() &&
+        isValidId(runId) &&
+        request.resource.data.runId == runId &&
+        isValidWireScraperRun(request.resource.data);
+      allow update: if false;
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- GCE e2-micro Worker Heartbeat Status ---
+    match /wireWorkerStatus/{workerId} {
+      allow get, list: if isPlatformAdmin();
+      allow create, update: if isPlatformAdmin() &&
+        isValidId(workerId) &&
+        isValidWireWorkerStatus(request.resource.data);
+      allow delete: if isPlatformAdmin();
+    }
+
+    // --- Wire Story SHA-256 Deduplication Index ---
+    match /wireDedupeIndex/{urlHash} {
+      allow get, list: if isPlatformAdmin();
+      allow create, update, delete: if isPlatformAdmin() && isValidId(urlHash);
+    }
   }
 }
+
 

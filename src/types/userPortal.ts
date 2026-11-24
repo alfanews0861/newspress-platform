@@ -136,3 +136,12 @@ export interface UserYouTubeSettingsConfig {
   safeHarborExemptionAcknowledged: boolean;
   defaultDescriptionDisclaimer: string;
 }
+
+export type UserPortalTabKey = 'profile' | 'plan' | 'credits' | 'paper' | 'reporter' | 'youtube' | 'legal';
+export type UserPortalProfile = ExtendedUserProfile;
+export type SubscriptionPlanInfo = UserSubscriptionPlan;
+export type CreditWalletInfo = UserCreditWallet;
+export type DigitalEPaperItem = UserPaperBookmark;
+export type ReporterDispatchItem = UserReporterDispatch;
+export type YouTubeAutomationConfig = UserYouTubeSettingsConfig;
+

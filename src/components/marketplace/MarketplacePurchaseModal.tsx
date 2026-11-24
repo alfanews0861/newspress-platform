@@ -49,6 +49,11 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [completedResult, setCompletedResult] = useState<{ purchase: MarketplacePurchase; license: NewsLicense } | null>(null);
 
+  const isSubscriberIncludedWire = Boolean(
+    listing.includedInSubscription ||
+      (listing.sourceType === 'WIRE_FEED' && listing.pricingModel === 'SUBSCRIPTION_ENTITLEMENT' && listing.price === 0)
+  );
+
   const checkoutId = React.useMemo(() => `chk_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`, [listing.listingId]);
 
   // Preflight validation check
@@ -175,7 +180,9 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
                 </div>
                 <div>
                   <span className="text-slate-500 dark:text-slate-400 block font-sans text-[11px] font-medium uppercase tracking-wider">CALCULATED COST</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-bold text-sm font-sans">{formatINR(listing.price)}</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-bold text-sm font-sans">
+                    {isSubscriberIncludedWire ? '₹0 (Included in Subscription)' : formatINR(listing.price)}
+                  </span>
                 </div>
               </div>
 
@@ -185,8 +192,8 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
                   value={territory}
                   onChange={(e) => setTerritory(e.target.value)}
                   options={[
-                    { value: listing.district || 'Nellore District', label: `District (${listing.district || 'Local'})` },
-                    { value: 'Andhra Pradesh', label: 'Statewide (Andhra Pradesh)' },
+                    { value: listing.district || 'Local District', label: `District (${listing.district || 'Local'})` },
+                    { value: listing.state || 'Statewide', label: `Statewide (${listing.state || 'Regional'})` },
                     { value: 'National', label: 'National (All States)' },
                   ]}
                 />
@@ -239,7 +246,9 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
         {/* STEP 3: Confirm Price & Payment Channel */}
         {step === 3 && (
           <div className="space-y-5">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white font-sans">Confirm Price & Payment Gateway</h4>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white font-sans">
+              {isSubscriberIncludedWire ? 'Confirm Subscriber Entitlement' : 'Confirm Price & Payment Gateway'}
+            </h4>
 
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
               <div className="flex items-center justify-between text-xs font-sans">
@@ -252,68 +261,99 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
               </div>
               <div className="flex items-center justify-between text-xs font-sans pt-2 border-t border-slate-200 dark:border-slate-700">
                 <span className="text-slate-700 dark:text-slate-200 font-semibold">Total Amount Due:</span>
-                <span className="text-xl font-bold text-blue-600 dark:text-blue-400 font-sans">{formatINR(listing.price)}</span>
+                {isSubscriberIncludedWire ? (
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400 font-sans">
+                    ₹0 — Included with Active Marketplace Subscription
+                  </span>
+                ) : (
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-400 font-sans">{formatINR(listing.price)}</span>
+                )}
               </div>
             </div>
 
-            {validation.canUseSubscription && (
-              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 block font-sans">Subscription Pack Available!</span>
-                  <span className="text-xs text-slate-600 dark:text-slate-300 font-sans">You can redeem 1 monthly pack unit instead of cash payment.</span>
-                </div>
-                <Button
-                  variant={useEntitlement ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={() => setUseEntitlement(!useEntitlement)}
-                >
-                  {useEntitlement ? 'Redeeming Pack' : 'Use Pack Unit'}
-                </Button>
+            {!validation.valid && validation.reasons.length > 0 && (
+              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs space-y-1">
+                {validation.reasons.map((reason, idx) => (
+                  <p key={idx} className="flex items-center gap-2">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{reason}</span>
+                  </p>
+                ))}
               </div>
             )}
 
-            {!useEntitlement && (
-              <div className="space-y-2">
-                <label className="text-xs text-slate-600 dark:text-slate-400 font-medium font-sans block">Select Payment Channel:</label>
-                <div className="grid grid-cols-3 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('mock')}
-                    className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all ${
-                      paymentMethod === 'mock'
-                        ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-600/20'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300'
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Instant Credit</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('razorpay')}
-                    className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all ${
-                      paymentMethod === 'razorpay'
-                        ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-600/20'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300'
-                    }`}
-                  >
-                    <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Razorpay UPI</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('stripe')}
-                    className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all ${
-                      paymentMethod === 'stripe'
-                        ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-600/20'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300'
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Stripe Card</span>
-                  </button>
+            {isSubscriberIncludedWire ? (
+              <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 font-sans flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
+                <div>
+                  <span className="font-semibold block">Included Syndicated Wire Story</span>
+                  <span className="text-emerald-700/90 dark:text-emerald-300/90">
+                    Active Marketplace subscribers can claim this story at ₹0 with zero pack units deducted.
+                  </span>
                 </div>
               </div>
+            ) : (
+              <>
+                {validation.canUseSubscription && (
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 block font-sans">Subscription Pack Available!</span>
+                      <span className="text-xs text-slate-600 dark:text-slate-300 font-sans">You can redeem 1 monthly pack unit instead of cash payment.</span>
+                    </div>
+                    <Button
+                      variant={useEntitlement ? 'primary' : 'secondary'}
+                      size="sm"
+                      onClick={() => setUseEntitlement(!useEntitlement)}
+                    >
+                      {useEntitlement ? 'Redeeming Pack' : 'Use Pack Unit'}
+                    </Button>
+                  </div>
+                )}
+
+                {!useEntitlement && (
+                  <div className="space-y-2">
+                    <label className="text-xs text-slate-600 dark:text-slate-400 font-medium font-sans block">Select Payment Channel:</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('mock')}
+                        className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all ${
+                          paymentMethod === 'mock'
+                            ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-600/20'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span>Instant Credit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('razorpay')}
+                        className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all ${
+                          paymentMethod === 'razorpay'
+                            ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-600/20'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                        }`}
+                      >
+                        <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span>Razorpay UPI</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('stripe')}
+                        className={`p-3 rounded-lg border text-xs font-semibold flex flex-col items-center justify-center gap-1.5 transition-all ${
+                          paymentMethod === 'stripe'
+                            ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-600/20'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                        }`}
+                      >
+                        <CreditCard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span>Stripe Card</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-between gap-3">
@@ -327,6 +367,8 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
               >
                 {isProcessing
                   ? 'Processing...'
+                  : isSubscriberIncludedWire
+                  ? 'Claim Story (Free for Subscribers)'
                   : useEntitlement
                   ? 'Confirm 1 Unit Redemption'
                   : `Authorize Payment (${formatINR(listing.price)})`}
@@ -342,8 +384,8 @@ export const MarketplacePurchaseModal: React.FC<MarketplacePurchaseModalProps> =
               <ShieldCheck className="w-6 h-6" />
             </div>
             <h4 className="text-base font-semibold text-slate-900 dark:text-white font-sans">
-              {step === 4 && 'Processing Gateway Payment...'}
-              {step === 5 && 'Verifying Payment Capture & Revenue Split...'}
+              {step === 4 && (isSubscriberIncludedWire ? 'Verifying Active Marketplace Subscription...' : 'Processing Gateway Payment...')}
+              {step === 5 && (isSubscriberIncludedWire ? 'Validating Zero-Cost Subscriber Entitlement...' : 'Verifying Payment Capture & Revenue Split...')}
               {step === 6 && 'Generating Official Syndication License Certificate...'}
               {step === 7 && 'Configuring Publisher Workspace Content Entitlement...'}
             </h4>

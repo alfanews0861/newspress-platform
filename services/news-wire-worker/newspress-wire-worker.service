@@ -1,0 +1,32 @@
+[Unit]
+Description=NewsPress Marketplace Wire Ingestion Worker (GCE e2-micro)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=newspress
+Group=newspress
+WorkingDirectory=/opt/newspress-wire-worker
+EnvironmentFile=/etc/newspress-wire-worker.env
+ExecStart=/usr/bin/node /opt/newspress-wire-worker/src/index.js
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=newspress-wire-worker
+
+# Tuned for Google Compute Engine e2-micro (1 GB RAM Always Free tier)
+MemoryMax=700M
+MemoryHigh=550M
+CPUQuota=85%
+
+# Service hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadOnlyPaths=/opt/newspress-wire-worker
+
+[Install]
+WantedBy=multi-user.target

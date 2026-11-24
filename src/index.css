@@ -3,8 +3,9 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --font-serif: "Newsreader", "Playfair Display", "Noto Serif Telugu", "Ramabhadra", "Suranna", "Cinzel", "Georgia", "Merriweather", serif;
-  --font-sans: "Plus Jakarta Sans", "Inter", "Google Sans", "Open Sans", "Roboto", "Noto Sans Telugu", "Mallanna", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: "Playfair Display", "Newsreader", "Noto Serif Telugu", "Ramabhadra", "Suranna", "Cinzel", "Georgia", serif;
+  --font-sans: "Plus Jakarta Sans", "DM Sans", "Open Sans", "Noto Sans Telugu", "Mallanna", "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Plus Jakarta Sans", "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   --color-canvas: var(--app-canvas);
@@ -24,6 +25,7 @@
   --color-primary-dark: var(--app-primary-dark);
   --color-primary-light: var(--app-primary-light);
 
+  --color-google-blue: var(--app-google-blue);
   --color-google-red: var(--app-google-red);
   --color-google-green: var(--app-google-green);
   --color-google-yellow: var(--app-google-yellow);
@@ -31,38 +33,40 @@
 
 :root {
   /* ==========================================================================
-     GOOGLE SITES & WORKSPACE CLEAN THEME (Default)
-     Airy whitespace, pure white card surfaces, soft Google blue accents,
-     clean Google-standard typography hierarchy and subtle borders.
+     GOOGLE WEBSITE & WORKSPACE COLORFUL THEME (Default)
+     Crisp white surfaces energized by iconic Google 4-Color Spectrum:
+     Google Blue (#4285F4 / #1A73E8), Red (#EA4335), Yellow (#FBBC04), Green (#34A853)
      ========================================================================== */
-  --app-canvas: #f8fafd;           /* Google Workspace clean soft background */
-  --app-canvas-subtle: #f1f3f4;    /* Light toolbar/header subtle background */
-  --app-surface: #ffffff;          /* Pure crisp white card surface */
-  --app-surface-elevated: #f8fafd; /* Elevated hover card surface */
-  --app-border-subtle: #dadce0;    /* Google standard 1px light outline */
-  --app-border-strong: #bdc1c6;    /* Focused/active Google border */
-  
+  --app-canvas: #ffffff;
+  --app-canvas-subtle: #f8fafd;
+  --app-surface: #ffffff;
+  --app-surface-elevated: #f8fafd;
+  --app-border-subtle: #e0e3e7;
+  --app-border-strong: #bdc1c6;
+
   /* Google Clean Typographic Hierarchy */
-  --app-text-heading: #202124;     /* Google primary title text (sharp, readable dark charcoal) */
-  --app-text-heading-muted: #3c4043;/* Google subheadings */
-  --app-text-body: #3c4043;        /* Google main body paragraph text */
-  --app-text-secondary: #444746;   /* Google secondary body text */
-  --app-text-muted: #5f6368;       /* Google standard secondary/muted grey */
-  --app-text-subtle: #70757a;      /* Google caption / subtle hint text */
+  --app-text-heading: #202124;
+  --app-text-heading-muted: #3c4043;
+  --app-text-body: #3c4043;
+  --app-text-secondary: #444746;
+  --app-text-muted: #5f6368;
+  --app-text-subtle: #70757a;
 
-  /* Google 4-Color Brand Palette */
-  --app-primary: #1a73e8;          /* Google Blue */
-  --app-primary-dark: #1557b0;     /* Google Blue Hover */
-  --app-primary-light: #e8f0fe;    /* Google Blue Pill/Surface container */
-  --app-primary-border: #d2e3fc;   /* Google Blue border */
+  /* Signature Google 4-Color Vibrant Palette & Tonal Surfaces */
+  --app-primary: #1a73e8;
+  --app-primary-dark: #1557b0;
+  --app-primary-light: #e8f0fe;
+  --app-primary-border: #d2e3fc;
 
-  --app-google-red: #d93025;       /* Google Red */
+  --app-google-blue: #4285f4;
+  --app-google-blue-tint: #e8f0fe;
+  --app-google-red: #ea4335;
   --app-google-red-light: #fce8e6;
-  --app-google-green: #1e8e3e;     /* Google Green */
+  --app-google-green: #34a853;
   --app-google-green-light: #e6f4ea;
-  --app-google-yellow: #f9ab00;    /* Google Yellow/Amber */
+  --app-google-yellow: #fbbc04;
   --app-google-yellow-light: #fef7e0;
-  
+
   --scrollbar-track: #f1f3f4;
   --scrollbar-thumb: #dadce0;
   --scrollbar-thumb-hover: #bdc1c6;
@@ -70,75 +74,87 @@
 
 [data-theme="dark"] {
   /* ==========================================================================
-     GOOGLE WORKSPACE DARK THEME
-     Consistent with Google Drive/Gmail Dark Theme
+     GOOGLE WORKSPACE COLORFUL DARK THEME
      ========================================================================== */
-  --app-canvas: #1f1f1f;
-  --app-canvas-subtle: #28292a;
-  --app-surface: #28292a;
-  --app-surface-elevated: #333537;
-  --app-border-subtle: #444746;
-  --app-border-strong: #5e5e5e;
-  --app-text-subtle: #8e918f;
-  --app-text-muted: #a8aaad;
-  --app-text-secondary: #c4c7c5;
-  --app-text-body: #e3e3e3;
-  --app-text-heading-muted: #e3e3e3;
-  --app-text-heading: #f2f2f2;
+  --app-canvas: #1a1c1e;
+  --app-canvas-subtle: #242629;
+  --app-surface: #242629;
+  --app-surface-elevated: #2e3135;
+  --app-border-subtle: #3c4043;
+  --app-border-strong: #5f6368;
+  --app-text-subtle: #9aa0a6;
+  --app-text-muted: #bdc1c6;
+  --app-text-secondary: #dadce0;
+  --app-text-body: #e8eaed;
+  --app-text-heading-muted: #e8eaed;
+  --app-text-heading: #f8f9fa;
 
-  --app-primary: #a8c7fa;
-  --app-primary-dark: #8ab4f8;
-  --app-primary-light: #004a77;
+  --app-primary: #8ab4f8;
+  --app-primary-dark: #669df6;
+  --app-primary-light: #173054;
   --app-primary-border: #1a73e8;
 
+  --app-google-blue: #8ab4f8;
+  --app-google-blue-tint: #173054;
   --app-google-red: #f28b82;
-  --app-google-red-light: #3c1410;
+  --app-google-red-light: #3c1816;
   --app-google-green: #81c995;
-  --app-google-green-light: #0d2818;
+  --app-google-green-light: #13311e;
   --app-google-yellow: #fdd663;
-  --app-google-yellow-light: #382c00;
+  --app-google-yellow-light: #3a2d07;
 
-  --scrollbar-track: #1f1f1f;
-  --scrollbar-thumb: #444746;
-  --scrollbar-thumb-hover: #5e5e5e;
+  --scrollbar-track: #1a1c1e;
+  --scrollbar-thumb: #3c4043;
+  --scrollbar-thumb-hover: #5f6368;
 }
 
 @layer base {
   *, *::before, *::after {
     -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
   }
 
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
   }
 
   body {
-    background-color: var(--color-canvas);
+    background-color: var(--color-canvas-subtle);
     color: var(--color-text-body);
     font-family: var(--font-sans);
     min-height: 100%;
     letter-spacing: -0.01em;
-    overflow-x: hidden;
+    overflow-x: clip;
     width: 100%;
     touch-action: manipulation;
   }
 
   h1, h2, h3, h4, h5, h6 {
     color: var(--color-text-heading);
-    font-family: var(--font-sans);
+    font-family: var(--font-display);
     letter-spacing: -0.02em;
+    text-wrap: balance;
   }
 
-  /* Prevent automatic zoom in on mobile iOS Safari when focusing text inputs */
+  /* Prevent automatic zoom on mobile iOS Safari when focusing text inputs */
   @media screen and (max-width: 768px) {
     input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
     select,
     textarea {
       font-size: 16px !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
   }
 
@@ -157,10 +173,10 @@
     display: none;
   }
 
-  /* Google-style subtle rounded scrollbars */
+  /* Subtle rounded scrollbars */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
@@ -168,7 +184,6 @@
   ::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 9999px;
-    border: 2px solid var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
@@ -176,18 +191,89 @@
 }
 
 /* ==========================================================================
-   GOOGLE MATERIAL DESIGN & GOOGLE SITES UTILITY STYLES
-   Clean pill buttons, light borders, subtle hover elevations, and crisp badges.
+   COLORFUL WORKSPACE & MATERIAL DESIGN 3 UTILITIES
    ========================================================================== */
 
-/* Google Primary Pill Button */
+/* Signature 4-color top hairline spectrum */
+.google-spectrum-bar {
+  background: linear-gradient(
+    90deg,
+    #4285f4 0%,
+    #4285f4 25%,
+    #ea4335 25%,
+    #ea4335 50%,
+    #fbbc04 50%,
+    #fbbc04 75%,
+    #34a853 75%,
+    #34a853 100%
+  );
+}
+
+/* Soft luminous hero backdrop */
+.google-hero-glow {
+  background:
+    radial-gradient(620px 380px at 8% 12%, rgba(66, 133, 244, 0.12), transparent 68%),
+    radial-gradient(540px 340px at 92% 16%, rgba(234, 67, 53, 0.10), transparent 68%),
+    radial-gradient(520px 340px at 82% 88%, rgba(251, 188, 4, 0.12), transparent 68%),
+    radial-gradient(560px 340px at 14% 88%, rgba(52, 168, 83, 0.10), transparent 68%),
+    #ffffff;
+}
+
+[data-theme="dark"] .google-hero-glow {
+  background:
+    radial-gradient(620px 380px at 8% 12%, rgba(66, 133, 244, 0.14), transparent 68%),
+    radial-gradient(540px 340px at 92% 16%, rgba(234, 67, 53, 0.11), transparent 68%),
+    radial-gradient(520px 340px at 82% 88%, rgba(251, 188, 4, 0.09), transparent 68%),
+    radial-gradient(560px 340px at 14% 88%, rgba(52, 168, 83, 0.11), transparent 68%),
+    #1a1c1e;
+}
+
+/* Tonal Pastel Surfaces (Light + Dark paired) */
+.google-surface-blue {
+  background-color: #eef4ff;
+  border-color: #d2e3fc;
+}
+[data-theme="dark"] .google-surface-blue {
+  background-color: rgba(66, 133, 244, 0.12);
+  border-color: rgba(138, 180, 248, 0.28);
+}
+
+.google-surface-red {
+  background-color: #fef1f0;
+  border-color: #fad2cf;
+}
+[data-theme="dark"] .google-surface-red {
+  background-color: rgba(234, 67, 53, 0.12);
+  border-color: rgba(242, 139, 130, 0.28);
+}
+
+.google-surface-yellow {
+  background-color: #fff9e6;
+  border-color: #feefc3;
+}
+[data-theme="dark"] .google-surface-yellow {
+  background-color: rgba(251, 188, 4, 0.12);
+  border-color: rgba(253, 214, 99, 0.28);
+}
+
+.google-surface-green {
+  background-color: #edf8f0;
+  border-color: #ceead6;
+}
+[data-theme="dark"] .google-surface-green {
+  background-color: rgba(52, 168, 83, 0.12);
+  border-color: rgba(129, 201, 149, 0.28);
+}
+
+/* Primary Action Button */
 .google-btn-primary {
   background-color: #1a73e8;
   color: #ffffff;
   border-radius: 9999px;
-  font-weight: 500;
-  padding: 0.5rem 1.25rem;
-  transition: all 0.15s ease-in-out;
+  font-weight: 600;
+  padding: 0.625rem 1.5rem;
+  min-height: 44px;
+  transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -195,79 +281,80 @@
 }
 .google-btn-primary:hover {
   background-color: #1557b0;
-  box-shadow: 0 1px 3px rgba(60,64,67, 0.3), 0 4px 8px 3px rgba(60,64,67, 0.15);
+  box-shadow: 0 2px 6px rgba(26, 115, 232, 0.28);
 }
 
-/* Google Outline / Secondary Button */
+/* Outline / Secondary Button */
 .google-btn-secondary {
-  background-color: #ffffff;
-  color: #1a73e8;
-  border: 1px solid #dadce0;
+  background-color: var(--app-surface);
+  color: var(--app-primary);
+  border: 1px solid var(--app-border-subtle);
   border-radius: 9999px;
-  font-weight: 500;
-  padding: 0.5rem 1.25rem;
-  transition: all 0.15s ease-in-out;
+  font-weight: 600;
+  padding: 0.625rem 1.5rem;
+  min-height: 44px;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
 }
 .google-btn-secondary:hover {
-  background-color: #f8fafd;
-  border-color: #bdc1c6;
+  background-color: var(--app-primary-light);
+  border-color: var(--app-primary-border);
 }
 
-/* Google Clean Card */
+/* Clean Card */
 .google-card {
-  background-color: #ffffff;
-  border: 1px solid #dadce0;
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-border-subtle);
   border-radius: 1rem;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .google-card:hover {
-  border-color: #bdc1c6;
-  box-shadow: 0 1px 3px rgba(60,64,67, 0.08), 0 4px 12px rgba(60,64,67, 0.06);
+  border-color: var(--app-border-strong);
+  box-shadow: 0 4px 12px rgba(60, 64, 67, 0.06);
 }
 
-/* Google Pill Chip / Filter */
+/* Segmented Control Chip */
 .google-chip {
-  background-color: #ffffff;
-  border: 1px solid #dadce0;
+  background-color: var(--app-surface);
+  border: 1px solid var(--app-border-subtle);
   border-radius: 9999px;
-  color: #3c4043;
-  padding: 0.35rem 0.85rem;
-  font-size: 0.75rem;
+  color: var(--app-text-body);
+  padding: 0.45rem 0.95rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  transition: all 0.15s ease-in-out;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .google-chip:hover {
-  background-color: #f1f3f4;
-  border-color: #bdc1c6;
+  background-color: var(--app-surface-elevated);
+  border-color: var(--app-border-strong);
 }
 .google-chip-active {
-  background-color: #e8f0fe !important;
-  color: #1a73e8 !important;
-  border-color: #d2e3fc !important;
+  background-color: var(--app-primary-light) !important;
+  color: var(--app-primary) !important;
+  border-color: var(--app-primary-border) !important;
   font-weight: 600 !important;
 }
 
-/* Form inputs: Google style with smooth #dadce0 outline */
-input:not([type="checkbox"]):not([type="radio"]),
+/* Form inputs: clean themed outline */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 textarea,
 select {
-  border-color: #dadce0;
-  border-radius: 0.5rem;
+  border-color: var(--app-border-subtle);
+  border-radius: 0.625rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-input:not([type="checkbox"]):not([type="radio"]):focus,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 textarea:focus,
 select:focus {
-  border-color: #1a73e8 !important;
+  border-color: var(--app-primary) !important;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.15);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.16);
 }
 
-/* Ensure utility button classes preserve horizontal icon+label alignment without breaking card buttons */
+/* Preserve horizontal icon+label alignment on utility buttons */
 button.inline-flex,
 .btn {
   display: inline-flex;

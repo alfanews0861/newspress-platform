@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,39 +19,39 @@ export interface PageHeaderProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
-  tagline,
   badge,
   actions,
   breadcrumbs,
   className = '',
 }) => {
   return (
-    <div className={`mb-6 pb-5 border-b border-[#dadce0] dark:border-[#3c4043] font-sans w-full min-w-0 ${className}`}>
+    <div
+      className={`mb-5 pb-4 border-b border-[#e0e3e7] dark:border-[#3c4043] font-sans w-full min-w-0 ${className}`}
+    >
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <div className="mb-2.5">
+        <div className="mb-1.5 hidden sm:block">
           <Breadcrumb items={breadcrumbs} />
         </div>
       )}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-black dark:text-white break-words">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-[#202124] dark:text-[#f8f9fa] break-words">
               {title}
             </h1>
             {badge}
           </div>
           {subtitle && (
-            <p className="text-xs sm:text-sm text-black dark:text-slate-300 mt-1 max-w-3xl leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-[#5f6368] dark:text-[#9aa0a6] mt-1 max-w-2xl leading-relaxed line-clamp-2">
               {subtitle}
             </p>
           )}
-          {tagline && (
-            <p className="text-xs text-[#1a73e8] dark:text-[#8ab4f8] font-semibold tracking-normal mt-1">
-              {tagline}
-            </p>
-          )}
         </div>
-        {actions && <div className="flex flex-row items-center gap-2 sm:gap-2.5 flex-wrap w-full md:w-auto min-w-0">{actions}</div>}
+        {actions && (
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );

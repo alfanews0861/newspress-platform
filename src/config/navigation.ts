@@ -23,7 +23,7 @@ export interface NavigationSection {
 export const NAVIGATION_SECTIONS: NavigationSection[] = [
   {
     id: 'primary',
-    title: 'Main Workspace',
+    title: 'Workspace',
     items: [
       {
         id: 'dashboard',
@@ -32,30 +32,30 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
       },
       {
         id: 'news',
-        label: 'Stories & Desk',
+        label: 'Stories',
         href: '/newsroom/news',
         requiredPermission: 'news.read',
       },
       {
         id: 'editions',
-        label: 'Newspaper Builder',
+        label: 'Editions',
         href: '/newspaper/editions',
         requiredPermission: 'edition.view',
       },
       {
         id: 'page_designer',
-        label: 'Read & Print Paper',
+        label: 'Page Designer',
         href: '/newspaper/page-designer',
         requiredPermission: 'editions.edit',
       },
       {
         id: 'youtube_studio',
-        label: 'YouTube Video Studio',
+        label: 'Broadcast Studio',
         href: '/newsroom/youtube-studio',
       },
       {
         id: 'marketplace_home',
-        label: 'News Marketplace',
+        label: 'Marketplace',
         href: '/marketplace',
         requiredPermission: 'marketplace.browse',
       },
@@ -101,29 +101,35 @@ export const NAVIGATION_SECTIONS: NavigationSection[] = [
   },
   {
     id: 'setup',
-    title: 'Setup & Reporters',
+    title: 'Manage',
     defaultCollapsed: false,
     items: [
       {
-        id: 'my_listings',
-        label: 'Sell Story (Reporters)',
-        href: '/marketplace/my-listings',
-      },
-      {
         id: 'paper_settings',
-        label: 'Paper & Masthead',
+        label: 'Paper & Brand',
         href: '/newspaper/brands',
         requiredPermission: 'edition.view',
       },
       {
         id: 'reporters',
-        label: 'Reporters & Staff',
+        label: 'Reporters',
         href: '/newsroom/reporters',
         requiredPermission: 'reporters.read',
       },
       {
+        id: 'user_portal',
+        label: 'Account & Wallet',
+        href: '/user/portal',
+      },
+      {
+        id: 'wire_feeds',
+        label: 'Wire Feeds',
+        href: '/admin/wire-feeds',
+        requiredPermission: 'platform.admin',
+      },
+      {
         id: 'settings',
-        label: 'Channel & Settings',
+        label: 'Settings',
         href: '/settings',
         requiredPermission: 'tenant.manage_settings',
       },

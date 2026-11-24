@@ -1107,7 +1107,7 @@
         "dateKey": { "type": "string", "description": "Date or month key (YYYY-MM-DD or YYYY-MM)" },
         "version": { "type": "number", "description": "Schema/run version" },
         "aggregatedAt": { "type": "string", "format": "date-time", "description": "Aggregation execution timestamp" }
-      },
+      }
     },
     "ApiApplication": {
       "title": "ApiApplication",
@@ -1167,6 +1167,138 @@
         "status": { "type": "string", "enum": ["PENDING", "DELIVERING", "DELIVERED", "RETRY_SCHEDULED", "FAILED", "DEAD_LETTER"], "description": "Delivery state" }
       },
       "required": ["deliveryId", "eventId", "endpointId", "tenantId", "eventType", "destinationUrl", "attemptNumber", "status"]
+    },
+    "YouTubeBroadcast": {
+      "title": "YouTubeBroadcast",
+      "description": "Published YouTube broadcast record with video metadata, channel attribution, and status.",
+      "type": "object",
+      "properties": {
+        "videoId": { "type": "string", "description": "Official YouTube video identifier (document ID)" },
+        "tenantId": { "type": "string", "description": "Tenant organization boundary" },
+        "createdBy": { "type": "string", "description": "Firebase Auth UID of publishing editor" },
+        "youtubeUrl": { "type": "string", "format": "uri", "description": "Public YouTube watch URL" },
+        "embedUrl": { "type": "string", "format": "uri", "description": "YouTube embed URL" },
+        "title": { "type": "string", "description": "Broadcast headline / YouTube video title" },
+        "tags": { "type": "array", "description": "SEO tags attached to the broadcast" },
+        "language": { "type": "string", "description": "ISO language code for the broadcast" },
+        "newsLocation": { "type": "string", "description": "Dateline reporting location" },
+        "channelTitle": { "type": "string", "description": "Target YouTube channel title" },
+        "voiceActorId": { "type": "string", "description": "Voice anchor profile ID" },
+        "voiceActorName": { "type": "string", "description": "Voice anchor display name" },
+        "publishedAt": { "type": "string", "format": "date-time", "description": "Broadcast publish timestamp" },
+        "privacyStatus": { "type": "string", "enum": ["public", "unlisted", "private"], "description": "YouTube visibility state" },
+        "status": { "type": "string", "enum": ["published", "processing", "ready", "failed"], "description": "Processing status" },
+        "isSdReady": { "type": "boolean", "description": "Whether YouTube SD/HD playback is ready" },
+        "thumbnailUrl": { "type": "string", "description": "Broadcast cover thumbnail reference" }
+      },
+      "required": ["videoId", "youtubeUrl", "title", "publishedAt"]
+    },
+    "YouTubeVideoJob": {
+      "title": "YouTubeVideoJob",
+      "description": "Queued background broadcast mastering and YouTube dispatch job.",
+      "type": "object",
+      "properties": {
+        "jobId": { "type": "string", "description": "Unique queue job identifier" },
+        "tenantId": { "type": "string", "description": "Tenant organization boundary" },
+        "userId": { "type": "string", "description": "Firebase Auth UID of submitting editor" },
+        "userName": { "type": "string", "description": "Display name of submitting desk or editor" },
+        "title": { "type": "string", "description": "Broadcast job headline" },
+        "newsLocation": { "type": "string", "description": "Dateline location" },
+        "language": { "type": "string", "description": "Broadcast language code" },
+        "priority": { "type": "string", "enum": ["P1_FLASH_BREAKING", "P2_PRIMETIME_BULLETIN", "P3_ROUTINE_FIELD_REPORT"], "description": "Dispatch priority level" },
+        "status": { "type": "string", "enum": ["QUEUED", "PROCESSING", "PUBLISHED", "FAILED", "CANCELLED"], "description": "Job execution status" },
+        "stage": { "type": "string", "description": "Current mastering pipeline stage" },
+        "stageMessage": { "type": "string", "description": "Human-readable progress description" },
+        "progress": { "type": "number", "description": "Completion percentage (0-100)" },
+        "retryCount": { "type": "number", "description": "Number of execution attempts" },
+        "maxRetries": { "type": "number", "description": "Maximum allowed retries" },
+        "needsFootageReattach": { "type": "boolean", "description": "True when local footage files must be re-selected after reload" },
+        "youtubeVideoId": { "type": "string", "description": "Published YouTube video ID" },
+        "youtubeUrl": { "type": "string", "description": "Published YouTube watch URL" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Job enqueue timestamp" }
+      },
+      "required": ["jobId", "tenantId", "userId", "title", "language", "priority", "status", "progress", "createdAt"]
+    },
+    "WireFeedSource": {
+      "title": "WireFeedSource",
+      "description": "Admin-configured RSS/Atom feed or news website URL tagged by language and category for Marketplace wire ingestion.",
+      "type": "object",
+      "properties": {
+        "sourceId": { "type": "string", "maxLength": 128, "description": "Unique source identifier" },
+        "name": { "type": "string", "maxLength": 120, "description": "Publisher or wire desk display name" },
+        "url": { "type": "string", "maxLength": 1024, "pattern": "^https?://[^\\s]+$", "description": "Source RSS/Atom feed or news website URL" },
+        "feedType": { "type": "string", "enum": ["auto", "rss", "website_section", "article"], "description": "Source ingestion mode" },
+        "language": { "type": "string", "enum": ["en", "te", "hi", "ta", "kn", "ml", "mr", "bn", "gu", "or", "pa"], "description": "Target Marketplace language code" },
+        "category": { "type": "string", "maxLength": 80, "description": "Target Marketplace editorial category" },
+        "pollIntervalMinutes": { "type": "number", "minimum": 5, "maximum": 1440, "description": "Polling cadence in minutes" },
+        "maxItemsPerRun": { "type": "number", "minimum": 1, "maximum": 20, "description": "Maximum stories ingested per cycle" },
+        "enabled": { "type": "boolean", "description": "Whether the source is actively polled" },
+        "regionTag": { "type": "string", "maxLength": 64, "description": "Optional geographic coverage label" },
+        "lastPolledAt": { "type": "string", "format": "date-time", "description": "Timestamp of last polling run" },
+        "lastStatus": { "type": "string", "enum": ["idle", "success", "partial", "failed"], "description": "Result status of last polling run" },
+        "lastError": { "type": "string", "maxLength": 500, "description": "Most recent error message if failed" },
+        "totalPublishedCount": { "type": "number", "description": "Cumulative stories published from this source" },
+        "createdBy": { "type": "string", "maxLength": 128, "description": "Admin UID who added the source" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last modification timestamp" }
+      },
+      "required": ["sourceId", "name", "url", "feedType", "language", "category", "pollIntervalMinutes", "maxItemsPerRun", "enabled", "createdBy", "createdAt", "updatedAt"]
+    },
+    "WireScraperRun": {
+      "title": "WireScraperRun",
+      "description": "Immutable audit record of a GCE e2-micro wire source polling execution.",
+      "type": "object",
+      "properties": {
+        "runId": { "type": "string", "maxLength": 128, "description": "Unique execution run ID" },
+        "workerId": { "type": "string", "maxLength": 128, "description": "Worker instance identifier" },
+        "sourceId": { "type": "string", "maxLength": 128, "description": "Referenced WireFeedSource ID" },
+        "sourceName": { "type": "string", "maxLength": 120, "description": "Display name of the wire source" },
+        "language": { "type": "string", "enum": ["en", "te", "hi", "ta", "kn", "ml", "mr", "bn", "gu", "or", "pa"], "description": "Target language code" },
+        "category": { "type": "string", "maxLength": 80, "description": "Target editorial category" },
+        "startedAt": { "type": "string", "format": "date-time", "description": "Execution start timestamp" },
+        "completedAt": { "type": "string", "format": "date-time", "description": "Execution completion timestamp" },
+        "durationMs": { "type": "number", "minimum": 0, "description": "Run duration in milliseconds" },
+        "fetchedCount": { "type": "number", "minimum": 0, "description": "Candidate articles extracted" },
+        "skippedDuplicates": { "type": "number", "minimum": 0, "description": "Items skipped as already ingested" },
+        "publishedCount": { "type": "number", "minimum": 0, "description": "New stories published to Marketplace" },
+        "status": { "type": "string", "enum": ["success", "partial", "failed"], "description": "Run completion outcome" },
+        "errorMessage": { "type": "string", "maxLength": 500, "description": "Optional error summary" }
+      },
+      "required": ["runId", "workerId", "sourceId", "sourceName", "language", "category", "startedAt", "completedAt", "durationMs", "fetchedCount", "skippedDuplicates", "publishedCount", "status"]
+    },
+    "WireWorkerStatus": {
+      "title": "WireWorkerStatus",
+      "description": "Heartbeat and resource usage snapshot reported by the GCE e2-micro wire ingestion worker.",
+      "type": "object",
+      "properties": {
+        "workerId": { "type": "string", "maxLength": 128, "description": "Worker instance identifier" },
+        "hostname": { "type": "string", "maxLength": 128, "description": "Compute Engine VM hostname" },
+        "machineType": { "type": "string", "maxLength": 64, "description": "GCP machine type (e2-micro)" },
+        "region": { "type": "string", "maxLength": 64, "description": "GCP Compute Engine region" },
+        "status": { "type": "string", "enum": ["online", "idle", "offline"], "description": "Current operational state" },
+        "lastHeartbeatAt": { "type": "string", "format": "date-time", "description": "Most recent heartbeat timestamp" },
+        "activeSourcesCount": { "type": "number", "minimum": 0, "description": "Number of enabled sources monitored" },
+        "publishedTodayCount": { "type": "number", "minimum": 0, "description": "Number of stories published today" },
+        "memoryUsageMb": { "type": "number", "minimum": 0, "maximum": 4096, "description": "Current Node.js resident memory in MB" },
+        "version": { "type": "string", "maxLength": 32, "description": "Worker package semantic version" }
+      },
+      "required": ["workerId", "region", "status", "lastHeartbeatAt"]
+    },
+    "WireDedupeEntry": {
+      "title": "WireDedupeEntry",
+      "description": "SHA-256 canonical URL index preventing duplicate wire ingestion.",
+      "type": "object",
+      "properties": {
+        "urlHash": { "type": "string", "maxLength": 128, "description": "SHA-256 hex digest of canonical article URL" },
+        "canonicalUrl": { "type": "string", "maxLength": 1024, "description": "Normalized source article URL" },
+        "sourceId": { "type": "string", "maxLength": 128, "description": "Origin WireFeedSource ID" },
+        "newsId": { "type": "string", "maxLength": 128, "description": "Published /news document ID" },
+        "listingId": { "type": "string", "maxLength": 128, "description": "Published /marketplaceListings document ID" },
+        "language": { "type": "string", "description": "Target language code" },
+        "category": { "type": "string", "description": "Target category" },
+        "publishedAt": { "type": "string", "format": "date-time", "description": "Publication timestamp" }
+      },
+      "required": ["urlHash", "canonicalUrl", "sourceId", "newsId", "listingId", "publishedAt"]
     }
   },
   "firestore": {
@@ -1501,6 +1633,30 @@
     "/launchReadinessChecks/{checkId}": {
       "schema": "LaunchGateCheck",
       "description": "Deterministic go-live readiness evaluation checks."
+    },
+    "/youtube_broadcasts/{videoId}": {
+      "schema": "YouTubeBroadcast",
+      "description": "Published YouTube news broadcast archive records."
+    },
+    "/youtube_video_queue/{jobId}": {
+      "schema": "YouTubeVideoJob",
+      "description": "Asynchronous broadcast mastering and YouTube dispatch queue jobs."
+    },
+    "/wireFeedSources/{sourceId}": {
+      "schema": "WireFeedSource",
+      "description": "Admin-configured RSS/Atom feeds and news website URLs tagged by language and category."
+    },
+    "/wireScraperRuns/{runId}": {
+      "schema": "WireScraperRun",
+      "description": "Immutable ingestion execution logs recorded by the GCE e2-micro wire worker."
+    },
+    "/wireWorkerStatus/{workerId}": {
+      "schema": "WireWorkerStatus",
+      "description": "Live health heartbeat and memory metrics reported by the GCE e2-micro wire worker."
+    },
+    "/wireDedupeIndex/{urlHash}": {
+      "schema": "WireDedupeEntry",
+      "description": "SHA-256 canonical URL deduplication index preventing duplicate story rewrites."
     }
   }
 }
